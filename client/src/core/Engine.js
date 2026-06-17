@@ -1,12 +1,13 @@
 import * as THREE from 'three'
+import { THEME } from '../config/theme.js'
 
 export class Engine {
   constructor(canvasId) {
     this.canvas = document.getElementById(canvasId)
 
     this.scene = new THREE.Scene()
-    this.scene.background = new THREE.Color(0x87ceeb)
-    this.scene.fog = new THREE.Fog(0x87ceeb, 30, 100)
+    this.scene.background = new THREE.Color(THEME.sky)
+    this.scene.fog = new THREE.Fog(THEME.fog, 40, 120)
 
     this._setupRenderer()
     this._setupCamera()
@@ -38,12 +39,19 @@ export class Engine {
   }
 
   _setupLights() {
-    const ambient = new THREE.AmbientLight(0xffffff, 0.6)
+    // Soft fill — prevents pure black shadows on dark sky
+    const ambient = new THREE.AmbientLight(0x334466, 0.8)
     this.scene.add(ambient)
 
-    const sun = new THREE.DirectionalLight(0xfff4e0, 1.2)
-    sun.position.set(10, 20, 10)
-    this.scene.add(sun)
+    // Main warm-gold key light (reinforces yellow brand)
+    const key = new THREE.DirectionalLight(0xFFE680, 2.0)
+    key.position.set(15, 30, 10)
+    this.scene.add(key)
+
+    // Subtle cool rim light from below (floating island atmosphere)
+    const rim = new THREE.DirectionalLight(0x4466AA, 0.4)
+    rim.position.set(-10, -10, -10)
+    this.scene.add(rim)
   }
 
   _setupResize() {
