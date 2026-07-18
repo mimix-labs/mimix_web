@@ -5,7 +5,7 @@
 export const WALLE = {
   modelPath:     '/assets/models/walle/walle.glb',
   scale:         1.0,
-  spawnPosition: [0, 1, 0],  // center of Math hub island
+  spawnPosition: [0, 0, 0],  // centrado en el origen
 
   // Mapping: gesture name → Blender animation clip name
   // Adjust clip names to match your exported Blender armature
