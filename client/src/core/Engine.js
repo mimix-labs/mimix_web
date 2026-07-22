@@ -50,7 +50,7 @@ export class Engine {
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
     this.controls.screenSpacePanning = false;
-    this.controls.enableRotate = true; // sin rotación: solo paneo con clic izquierdo
+    this.controls.enableRotate = false; // sin rotación: solo paneo con clic izquierdo
     this.controls.target.set(0, 0, 0); // la cámara mira al origen (Wall-E + mapa centrados)
     this.controls.minDistance = 6; // zoom máximo (lo más cerca)
     this.controls.maxDistance = 16; // zoom mínimo: rango CORTO = mapa "vivo" como Bruno

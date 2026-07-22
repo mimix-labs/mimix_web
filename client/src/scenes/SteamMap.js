@@ -21,4 +21,16 @@ export class SteamMap {
   }
 
   update(_delta, _elapsed) {}
+
+  get ready() {
+    return this.island.ready
+  }
+
+  resolveMovement(from, desired) {
+    return this.island.resolveMovement(from, desired)
+  }
+
+  snapToGround(position) {
+    return this.island.snapToGround(position)
+  }
 }

@@ -4,7 +4,7 @@ import { getGesture } from './gestures.js'
 const FADE_DURATION = 0.25 // seconds to blend between animations
 
 export class CharacterController {
-  constructor({ mesh, animations, input }) {
+  constructor({ mesh, animations, input, proceduralAnimator = null, collisionWorld = null }) {
     this.mesh   = mesh
     this.input  = input
 
@@ -15,8 +15,12 @@ export class CharacterController {
     this._speed     = 5
     this._direction = new THREE.Vector3()
     this._velocity  = new THREE.Vector3()
+    this._proceduralAnimator = proceduralAnimator
+    this._collisionWorld = collisionWorld
 
     this._buildActions(animations)
+    this._collisionWorld?.snapToGround(this.mesh.position)
+    this._proceduralAnimator?.setGroundHeight(this.mesh.position.y)
     this.play('idle')
   }
 
@@ -49,7 +53,8 @@ export class CharacterController {
 
   update(delta) {
     this._mixer.update(delta)
-    this._handleMovement(delta)
+    const isMoving = this._handleMovement(delta)
+    this._proceduralAnimator?.update(delta, isMoving)
   }
 
   _handleMovement(delta) {
@@ -67,7 +72,12 @@ export class CharacterController {
 
     if (isMoving) {
       this._direction.normalize()
-      this.mesh.position.addScaledVector(this._direction, this._speed * delta)
+      const desired = this.mesh.position.clone().addScaledVector(this._direction, this._speed * delta)
+      const resolved = this._collisionWorld?.resolveMovement(this.mesh.position, desired) ?? desired
+      if (resolved) {
+        this.mesh.position.copy(resolved)
+        this._proceduralAnimator?.setGroundHeight(this.mesh.position.y)
+      }
 
       // Face direction of travel
       const angle = Math.atan2(this._direction.x, this._direction.z)
@@ -77,5 +87,11 @@ export class CharacterController {
     } else {
       this.play('idle')
     }
+
+    return isMoving
+  }
+
+  playAction(name) {
+    return this._proceduralAnimator?.play(name) ?? false
   }
 }

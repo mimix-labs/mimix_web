@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ciencias | Mimix</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="Tarjetas 3D Interactivas">
+  <meta name="description" content="Usa gestos de mano para interactuar con tarjetas 3D educativas">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <video id="webcam" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+  <div id="three-canvas"></div>
+
+  <!-- Título principal -->
+  <div id="main-title">
+    <h1>¿Cómo podemos...?</h1>
+  </div>
+
+  <!-- Robot flotante - SIN cuadro contenedor, solo el robot 3D -->
+  <div id="robot-container"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="socketBridge.js"></script>
+  <script type="module" src="main.js"></script>
+
+  <!-- Three.js desde CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  
+  <!-- Nuevos módulos del robot -->
+  <script type="module" src="../../robot/robotManager.js"></script>
+  <script type="module" src="../../robot/robotShapeIntegration.js"></script>
+  <script type="module" src="../../robot/robotUtils.js"></script>
+</body>
+</html>

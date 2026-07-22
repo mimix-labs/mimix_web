@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hand-Tracked Interactive Cube</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="3D Shape Editor">
+  <meta name="description" content="use hand gestures to edit 3D shapes">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <video id="webcam" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+  <div id="three-canvas"></div>
+
+  <div id="sidebar-menu">
+    <h3>Formas</h3>
+    <div class="shape-option">
+      <canvas id="preview-cube" width="90" height="90"></canvas>
+      <span>Cubo</span>
+    </div>
+    <div class="shape-option">
+      <canvas id="preview-octahedron" width="90" height="90"></canvas>
+      <span>Octaedro</span>
+    </div>
+    <div class="shape-option">
+      <canvas id="preview-prism" width="90" height="90"></canvas>
+      <span>Prisma</span>
+    </div>
+    <div class="shape-option">
+      <canvas id="preview-pyramid" width="90" height="90"></canvas>
+      <span>Pirámide</span>
+    </div>
+  </div>
+
+  <!-- Robot flotante - SIN cuadro contenedor, solo el robot 3D -->
+  <div id="robot-container"></div>
+  <div id="robot-dialogue" role="status" aria-live="polite">
+    <span>Wall-E</span>
+    <p id="robot-dialogue-text"></p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="socketBridge.js"></script>
+  <script type="module" src="main.js"></script>
+  <script type="module" src="sidebarShapes.js"></script>
+  <script type="module" src="shapeDialogue.js"></script>
+
+  <!-- Three.js desde CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  
+  <!-- Nuevos módulos del robot -->
+  <script type="module" src="../../robot/robotManager.js"></script>
+  <script type="module" src="../../robot/robotShapeIntegration.js"></script>
+  <script type="module" src="../../robot/robotUtils.js"></script>
+</body>
+</html>

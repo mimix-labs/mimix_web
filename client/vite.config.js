@@ -8,7 +8,9 @@ export default defineConfig({
     assetsInlineLimit: 0,
   },
   server: {
-    port: 3000,
+    // Runabit usa el puerto 3000 para sus retos interactivos.
+    // Mimix se mantiene separado para que ambos se ejecuten a la vez.
+    port: 5173,
     proxy: {
       '/api': 'http://localhost:4000',
     },

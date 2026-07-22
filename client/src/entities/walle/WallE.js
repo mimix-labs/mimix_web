@@ -5,7 +5,9 @@
 export const WALLE = {
   modelPath:     '/assets/models/walle/walle.glb',
   scale:         1.0,
-  spawnPosition: [0, 0, 0],  // centrado en el origen
+  // El suelo del mapa en el origen está a Y = 0.30. El margen evita que
+  // las orugas queden embebidas por redondeos de la malla del terreno.
+  spawnPosition: [0, 0.32, 0],
 
   // Mapping: gesture name → Blender animation clip name
   // Adjust clip names to match your exported Blender armature
