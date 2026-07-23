@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import http from 'node:http'
 import 'dotenv/config'
 
 const app = express()
@@ -67,6 +68,30 @@ app.get('/api/vision/status', (_req, res) => {
     lastFrameAt: latestHandLandmarks?.timestamp ?? null,
     source: latestHandLandmarks?.source ?? null,
   })
+})
+
+app.get('/api/vision/video', (req, res) => {
+  const videoUrl = new URL(
+    process.env.MIMIX_VISION_VIDEO_URL || 'http://127.0.0.1:8081/stream.mjpg',
+  )
+  const upstream = http.get(videoUrl, (videoResponse) => {
+    res.status(videoResponse.statusCode || 502)
+    res.setHeader(
+      'Content-Type',
+      videoResponse.headers['content-type'] || 'multipart/x-mixed-replace',
+    )
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    videoResponse.pipe(res)
+  })
+
+  upstream.on('error', (error) => {
+    if (!res.headersSent) {
+      res.status(503).json({ error: `vision video unavailable: ${error.message}` })
+    } else {
+      res.end()
+    }
+  })
+  res.on('close', () => upstream.destroy())
 })
 
 // Punto de integración para los retos internos. Por ahora registra eventos

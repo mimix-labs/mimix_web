@@ -23,3 +23,11 @@ export function startRobotHandTracking(onResults) {
 
   return () => stream.close();
 }
+
+export function startRobotVideo(imageElement) {
+  imageElement.hidden = false;
+  imageElement.src = '/api/vision/video';
+  imageElement.onerror = () => {
+    console.warn('El video de la Jetson todavia no esta disponible.');
+  };
+}

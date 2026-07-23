@@ -2,7 +2,7 @@
 // Punto de entrada del proyecto, inicializa todo y conecta los módulos
 import { initThree, updateCanvasSize, onShapeCreated } from "./threeScene.js";
 import { initWebcam, setupHands, setupRobotHands } from "./webcam.js";
-import { isRobotVisionMode } from "../robotVision.js";
+import { isRobotVisionMode, startRobotVideo } from "../robotVision.js";
 // import { drawColorPickerWheel } from "./drawUtils.js";
 
 // Inicializar Socket.io
@@ -10,6 +10,7 @@ const socket = io();
 
 // Obtiene el elemento de video de la webcam
 const videoElement = document.getElementById("webcam");
+const robotCameraElement = document.getElementById("robot-camera");
 // Obtiene el elemento canvas para dibujar
 const canvasElement = document.getElementById("canvas");
 // Obtiene el contexto 2D del canvas
@@ -28,6 +29,7 @@ async function main() {
   if (robotVision) {
     // La cámara pertenece al proceso nativo de la Jetson, no al navegador.
     videoElement.hidden = true;
+    startRobotVideo(robotCameraElement);
   } else {
     await initWebcam(videoElement);
   }
