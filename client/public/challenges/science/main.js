@@ -1,7 +1,8 @@
 // main.js
 // Punto de entrada del proyecto, inicializa todo y conecta los módulos
 import { initThree, updateCanvasSize, onCardCreated } from "./threeScene.js";
-import { initWebcam, setupHands } from "./webcam.js";
+import { initWebcam, setupHands, setupRobotHands } from "./webcam.js";
+import { isRobotVisionMode } from "../robotVision.js";
 
 // Inicializar Socket.io
 const socket = io();
@@ -22,11 +23,21 @@ onCardCreated((data) => {
 
 // Función principal que inicializa todo
 async function main() {
-  await initWebcam(videoElement); // Inicializa la webcam
+  const robotVision = isRobotVisionMode();
+  if (robotVision) {
+    // La cámara pertenece al proceso nativo de la Jetson, no al navegador.
+    videoElement.hidden = true;
+  } else {
+    await initWebcam(videoElement);
+  }
   initThree(); // Inicializa la escena 3D
   updateCanvasSize(canvasElement); // Ajusta el tamaño de los canvas
   window.addEventListener("resize", () => updateCanvasSize(canvasElement)); // Actualiza el tamaño al cambiar la ventana
-  await setupHands(canvasElement, canvasCtx, videoElement); // Inicializa MediaPipe Hands en CPU
+  if (robotVision) {
+    setupRobotHands(canvasElement, canvasCtx);
+  } else {
+    await setupHands(canvasElement, canvasCtx, videoElement);
+  }
 }
 
 main(); // Ejecuta la función principal

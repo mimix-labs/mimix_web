@@ -4,12 +4,69 @@ import 'dotenv/config'
 
 const app = express()
 const PORT = process.env.PORT || 4000
+const visionClients = new Set()
+let latestHandLandmarks = null
 
 app.use(cors())
 app.use(express.json())
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', project: 'mimix' })
+})
+
+// Canal local entre la visión nativa de la Jetson y la interfaz web. No se
+// transmite vídeo: únicamente los 21 puntos normalizados de cada mano.
+function sendVisionEvent(res, event, payload) {
+  res.write(`event: ${event}\n`)
+  res.write(`data: ${JSON.stringify(payload)}\n\n`)
+}
+
+function broadcastVisionEvent(event, payload) {
+  for (const client of visionClients) {
+    sendVisionEvent(client, event, payload)
+  }
+}
+
+app.post('/api/vision/hand-landmarks', (req, res) => {
+  const { landmarks, handedness, timestamp, source } = req.body ?? {}
+
+  if (!Array.isArray(landmarks) || !Array.isArray(handedness)) {
+    return res.status(400).json({ error: 'landmarks and handedness are required' })
+  }
+
+  latestHandLandmarks = {
+    landmarks,
+    handedness,
+    timestamp: Number.isFinite(timestamp) ? timestamp : Date.now(),
+    source: source || 'jetson-native',
+  }
+  broadcastVisionEvent('hand-landmarks', latestHandLandmarks)
+  return res.status(202).json({ accepted: true })
+})
+
+app.get('/api/vision/stream', (req, res) => {
+  res.writeHead(200, {
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'Content-Type': 'text/event-stream',
+  })
+  res.flushHeaders()
+  res.write('retry: 2000\n\n')
+  visionClients.add(res)
+
+  if (latestHandLandmarks) {
+    sendVisionEvent(res, 'hand-landmarks', latestHandLandmarks)
+  }
+
+  req.on('close', () => visionClients.delete(res))
+})
+
+app.get('/api/vision/status', (_req, res) => {
+  res.json({
+    connectedClients: visionClients.size,
+    lastFrameAt: latestHandLandmarks?.timestamp ?? null,
+    source: latestHandLandmarks?.source ?? null,
+  })
 })
 
 // Punto de integración para los retos internos. Por ahora registra eventos

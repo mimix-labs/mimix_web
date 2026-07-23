@@ -5,6 +5,7 @@ import { detectDrag, isFist } from "./handGestures.js";
 import { cornerMarkers, camera } from "./threeScene.js";
 import { drawLandmarks } from "./drawUtils.js";
 import { startCpuHandTracking } from "../handTrackingCpu.js";
+import { startRobotHandTracking } from "../robotVision.js";
 
 let draggingCornerIndex = -1;
 let previousLeftFistX = null;
@@ -29,7 +30,20 @@ export async function initWebcam(videoElement) {
 
 // Lógica principal de MediaPipe Hands
 export async function setupHands(canvasElement, canvasCtx, videoElement) {
-  return startCpuHandTracking(videoElement, (results) => {
+  return startCpuHandTracking(videoElement, (results) =>
+    handleHandResults(canvasElement, canvasCtx, results)
+  );
+}
+
+// Usa la misma lógica de gestos, pero los landmarks llegan desde la cámara de
+// la Jetson en vez de crear otro contexto WebGL/MediaPipe en Chromium.
+export function setupRobotHands(canvasElement, canvasCtx) {
+  return startRobotHandTracking((results) =>
+    handleHandResults(canvasElement, canvasCtx, results)
+  );
+}
+
+function handleHandResults(canvasElement, canvasCtx, results) {
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     const handsLandmarks = results.landmarks;
     if (!handsLandmarks || handsLandmarks.length === 0) {
@@ -94,6 +108,5 @@ export async function setupHands(canvasElement, canvasCtx, videoElement) {
       previousLeftFistX = null;
       previousLeftFistY = null;
     }
-  });
 }
 
