@@ -10,6 +10,10 @@ import { ChallengeZone } from '../scenes/ChallengeZone.js'
 
 export class World {
   constructor() {
+    const robotVisionQuery = new URLSearchParams(window.location.search).get('vision') === 'robot'
+      ? '?vision=robot'
+      : ''
+
     this.engine    = new Engine('canvas')
     this.loop      = new Loop(this.engine)
     this.input     = new InputSystem()
@@ -32,7 +36,7 @@ export class World {
       position: [0, 0, -7],
       radius: 2.2,
       label: 'Matemáticas',
-      destination: '/challenges/mathematics/index.html',
+      destination: `/challenges/mathematics/index.html${robotVisionQuery}`,
     })
 
     this.scienceChallenge = new ChallengeZone({
@@ -41,7 +45,7 @@ export class World {
       position: [7, 0, 0],
       radius: 2.2,
       label: 'Ciencias',
-      destination: '/challenges/science/index.html',
+      destination: `/challenges/science/index.html${robotVisionQuery}`,
     })
 
     this.loop.add(this.steamMap)
