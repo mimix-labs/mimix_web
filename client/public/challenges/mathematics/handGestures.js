@@ -3,6 +3,7 @@
 import { camera, cornerMarkers, createShape, setMainShape } from "./threeScene.js";
 
 import { SHAPES } from "./sidebarShapes.js";
+import { landmarkToMirroredScreen } from "../cameraViewport.js";
 
 let draggingCornerIndex = -1;
 let isPinching = false;
@@ -15,9 +16,8 @@ export function detectDrag(handLandmarks) {
   // Obtiene la posición de la punta del pulgar
   const thumbTip = handLandmarks[4];
   // Calcula la posición X en pantalla del índice
-  const screenX = (1 - indexTip.x) * window.innerWidth;
+  const { x: screenX, y: screenY } = landmarkToMirroredScreen(indexTip);
   // Calcula la posición Y en pantalla del índice
-  const screenY = indexTip.y * window.innerHeight;
   // Calcula la distancia entre la punta del índice y el pulgar (para detectar el "pinch")
   const pinchDist = Math.hypot(indexTip.x - thumbTip.x, indexTip.y - thumbTip.y);
 

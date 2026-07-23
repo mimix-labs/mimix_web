@@ -5,6 +5,7 @@ import { camera } from "./threeScene.js";
 import { drawLandmarks } from "./drawUtils.js";
 import { startCpuHandTracking } from "../handTrackingCpu.js";
 import { startRobotHandTracking } from "../robotVision.js";
+import { landmarkToMirroredScreen } from "../cameraViewport.js";
 
 let draggingCardIndex = -1;
 let previousLeftFistX = null;
@@ -70,8 +71,7 @@ function handleHandResults(canvasElement, canvasCtx, results) {
     }
     if (leftHand && isFist(leftHand)) {
       isLeftFist = true;
-      const x = (1 - leftHand[9].x) * window.innerWidth;
-      const y = leftHand[9].y * window.innerHeight;
+      const { x, y } = landmarkToMirroredScreen(leftHand[9]);
       if (previousLeftFistX !== null && previousLeftFistY !== null) {
         const deltaX = x - previousLeftFistX;
         const deltaY = y - previousLeftFistY;

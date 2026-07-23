@@ -105,6 +105,8 @@ export const CARDS = [
 ];
 
 // Array para almacenar las tarjetas 3D en la escena
+import { landmarkToMirroredScreen } from "../cameraViewport.js";
+
 let cardMeshes = [];
 let selectedCard = null;
 let draggedCard = null;
@@ -210,8 +212,7 @@ function createCard(cardData) {
 
 // Detectar interacción con tarjetas usando pinch
 export function detectCardInteraction(indexTip, thumbTip, camera, isStartingPinch = false, dragDelta = null, isEndingPinch = false) {
-  const screenX = (1 - indexTip.x) * window.innerWidth; // Restaurar la inversión para coordenadas correctas
-  const screenY = indexTip.y * window.innerHeight;
+  const { x: screenX, y: screenY } = landmarkToMirroredScreen(indexTip);
   
   // Si estamos terminando el pinch, soltar la tarjeta
   if (isEndingPinch && draggedCard) {

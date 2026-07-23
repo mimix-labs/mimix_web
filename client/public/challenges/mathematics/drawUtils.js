@@ -1,12 +1,16 @@
 // drawUtils.js
 // Funciones de dibujo y utilidades de canvas
+import { landmarkToCanvas } from "../cameraViewport.js";
 
 // Dibuja los puntos de referencia de las manos en el canvas
 export function drawLandmarks(hands, canvasElement, canvasCtx) {
   hands.forEach((landmarks) => {
     for (const landmark of landmarks) {
-      const x = landmark.x * canvasElement.width;
-      const y = landmark.y * canvasElement.height;
+      const { x, y } = landmarkToCanvas(
+        landmark,
+        canvasElement.width,
+        canvasElement.height,
+      );
       canvasCtx.beginPath();
       canvasCtx.arc(x, y, 5, 0, 2 * Math.PI);
       canvasCtx.fillStyle = "cyan";

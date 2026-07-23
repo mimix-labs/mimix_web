@@ -26,6 +26,7 @@ onShapeCreated((data) => {
 // Función principal que inicializa todo
 async function main() {
   const robotVision = await isRobotVisionMode();
+  document.body.dataset.visionSource = robotVision ? "robot" : "browser";
   if (robotVision) {
     // La cámara pertenece al proceso nativo de la Jetson, no al navegador.
     videoElement.hidden = true;
