@@ -40,7 +40,7 @@ function initThree() {
   // Añade el canvas del renderizador al DOM
   document.getElementById("three-canvas").appendChild(renderer.domElement);
 
-  //createShape(); // Crea la forma inicial
+  createShape(); // Crea una forma visible al iniciar el reto
   animate(); // Inicia el bucle de animación
   
   // Inicializar integración con robot
