@@ -4,6 +4,7 @@
 import { detectDrag, isFist } from "./handGestures.js";
 import { cornerMarkers, camera } from "./threeScene.js";
 import { drawLandmarks } from "./drawUtils.js";
+import { startCpuHandTracking } from "../handTrackingCpu.js";
 
 let draggingCornerIndex = -1;
 let previousLeftFistX = null;
@@ -13,7 +14,12 @@ let isLeftFist = false;
 // Inicializa la webcam y espera a que esté lista
 export async function initWebcam(videoElement) {
   const stream = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: "user" },
+    video: {
+      facingMode: "user",
+      width: { ideal: 640 },
+      height: { ideal: 480 },
+      frameRate: { ideal: 30, max: 30 },
+    },
   });
   videoElement.srcObject = stream;
   return new Promise(
@@ -22,20 +28,10 @@ export async function initWebcam(videoElement) {
 }
 
 // Lógica principal de MediaPipe Hands
-export function setupHands(canvasElement, canvasCtx, videoElement) {
-  const hands = new Hands({
-    locateFile: (file) =>
-      `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
-  });
-  hands.setOptions({
-    maxNumHands: 2,
-    modelComplexity: 1,
-    minDetectionConfidence: 0.7,
-    minTrackingConfidence: 0.5,
-  });
-  hands.onResults((results) => {
+export async function setupHands(canvasElement, canvasCtx, videoElement) {
+  return startCpuHandTracking(videoElement, (results) => {
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    const handsLandmarks = results.multiHandLandmarks;
+    const handsLandmarks = results.landmarks;
     if (!handsLandmarks || handsLandmarks.length === 0) {
       // Si no hay manos detectadas
       
@@ -48,13 +44,13 @@ export function setupHands(canvasElement, canvasCtx, videoElement) {
     }
     drawLandmarks(handsLandmarks, canvasElement, canvasCtx);
     let rightHand = null, leftHand = null;
-    if (results.multiHandedness.length === 2) {
-      results.multiHandedness.forEach((handedness, i) => {
-        if (handedness.label === "Right") leftHand = handsLandmarks[i];
+    if (results.handedness.length === 2) {
+      results.handedness.forEach((categories, i) => {
+        if (categories[0]?.categoryName === "Right") leftHand = handsLandmarks[i];
         else rightHand = handsLandmarks[i];
       });
-    } else if (results.multiHandedness.length === 1) {
-      if (results.multiHandedness[0].label === "Right")
+    } else if (results.handedness.length === 1) {
+      if (results.handedness[0][0]?.categoryName === "Right")
         leftHand = handsLandmarks[0];
       else rightHand = handsLandmarks[0];
     }
@@ -99,11 +95,5 @@ export function setupHands(canvasElement, canvasCtx, videoElement) {
       previousLeftFistY = null;
     }
   });
-  const cam = new Camera(videoElement, {
-    onFrame: async () => await hands.send({ image: videoElement }),
-    width: 1280,
-    height: 960,
-  });
-  cam.start();
 }
 

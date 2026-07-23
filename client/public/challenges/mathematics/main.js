@@ -28,7 +28,7 @@ async function main() {
   updateCanvasSize(canvasElement); // Ajusta el tamaño de los canvas
   window.addEventListener("resize", () => updateCanvasSize(canvasElement)); // Actualiza el tamaño al cambiar la ventana
   // drawColorPickerWheel(); // Dibuja la rueda de color
-  setupHands(canvasElement, canvasCtx, videoElement); // Inicializa MediaPipe Hands
+  await setupHands(canvasElement, canvasCtx, videoElement); // Inicializa MediaPipe Hands en CPU
 }
 
 main(); // Ejecuta la función principal
