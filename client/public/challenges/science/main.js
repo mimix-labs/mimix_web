@@ -24,7 +24,7 @@ onCardCreated((data) => {
 
 // Función principal que inicializa todo
 async function main() {
-  const robotVision = isRobotVisionMode();
+  const robotVision = await isRobotVisionMode();
   if (robotVision) {
     // La cámara pertenece al proceso nativo de la Jetson, no al navegador.
     videoElement.hidden = true;
