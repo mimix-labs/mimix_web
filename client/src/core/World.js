@@ -7,12 +7,14 @@ import { CameraFollower } from '../systems/CameraFollower.js'
 import { CharacterManager } from '../entities/CharacterManager.js'
 import { StartRing } from '../fx/StartRing.js'
 import { ChallengeZone } from '../scenes/ChallengeZone.js'
+import { RobotWebBridge } from './RobotWebBridge.js'
 
 export class World {
   constructor() {
     const robotVisionQuery = new URLSearchParams(window.location.search).get('vision') === 'robot'
       ? '?vision=robot'
       : ''
+    this.robotVisionQuery = robotVisionQuery
 
     this.engine    = new Engine('canvas')
     this.loop      = new Loop(this.engine)
@@ -48,6 +50,12 @@ export class World {
       destination: `/challenges/science/index.html${robotVisionQuery}`,
     })
 
+    this.robotBridge = new RobotWebBridge({
+      context: { page: 'world', challenge: null, selectedObject: null },
+      onNavigate: (destination) => this.navigateFromRobot(destination),
+    })
+    this.robotBridge.start()
+
     this.loop.add(this.steamMap)
     this.loop.add(this.characters)
     this.loop.add(this.cameraFollower)
@@ -55,6 +63,16 @@ export class World {
     this.loop.add(this.mathChallenge)
     this.loop.add(this.scienceChallenge)
     this.loop.start()
+  }
+
+  navigateFromRobot(destination) {
+    const destinations = {
+      world: null,
+      mathematics: `/challenges/mathematics/index.html${this.robotVisionQuery}`,
+      science: `/challenges/science/index.html${this.robotVisionQuery}`,
+    }
+    const target = destinations[destination]
+    if (target) window.location.assign(target)
   }
 
   // Called from main.js once walle.glb is available

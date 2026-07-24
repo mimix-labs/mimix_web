@@ -3,6 +3,7 @@
 import { initThree, updateCanvasSize, onShapeCreated } from "./threeScene.js";
 import { initWebcam, setupHands, setupRobotHands } from "./webcam.js";
 import { isRobotVisionMode, startRobotVideo } from "../robotVision.js";
+import { startRobotWebBridge } from "../robotWebBridge.js";
 // import { drawColorPickerWheel } from "./drawUtils.js";
 
 // Inicializar Socket.io
@@ -15,6 +16,11 @@ const robotCameraElement = document.getElementById("robot-camera");
 const canvasElement = document.getElementById("canvas");
 // Obtiene el contexto 2D del canvas
 const canvasCtx = canvasElement.getContext("2d");
+let robotBridge;
+
+document.addEventListener('mimix:shape-selected', ({ detail }) => {
+  robotBridge?.updateContext({ selectedObject: detail?.shapeName || null });
+});
 
 // Registrar el callback para cuando se crea una forma
 onShapeCreated((data) => {
@@ -25,6 +31,7 @@ onShapeCreated((data) => {
 
 // Función principal que inicializa todo
 async function main() {
+  robotBridge = startRobotWebBridge('mathematics');
   const robotVision = await isRobotVisionMode();
   document.body.dataset.visionSource = robotVision ? "robot" : "browser";
   if (robotVision) {

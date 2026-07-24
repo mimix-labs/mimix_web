@@ -3,6 +3,7 @@
 import { initThree, updateCanvasSize, onCardCreated } from "./threeScene.js";
 import { initWebcam, setupHands, setupRobotHands } from "./webcam.js";
 import { isRobotVisionMode, startRobotVideo } from "../robotVision.js";
+import { startRobotWebBridge } from "../robotWebBridge.js";
 
 // Inicializar Socket.io
 const socket = io();
@@ -14,6 +15,11 @@ const robotCameraElement = document.getElementById("robot-camera");
 const canvasElement = document.getElementById("canvas");
 // Obtiene el contexto 2D del canvas
 const canvasCtx = canvasElement.getContext("2d");
+let robotBridge;
+
+document.addEventListener('mimix:card-selected', ({ detail }) => {
+  robotBridge?.updateContext({ selectedObject: detail?.cardTitle || null });
+});
 
 // Registrar el callback para cuando se selecciona una tarjeta
 onCardCreated((data) => {
@@ -24,6 +30,7 @@ onCardCreated((data) => {
 
 // Función principal que inicializa todo
 async function main() {
+  robotBridge = startRobotWebBridge('science');
   const robotVision = await isRobotVisionMode();
   document.body.dataset.visionSource = robotVision ? "robot" : "browser";
   if (robotVision) {

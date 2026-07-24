@@ -292,6 +292,7 @@ export function detectCardInteraction(indexTip, thumbTip, camera, isStartingPinc
 
 // Seleccionar una tarjeta con efectos 3D mejorados
 function selectCard(card) {
+  const previousCard = selectedCard;
   // Deseleccionar tarjeta anterior
   if (selectedCard && selectedCard !== card) {
     selectedCard.userData.isSelected = false;
@@ -312,6 +313,11 @@ function selectCard(card) {
   card.children[0].material.emissive.setHex(0x444444);
   
   console.log(`Tarjeta seleccionada: ${card.userData.title}`);
+  if (previousCard !== card) {
+    document.dispatchEvent(new CustomEvent('mimix:card-selected', {
+      detail: { cardTitle: card.userData.title },
+    }));
+  }
 }
 
 // Obtener tarjetas para exportar
