@@ -26,6 +26,9 @@ export class IslandModel {
   async _load(modelPath) {
     const gltf = await loader.loadAsync(modelPath)
     const root = gltf.scene
+    // Los tres mapas se exportaron desde Blender con Z como eje vertical.
+    // Three.js trabaja con Y vertical: la rotaciÃ³n deja el terreno horizontal.
+    root.rotation.x = Math.PI / 2
     this.group.add(root)
     root.updateMatrixWorld(true)
     root.traverse(object => {

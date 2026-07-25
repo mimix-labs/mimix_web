@@ -9,6 +9,7 @@ export class Bridge {
   constructor(from, to, { color = 0x6fe9ff, width = 3 } = {}) {
     this.group  = new THREE.Group()
     this.meshes = []
+    this.walkableMeshes = []
     this._build(from, to, color, width)
   }
 
@@ -31,7 +32,8 @@ export class Bridge {
       }
     }
 
-    this._instance(floor, { color: 0x2a2f3a, y: 0,   lit: true,  thin: false })
+    // Its walkable top is at Y = 0, matching the flattened Blender terrain.
+    this.walkableMeshes.push(this._instance(floor, { color: 0x2a2f3a, y: -0.5, lit: true,  thin: false }))
     this._instance(neon,  { color,           y: 0.5, lit: false, thin: true  })
   }
 
@@ -49,6 +51,11 @@ export class Bridge {
 
     this.group.add(mesh)
     this.meshes.push(mesh)
+    return mesh
+  }
+
+  get colliders() {
+    return this.walkableMeshes
   }
 
   dispose() {

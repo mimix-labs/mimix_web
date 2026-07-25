@@ -1,7 +1,7 @@
 import { Engine } from './Engine.js'
 import { Loop } from './Loop.js'
 import * as THREE from 'three'
-import { SteamMap } from '../scenes/SteamMap.js'
+import { ISLAND_LAYOUT, SteamMap } from '../scenes/SteamMap.js'
 import { InputSystem } from '../systems/InputSystem.js'
 import { CameraFollower } from '../systems/CameraFollower.js'
 import { CharacterManager } from '../entities/CharacterManager.js'
@@ -35,7 +35,7 @@ export class World {
     this.mathChallenge = new ChallengeZone({
       scene: this.engine.scene,
       characters: this.characters,
-      position: [0, 0, -7],
+      position: ISLAND_LAYOUT.mathematics.position,
       radius: 2.2,
       label: 'Matemáticas',
       destination: `/challenges/mathematics/index.html${robotVisionQuery}`,
@@ -44,7 +44,7 @@ export class World {
     this.scienceChallenge = new ChallengeZone({
       scene: this.engine.scene,
       characters: this.characters,
-      position: [7, 0, 0],
+      position: ISLAND_LAYOUT.science.position,
       radius: 2.2,
       label: 'Ciencias',
       destination: `/challenges/science/index.html${robotVisionQuery}`,
