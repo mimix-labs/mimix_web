@@ -1,18 +1,11 @@
 // threeScene.js
 // Inicialización de Three.js y gestión de tarjetas 3D
 
-import { createCards, clearCards } from "./sidebarShapes.js";
 import { animateAtomLab, initAtomLab } from "./atomLab.js";
 
 let scene,
 camera,
 renderer;
-
-// Callback para cuando se crea una tarjeta
-let onCardCreatedCallback = null;
-
-// Integración con robot
-let robotIntegration = null;
 
 // Inicializa la escena Three.js
 function initThree() {
@@ -33,34 +26,10 @@ function initThree() {
   // Añade el canvas del renderizador al DOM
   document.getElementById("three-canvas").appendChild(renderer.domElement);
 
-  // Crear las tarjetas 3D
-  createCards(scene);
   initAtomLab(scene);
   
   animate(); // Inicia el bucle de animación
   
-  // Inicializar integración con robot
-  initRobotIntegration();
-}
-
-// Función para inicializar la integración con el robot
-async function initRobotIntegration() {
-  try {
-    // Cargar dinámicamente el módulo de integración del robot
-    const { default: RobotShapeIntegration } = await import('../../robot/robotShapeIntegration.js');
-    robotIntegration = RobotShapeIntegration;
-    await robotIntegration.init();
-    console.log('✅ Robot integrado con las tarjetas 3D');
-  } catch (error) {
-    console.warn('⚠️ No se pudo cargar la integración del robot:', error);
-  }
-}
-
-// Añadir esta función para registrar el callback
-export function onCardCreated(callback) {
-  if (callback && typeof callback === 'function') {
-    onCardCreatedCallback = callback;
-  }
 }
 // Bucle de animación para renderizar la escena
 export function animate() {

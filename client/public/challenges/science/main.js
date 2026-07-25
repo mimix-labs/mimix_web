@@ -1,9 +1,10 @@
 // main.js
 // Punto de entrada del proyecto, inicializa todo y conecta los módulos
-import { initThree, updateCanvasSize, onCardCreated } from "./threeScene.js";
+import { initThree, updateCanvasSize } from "./threeScene.js";
 import { initWebcam, setupHands, setupRobotHands } from "./webcam.js";
 import { isRobotVisionMode, startRobotVideo } from "../robotVision.js";
 import { startRobotWebBridge } from "../robotWebBridge.js";
+import { initPeriodicTable } from './sidebarShapes.js';
 
 // Inicializar Socket.io
 const socket = io();
@@ -21,13 +22,6 @@ document.addEventListener('mimix:card-selected', ({ detail }) => {
   robotBridge?.updateContext({ selectedObject: detail?.cardTitle || null });
 });
 
-// Registrar el callback para cuando se selecciona una tarjeta
-onCardCreated((data) => {
-  console.log("Tarjeta seleccionada:", data);
-  // Aquí puedes emitir un evento a través de Socket.io
-  socket.emit("cardSelected", data);
-});
-
 // Función principal que inicializa todo
 async function main() {
   robotBridge = startRobotWebBridge('science');
@@ -40,6 +34,7 @@ async function main() {
   } else {
     await initWebcam(videoElement);
   }
+  initPeriodicTable();
   initThree(); // Inicializa la escena 3D
   updateCanvasSize(canvasElement); // Ajusta el tamaño de los canvas
   window.addEventListener("resize", () => updateCanvasSize(canvasElement)); // Actualiza el tamaño al cambiar la ventana

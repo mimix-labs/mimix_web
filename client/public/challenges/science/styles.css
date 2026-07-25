@@ -24,13 +24,73 @@ body, html {
 
 #canvas {
   transform: scaleX(-1);
-  z-index: 11;
+  z-index: 25;
+  pointer-events: none;
 }
 
 #three-canvas {
   z-index: 2;
   pointer-events: none;
 }
+
+#periodic-explorer {
+  position: fixed;
+  inset: 112px 4vw 76px;
+  z-index: 20;
+  display: grid;
+  align-items: center;
+  pointer-events: auto;
+}
+
+#periodic-table {
+  display: grid;
+  grid-template-columns: repeat(18, minmax(0, 1fr));
+  grid-template-rows: repeat(10, minmax(0, 1fr));
+  gap: clamp(3px, 0.5vw, 9px);
+  width: 100%;
+  height: min(76vh, 720px);
+  padding: clamp(10px, 2vw, 24px);
+  box-sizing: border-box;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.14);
+  backdrop-filter: blur(13px);
+}
+
+.element-cell {
+  position: relative;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  min-width: 0;
+  overflow: hidden;
+  padding: 3px;
+  color: #312e2b;
+  border: 1px solid rgba(71, 85, 105, 0.13);
+  border-radius: clamp(7px, 0.8vw, 14px);
+  box-shadow: inset 0 -2px rgba(15, 23, 42, 0.06), 0 3px 10px rgba(15, 23, 42, 0.08);
+  font-family: system-ui, sans-serif;
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+
+button.element-cell { cursor: pointer; }
+.element-cell:hover, .element-cell.is-hovered { transform: scale(1.11); z-index: 3; filter: brightness(1.04); box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.7), 0 12px 22px rgba(15, 23, 42, 0.2); }
+.element-number { position: absolute; top: 5px; left: 7px; color: rgba(51, 65, 85, 0.6); font-size: clamp(0.45rem, 0.72vw, 0.72rem); }
+.element-cell strong { font-size: clamp(0.85rem, 1.65vw, 1.7rem); line-height: 1; }
+.element-cell small { max-width: 100%; overflow: hidden; color: rgba(51, 65, 85, 0.75); font-size: clamp(0.4rem, 0.62vw, 0.7rem); line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
+.element-series { color: #6b3d2e; cursor: default; }
+
+.category-alkali { background: #ffd6d6; }
+.category-alkaline { background: #ffe7c6; }
+.category-transition { background: #fff1bb; }
+.category-post-transition { background: #dbe8ff; }
+.category-metalloid { background: #d0eee1; }
+.category-nonmetal { background: #e1f2d4; }
+.category-halogen { background: #fff9bc; }
+.category-noble { background: #ead4ff; }
+.category-lanthanide { background: #fee4d0; }
+.category-actinide { background: #ffd9dd; }
+.category-unknown { background: #e6e6e6; }
 
 #element-guide {
   position: fixed;
@@ -92,7 +152,7 @@ body, html {
 .atom-focus-open #three-canvas { z-index: 11; }
 .atom-focus-open #main-title,
 .atom-focus-open #element-guide,
-.atom-focus-open #robot-container { display: none; }
+.atom-focus-open #periodic-explorer { display: none; }
 
 .atom-kicker { margin: 23px 0 12px; color: #64748b; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.14em; }
 
@@ -181,19 +241,9 @@ a {
   z-index:1000;
 }
 
-/* Robot flotante - Sin contenedor visible */
-#robot-container {
-    position: fixed;
-    bottom: 0px;
-    left: 0px;
-    width:400px;
-    height:400px;
-    z-index: 1000;
-    pointer-events: none; /* No bloquea clicks en la página */
-}
-
-#robot-container canvas {
-    display: block;
-    background: transparent !important;
-    /* Sin bordes, sin sombras - Solo el robot */
+@media (max-width: 900px) {
+  #periodic-explorer { inset: 105px 12px 66px; }
+  #periodic-table { padding: 7px; gap: 3px; border-radius: 18px; }
+  .element-number { display: none; }
+  .element-cell small { display: none; }
 }

@@ -1,29 +1,10 @@
 // Modelo atómico ligero para el laboratorio de Ciencia.
 // Se monta dentro de la escena Three.js existente: no crea otro renderer.
 import { landmarkToMirroredScreen } from '../cameraViewport.js';
+import { ELEMENT_BY_SYMBOL } from './periodicData.js';
 
-const ELEMENTS = {
-  H: { name: 'Hidrógeno', atomicNumber: 1, massNumber: 1 },
-  He: { name: 'Helio', atomicNumber: 2, massNumber: 4 },
-  Li: { name: 'Litio', atomicNumber: 3, massNumber: 7 },
-  Be: { name: 'Berilio', atomicNumber: 4, massNumber: 9 },
-  B: { name: 'Boro', atomicNumber: 5, massNumber: 11 },
-  C: { name: 'Carbono', atomicNumber: 6, massNumber: 12 },
-  N: { name: 'Nitrógeno', atomicNumber: 7, massNumber: 14 },
-  O: { name: 'Oxígeno', atomicNumber: 8, massNumber: 16 },
-  F: { name: 'Flúor', atomicNumber: 9, massNumber: 19 },
-  Ne: { name: 'Neón', atomicNumber: 10, massNumber: 20 },
-  Na: { name: 'Sodio', atomicNumber: 11, massNumber: 23 },
-  Mg: { name: 'Magnesio', atomicNumber: 12, massNumber: 24 },
-  Al: { name: 'Aluminio', atomicNumber: 13, massNumber: 27 },
-  Si: { name: 'Silicio', atomicNumber: 14, massNumber: 28 },
-  P: { name: 'Fósforo', atomicNumber: 15, massNumber: 31 },
-  S: { name: 'Azufre', atomicNumber: 16, massNumber: 32 },
-  Cl: { name: 'Cloro', atomicNumber: 17, massNumber: 35 },
-};
-
-const SHELL_CAPACITIES = [2, 8, 8, 18];
-const ORBIT_TILTS = [0.15, -0.45, 0.55, -0.7];
+const SHELL_CAPACITIES = [2, 8, 18, 32, 32, 18, 8];
+const ORBIT_TILTS = [0.15, -0.45, 0.55, -0.7, 0.3, -0.25, 0.6];
 
 let atomGroup;
 let electronGroup;
@@ -78,8 +59,10 @@ function createNucleus(element) {
   const nucleus = new THREE.Group();
   const particles = [];
   const neutrons = element.massNumber - element.atomicNumber;
-  for (let i = 0; i < element.atomicNumber; i += 1) particles.push(0xff4f5e);
-  for (let i = 0; i < neutrons; i += 1) particles.push(0x94a3b8);
+  const visibleParticles = Math.min(80, element.massNumber);
+  const visibleProtons = Math.round((element.atomicNumber / element.massNumber) * visibleParticles);
+  for (let i = 0; i < visibleProtons; i += 1) particles.push(0xff4f5e);
+  for (let i = visibleProtons; i < visibleParticles; i += 1) particles.push(0x94a3b8);
 
   const geometry = new THREE.SphereGeometry(0.16, 14, 14);
   const materials = {
@@ -171,7 +154,7 @@ export function initAtomLab(scene) {
 }
 
 export function selectAtom(symbol) {
-  const element = ELEMENTS[symbol];
+  const element = ELEMENT_BY_SYMBOL[symbol];
   if (!element) return;
   selectedElement = { ...element, symbol };
   charge = 0;
