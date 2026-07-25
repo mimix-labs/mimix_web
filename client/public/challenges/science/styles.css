@@ -32,6 +32,72 @@ body, html {
   pointer-events: none;
 }
 
+#atom-lab {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  width: min(300px, calc(100vw - 48px));
+  box-sizing: border-box;
+  z-index: 120;
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.76);
+  border: 1px solid rgba(125, 211, 252, 0.45);
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: 0 18px 50px rgba(2, 6, 23, 0.42);
+  backdrop-filter: blur(14px);
+  pointer-events: none;
+}
+
+.atom-kicker {
+  margin: 0 0 12px;
+  color: #7dd3fc;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+#atom-empty-state {
+  display: grid;
+  gap: 6px;
+  color: #cbd5e1;
+}
+
+#atom-empty-state strong { color: #f8fafc; font-size: 1.05rem; }
+#atom-empty-state span, .atom-help { font-family: system-ui, sans-serif; font-size: 0.78rem; line-height: 1.4; }
+
+.atom-heading { display: flex; align-items: center; gap: 12px; }
+.atom-heading > span { color: #f8fafc; font-family: Georgia, serif; font-size: 3rem; font-weight: 700; line-height: 1; }
+.atom-heading strong, .atom-heading small { display: block; }
+.atom-heading strong { color: #f8fafc; font-family: system-ui, sans-serif; font-size: 1.05rem; }
+.atom-heading small { color: #94a3b8; font-family: system-ui, sans-serif; margin-top: 3px; }
+
+#atom-lab dl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0 10px; }
+#atom-lab dl div { padding: 8px; border-radius: 10px; background: rgba(148, 163, 184, 0.12); }
+#atom-lab dt { color: #94a3b8; font-family: system-ui, sans-serif; font-size: 0.68rem; }
+#atom-lab dd { margin: 3px 0 0; color: #f8fafc; font-family: system-ui, sans-serif; font-weight: 700; }
+.atom-shells { margin: 0; color: #cbd5e1; font-family: system-ui, sans-serif; font-size: 0.8rem; }
+
+.atom-controls { display: flex; gap: 8px; margin-top: 13px; pointer-events: auto; }
+.atom-controls button {
+  flex: 1;
+  padding: 9px;
+  color: #082f49;
+  background: #7dd3fc;
+  border: 0;
+  border-radius: 10px;
+  font-family: system-ui, sans-serif;
+  font-weight: 800;
+}
+.atom-controls button:disabled { opacity: 0.4; }
+.atom-help { margin: 12px 0 0; color: #94a3b8; }
+
+@media (max-width: 720px) {
+  #atom-lab { top: 12px; right: 12px; width: 240px; padding: 13px; }
+  #atom-lab dl { margin-top: 10px; }
+  .atom-help { display: none; }
+}
+
 #main-title {
   position: absolute;
   top: 50px;

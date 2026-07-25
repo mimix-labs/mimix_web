@@ -2,12 +2,14 @@
 // Detección de gestos de mano y lógica de interacción con tarjetas 3D
 import { camera } from "./threeScene.js";
 import { detectCardInteraction } from "./sidebarShapes.js";
+import { changeAtomCharge, detectAtomControl, hasSelectedAtom, rotateAtomBy } from './atomLab.js';
 
 let draggingCardIndex = -1;
 let isPinching = false;
 let pinchThreshold = 0.045;
 let previousPinchPosition = null;
 let isDragging = false;
+let activePinchAction = null;
 
 // Detecta la interacción con tarjetas usando gestos de mano
 export function detectDrag(handLandmarks) {
@@ -29,21 +31,27 @@ export function detectDrag(handLandmarks) {
   if (isCurrentlyPinching && !isPinching) {
     isPinching = true;
     previousPinchPosition = currentPinchPosition;
-    // Intentar seleccionar una tarjeta
-    const selectedCard = detectCardInteraction(indexTip, thumbTip, camera, true);
-    if (selectedCard) {
+    const chargeDelta = detectAtomControl(indexTip);
+    if (chargeDelta !== null) {
+      changeAtomCharge(chargeDelta);
+      activePinchAction = 'control';
+      return;
+    }
+    // Las tarjetas ahora eligen un átomo; no se desplazan por el escenario.
+    const selectedCard = detectCardInteraction(indexTip, camera, true);
+    if (selectedCard) activePinchAction = 'card';
+    else if (hasSelectedAtom()) {
+      activePinchAction = 'atom';
       isDragging = true;
-      draggingCardIndex = selectedCard.userData.index || -1;
     }
   }
-  // Mantener el pinch - arrastrar si hay una tarjeta seleccionada
-  else if (isCurrentlyPinching && isPinching && isDragging) {
+  // Mantener el pinch sobre el modelo permite observarlo desde otros ángulos.
+  else if (isCurrentlyPinching && isPinching && activePinchAction === 'atom') {
     if (previousPinchPosition) {
       const deltaX = currentPinchPosition.x - previousPinchPosition.x;
       const deltaY = currentPinchPosition.y - previousPinchPosition.y;
       
-      // Enviar el delta de movimiento para arrastrar la tarjeta
-      detectCardInteraction(indexTip, thumbTip, camera, false, { deltaX, deltaY });
+      rotateAtomBy(deltaX, deltaY);
     }
     previousPinchPosition = currentPinchPosition;
   }
@@ -52,13 +60,12 @@ export function detectDrag(handLandmarks) {
     isPinching = false;
     isDragging = false;
     draggingCardIndex = -1;
+    activePinchAction = null;
     previousPinchPosition = null;
-    // Notificar que se soltó la tarjeta
-    detectCardInteraction(indexTip, thumbTip, camera, false, null, true);
   }
   // Sin pinch - solo hover
   else {
-    detectCardInteraction(indexTip, thumbTip, camera, false);
+    detectCardInteraction(indexTip, camera, false);
   }
 }
 

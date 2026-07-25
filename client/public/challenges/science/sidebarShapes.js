@@ -106,10 +106,10 @@ export const CARDS = [
 
 // Array para almacenar las tarjetas 3D en la escena
 import { landmarkToMirroredScreen } from "../cameraViewport.js";
+import { selectAtom } from './atomLab.js';
 
 let cardMeshes = [];
 let selectedCard = null;
-let draggedCard = null;
 
 // Crear todas las tarjetas 3D en la escena
 export function createCards(scene) {
@@ -211,37 +211,8 @@ function createCard(cardData) {
 }
 
 // Detectar interacción con tarjetas usando pinch
-export function detectCardInteraction(indexTip, thumbTip, camera, isStartingPinch = false, dragDelta = null, isEndingPinch = false) {
+export function detectCardInteraction(indexTip, camera, isStartingPinch = false) {
   const { x: screenX, y: screenY } = landmarkToMirroredScreen(indexTip);
-  
-  // Si estamos terminando el pinch, soltar la tarjeta
-  if (isEndingPinch && draggedCard) {
-    draggedCard.userData.isDragging = false;
-    draggedCard = null;
-    return null;
-  }
-  
-  // Si hay movimiento de arrastre y tenemos una tarjeta seleccionada
-  if (dragDelta && draggedCard) {
-    // Convertir el delta de pantalla a movimiento 3D
-    const vector = new THREE.Vector3();
-    
-    // Proyectar la posición actual de la tarjeta
-    vector.copy(draggedCard.position);
-    vector.project(camera);
-    
-    // Aplicar el delta en coordenadas de pantalla - CORREGIR DIRECCIONES
-    vector.x -= dragDelta.deltaX * 2; // Cambiar a negativo para invertir dirección
-    vector.y -= dragDelta.deltaY * 2; // Mantener Y invertido
-    
-    // Convertir de vuelta a coordenadas 3D
-    vector.unproject(camera);
-    
-    // Actualizar posición de la tarjeta
-    draggedCard.position.copy(vector);
-    
-    return draggedCard;
-  }
   
   // Verificar interacción con tarjetas
   let hoveredCard = null;
@@ -264,7 +235,7 @@ export function detectCardInteraction(indexTip, thumbTip, camera, isStartingPinc
   
   // Resetear efectos de todas las tarjetas
   cardMeshes.forEach(card => {
-    if (card !== hoveredCard && !card.userData.isDragging) {
+    if (card !== hoveredCard) {
       card.scale.set(1, 1, 1);
       card.rotation.x = 0;
       card.children[0].material.opacity = 0.9;
@@ -274,13 +245,9 @@ export function detectCardInteraction(indexTip, thumbTip, camera, isStartingPinc
   
   if (hoveredCard) {
     if (isStartingPinch) {
-      // Iniciar arrastre
       selectCard(hoveredCard);
-      draggedCard = hoveredCard;
-      hoveredCard.userData.isDragging = true;
-      console.log(`Iniciando arrastre de: ${hoveredCard.userData.title}`);
       return hoveredCard;
-    } else if (!draggedCard) {
+    } else {
       // Efecto hover
       hoveredCard.scale.set(1.15, 1.15, 1.15);
       hoveredCard.rotation.x = Math.sin(Date.now() * 0.005) * 0.1;
@@ -313,6 +280,7 @@ function selectCard(card) {
   card.children[0].material.emissive.setHex(0x444444);
   
   console.log(`Tarjeta seleccionada: ${card.userData.title}`);
+  selectAtom(card.userData.title);
   if (previousCard !== card) {
     document.dispatchEvent(new CustomEvent('mimix:card-selected', {
       detail: { cardTitle: card.userData.title },

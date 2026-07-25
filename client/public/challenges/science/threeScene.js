@@ -2,6 +2,7 @@
 // Inicialización de Three.js y gestión de tarjetas 3D
 
 import { createCards, clearCards } from "./sidebarShapes.js";
+import { animateAtomLab, initAtomLab } from "./atomLab.js";
 
 let scene,
 camera,
@@ -34,6 +35,7 @@ function initThree() {
 
   // Crear las tarjetas 3D
   createCards(scene);
+  initAtomLab(scene);
   
   animate(); // Inicia el bucle de animación
   
@@ -63,6 +65,7 @@ export function onCardCreated(callback) {
 // Bucle de animación para renderizar la escena
 export function animate() {
   requestAnimationFrame(animate);
+  animateAtomLab();
   renderer.render(scene, camera);
 }
 
