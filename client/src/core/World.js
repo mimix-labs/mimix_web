@@ -10,6 +10,9 @@ import { StartRing } from '../fx/StartRing.js'
 import { ChallengeZone } from '../scenes/ChallengeZone.js'
 import { RobotWebBridge } from './RobotWebBridge.js'
 
+// Keep the normal follow/zoom view; island cinematic camera cues are disabled.
+const ENABLE_ISLAND_CAMERA_CUES = false
+
 // Challenge entrances: positioned on the Home-facing edge of each island.
 // position uses [X, Y, Z]; radius is the activation distance in world units.
 const CHALLENGE_LAYOUT = {
@@ -81,8 +84,10 @@ export class World {
     this.loop.add(this.steamMap)
     this.loop.add(this.characters)
     this.loop.add(this.cameraFollower)
-    this.loop.add(this.mathCameraCue)
-    this.loop.add(this.scienceCameraCue)
+    if (ENABLE_ISLAND_CAMERA_CUES) {
+      this.loop.add(this.mathCameraCue)
+      this.loop.add(this.scienceCameraCue)
+    }
     this.loop.add(this.startRing)
     this.loop.add(this.mathChallenge)
     this.loop.add(this.scienceChallenge)
