@@ -69,6 +69,7 @@ export class CharacterController {
     if (keys['ArrowRight'] || keys['KeyD']) this._direction.x += 1
 
     const isMoving = this._direction.lengthSq() > 0
+    let moved = false
 
     if (isMoving) {
       this._direction.normalize()
@@ -77,18 +78,19 @@ export class CharacterController {
       if (resolved) {
         this.mesh.position.copy(resolved)
         this._proceduralAnimator?.setGroundHeight(this.mesh.position.y)
+        moved = true
       }
 
       // Face direction of travel
       const angle = Math.atan2(this._direction.x, this._direction.z)
       this.mesh.rotation.y = angle
 
-      this.play('walk')
+      this.play(moved ? 'walk' : 'idle')
     } else {
       this.play('idle')
     }
 
-    return isMoving
+    return moved
   }
 
   playAction(name) {

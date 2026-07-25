@@ -4,24 +4,29 @@ import { BridgeModel } from './islands/BridgeModel.js'
 
 export const ISLAND_LAYOUT = {
   home:        { position: [0, 0, 0],   path: '/assets/models/islands/home.glb' },
-  mathematics: { position: [0, 0, -62], path: '/assets/models/islands/mathematics.glb' },
-  science:     { position: [62, 0, 0],  path: '/assets/models/islands/sciencie.glb' },
+  mathematics: { position: [0, 0, -55], path: '/assets/models/islands/mathematics.glb' },
+  science:     { position: [55, 0, 0],  path: '/assets/models/islands/sciencie.glb' },
 }
 
 const BRIDGE_MODEL_PATH = '/assets/models/resources/bridge.glb'
+// Movement limits in world units. Reduce MAX_STEP_UP for a stricter climb limit.
+const MAX_STEP_UP = 0.12
+const MAX_STEP_DOWN = 0.22
+const MAX_WALKABLE_SLOPE_DEGREES = 25
+const MIN_WALKABLE_NORMAL_Y = Math.cos(THREE.MathUtils.degToRad(MAX_WALKABLE_SLOPE_DEGREES))
 
 // Edit these values to place the original bridge model manually.
 // position: [X, Y, Z] | rotationY: radians | scale: [X, Y, Z]
 export const BRIDGE_LAYOUT = {
   mathematics: {
-    position: [0, 0.3, -31],
+    position: [0.5, 2.5, -29],
     rotationY: Math.PI / 2,
-    scale: [1, 1, 1],
+    scale: [3, 3, 3],
   },
   science: {
-    position: [31, 0.3, 0],
+    position: [30, 2.5, 0],
     rotationY: 0,
-    scale: [1, 1, 1],
+    scale: [3, 3, 3],
   },
 }
 
@@ -53,6 +58,7 @@ export class SteamMap {
     this.raycaster = new THREE.Raycaster()
     this.raycastOrigin = new THREE.Vector3()
     this.down = new THREE.Vector3(0, -1, 0)
+    this.surfaceNormal = new THREE.Vector3()
   }
 
   _createBridge(key) {
@@ -78,14 +84,23 @@ export class SteamMap {
     ]
   }
 
-  getGroundHeight(x, z) {
+  getWalkableGroundHit(x, z) {
     const colliders = this.colliders
     if (!colliders.length) return null
 
     this.raycastOrigin.set(x, 100, z)
     this.raycaster.set(this.raycastOrigin, this.down)
-    const hit = this.raycaster.intersectObjects(colliders, true)[0]
-    return hit ? hit.point.y : null
+    const hits = this.raycaster.intersectObjects(colliders, true)
+    return hits.find(hit => {
+      if (!hit.face) return false
+      this.surfaceNormal.copy(hit.face.normal).transformDirection(hit.object.matrixWorld)
+      // Some exported terrain faces point downward, hence the absolute value.
+      return Math.abs(this.surfaceNormal.y) >= MIN_WALKABLE_NORMAL_Y
+    }) ?? null
+  }
+
+  getGroundHeight(x, z) {
+    return this.getWalkableGroundHit(x, z)?.point.y ?? null
   }
 
   resolveMovement(from, desired) {
@@ -95,7 +110,7 @@ export class SteamMap {
 
     if (currentGround !== null) {
       const heightChange = nextGround - currentGround
-      if (heightChange > 0.18 || heightChange < -0.28) return null
+      if (heightChange > MAX_STEP_UP || heightChange < -MAX_STEP_DOWN) return null
     }
     return new THREE.Vector3(desired.x, nextGround + 0.02, desired.z)
   }
