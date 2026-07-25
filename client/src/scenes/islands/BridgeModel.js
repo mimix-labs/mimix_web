@@ -14,6 +14,7 @@ export class BridgeModel {
     this.colliders = []
     this.walkwayHalfLength = 0
     this.walkwayHalfWidth = 0
+    this.deckProfile = null
     this.localPoint = new THREE.Vector3()
     this.worldPoint = new THREE.Vector3()
     this.deckRaycaster = new THREE.Raycaster()
@@ -36,12 +37,11 @@ export class BridgeModel {
     // Center the asset on its group. Position, rotation and scale remain
     // explicit scene settings rather than automatic deformation.
     root.position.set(-center.x, -center.y, -center.z)
-    // Use the wooden deck as the only bridge navigation surface. The previous
-    // corridor was too narrow at the curved entries, so Wall-E could reach the
-    // visible planks but still be rejected by navigation. Keep a small margin
-    // before the rail posts while covering the usable board width.
-    this.walkwayHalfLength = size.x * 0.49
-    this.walkwayHalfWidth = size.z * 0.42
+    // Navigation uses a continuous surface following the wooden deck. Using
+    // the GLB triangles directly creates invisible gaps between planks and
+    // lets rail pieces interrupt movement.
+    this.walkwayHalfLength = size.x * 0.52
+    this.walkwayHalfWidth = size.z * 0.50
     this.group.add(root)
     this.group.updateMatrixWorld(true)
 
@@ -51,10 +51,12 @@ export class BridgeModel {
       materials.forEach(material => { material.side = THREE.DoubleSide })
       this.colliders.push(object)
     })
+
+    this.deckProfile = this._createDeckProfile()
   }
 
   getWalkwayHeightAt(x, z) {
-    if (!this.walkwayHalfLength || !this.walkwayHalfWidth) return null
+    if (!this.walkwayHalfLength || !this.walkwayHalfWidth || !this.deckProfile) return null
 
     this.worldPoint.set(x, 0, z)
     this.localPoint.copy(this.worldPoint)
@@ -64,12 +66,67 @@ export class BridgeModel {
       Math.abs(this.localPoint.z) > this.walkwayHalfWidth
     ) return null
 
-    // Raycast the actual deck geometry at this point. The authored model's
-    // deck is not necessarily at the group's Y origin.
-    this.worldPoint.set(x, 100, z)
+    this.localPoint.set(
+      this.localPoint.x,
+      this._getDeckProfileHeight(this.localPoint.x),
+      this.localPoint.z,
+    )
+    this.group.localToWorld(this.localPoint)
+    return this.localPoint.y
+  }
+
+  _createDeckProfile() {
+    const sampleXs = [
+      -this.walkwayHalfLength * 0.82,
+      0,
+      this.walkwayHalfLength * 0.82,
+    ]
+    const heights = sampleXs.map(x => this._sampleDeckHeight(x))
+    const fallbackHeight = heights.find(height => height !== null) ?? 0
+
+    return sampleXs.map((x, index) => ({
+      x,
+      y: heights[index] ?? fallbackHeight,
+    }))
+  }
+
+  _sampleDeckHeight(localX) {
+    this.localPoint.set(localX, 0, 0)
+    this.group.localToWorld(this.localPoint)
+    this.worldPoint.set(this.localPoint.x, 100, this.localPoint.z)
     this.deckRaycaster.set(this.worldPoint, this.down)
-    const hit = this.deckRaycaster.intersectObjects(this.colliders, true)[0]
-    return hit ? hit.point.y : null
+
+    const hit = this.deckRaycaster.intersectObjects(this.colliders, true)
+      .find(candidate => {
+        if (!candidate.face) return false
+        const normal = candidate.face.normal.clone()
+          .transformDirection(candidate.object.matrixWorld)
+        return Math.abs(normal.y) > 0.6
+      })
+    if (!hit) return null
+
+    this.localPoint.copy(hit.point)
+    this.group.worldToLocal(this.localPoint)
+    return this.localPoint.y
+  }
+
+  _getDeckProfileHeight(localX) {
+    const [start, center, end] = this.deckProfile
+    if (localX <= center.x) {
+      const progress = THREE.MathUtils.clamp(
+        (localX - start.x) / (center.x - start.x),
+        0,
+        1,
+      )
+      return THREE.MathUtils.lerp(start.y, center.y, progress)
+    }
+
+    const progress = THREE.MathUtils.clamp(
+      (localX - center.x) / (end.x - center.x),
+      0,
+      1,
+    )
+    return THREE.MathUtils.lerp(center.y, end.y, progress)
   }
 
   dispose() {
