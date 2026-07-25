@@ -20,35 +20,43 @@
   <canvas id="canvas"></canvas>
   <div id="three-canvas"></div>
 
-  <aside id="atom-lab" aria-live="polite">
-    <p class="atom-kicker">LABORATORIO ATÓMICO</p>
-    <div id="atom-empty-state">
-      <strong>Elige un elemento</strong>
-      <span>Acerca índice y pulgar a una tarjeta.</span>
-    </div>
-    <div id="atom-details" hidden>
-      <div class="atom-heading">
-        <span id="atom-symbol">O</span>
-        <div><strong id="atom-name">Oxígeno</strong><small>Modelo de Bohr interactivo</small></div>
+  <div id="element-guide">
+    <span>Tabla periódica</span>
+    <strong>Haz pinch en un elemento para explorarlo</strong>
+  </div>
+
+  <main id="atom-focus" aria-live="polite" hidden>
+    <section class="atom-info">
+      <button id="atom-back" type="button">← Volver a la tabla</button>
+      <p class="atom-kicker">MODELO ATÓMICO</p>
+      <div id="atom-details">
+        <div class="atom-heading">
+          <div class="atom-number"><span id="atom-mass-number">24</span><span id="atom-atomic-number">12</span></div>
+          <span id="atom-symbol">Mg</span>
+          <div><strong id="atom-name">Magnesio</strong><small>Modelo de Bohr interactivo</small></div>
+        </div>
+        <dl>
+          <div><dt>Protones</dt><dd id="atom-protons">12</dd></div>
+          <div><dt>Neutrones</dt><dd id="atom-neutrons">12</dd></div>
+          <div><dt>Electrones</dt><dd id="atom-electrons">12</dd></div>
+          <div><dt>Carga</dt><dd id="atom-charge">0</dd></div>
+        </dl>
+        <p class="atom-shells">Capas: <span id="atom-shells">2 · 8 · 2</span></p>
+        <div class="atom-controls" aria-label="Cambiar carga del ion">
+          <button id="atom-charge-down" type="button" aria-label="Agregar un electrón">+ e⁻</button>
+          <button id="atom-charge-up" type="button" aria-label="Quitar un electrón">− e⁻</button>
+        </div>
+        <p class="atom-help">Mantén un pinch y mueve tu mano sobre el átomo para rotarlo. Haz pinch en + o − para formar un ion.</p>
       </div>
-      <dl>
-        <div><dt>Protones</dt><dd id="atom-protons">8</dd></div>
-        <div><dt>Neutrones</dt><dd id="atom-neutrons">8</dd></div>
-        <div><dt>Electrones</dt><dd id="atom-electrons">8</dd></div>
-        <div><dt>Carga</dt><dd id="atom-charge">0</dd></div>
-      </dl>
-      <p class="atom-shells">Capas: <span id="atom-shells">2 · 6</span></p>
-      <div class="atom-controls" aria-label="Cambiar carga del ion">
-        <button id="atom-charge-down" type="button" aria-label="Agregar un electrón">+ e⁻</button>
-        <button id="atom-charge-up" type="button" aria-label="Quitar un electrón">− e⁻</button>
-      </div>
-      <p class="atom-help">Pinch en el átomo y mueve tu mano para rotarlo. Pinch en + o − para formar un ion.</p>
-    </div>
-  </aside>
+    </section>
+    <section class="atom-visual" aria-label="Vista tridimensional del átomo">
+      <p>Gira el átomo con tu mano</p>
+    </section>
+  </main>
 
   <!-- Título principal -->
   <div id="main-title">
-    <h1>¿Cómo podemos...?</h1>
+    <h1>Explora los átomos</h1>
   </div>
 
   <!-- Robot flotante - SIN cuadro contenedor, solo el robot 3D -->

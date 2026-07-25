@@ -30,6 +30,7 @@ let electronGroup;
 let electrons = [];
 let selectedElement = null;
 let charge = 0;
+let focusOpen = false;
 
 function disposeGroup(group) {
   group.traverse((child) => {
@@ -57,17 +58,9 @@ function displayCharge(value) {
 }
 
 function updatePanel() {
-  const empty = document.getElementById('atom-empty-state');
-  const details = document.getElementById('atom-details');
-  if (!selectedElement) {
-    empty.hidden = false;
-    details.hidden = true;
-    return;
-  }
+  if (!selectedElement) return;
 
   const electronCount = Math.max(0, selectedElement.atomicNumber - charge);
-  empty.hidden = true;
-  details.hidden = false;
   document.getElementById('atom-symbol').textContent = selectedElement.symbol;
   document.getElementById('atom-name').textContent = selectedElement.name;
   document.getElementById('atom-protons').textContent = selectedElement.atomicNumber;
@@ -75,6 +68,8 @@ function updatePanel() {
   document.getElementById('atom-electrons').textContent = electronCount;
   document.getElementById('atom-charge').textContent = displayCharge(charge);
   document.getElementById('atom-shells').textContent = electronDistribution(electronCount).join(' · ');
+  document.getElementById('atom-mass-number').textContent = selectedElement.massNumber;
+  document.getElementById('atom-atomic-number').textContent = selectedElement.atomicNumber;
   document.getElementById('atom-charge-down').disabled = charge <= -3;
   document.getElementById('atom-charge-up').disabled = charge >= 3 || electronCount === 0;
 }
@@ -116,8 +111,9 @@ function createElectrons(element) {
   const distribution = electronDistribution(electronCount);
   const electronGeometry = new THREE.SphereGeometry(0.075, 12, 12);
   const electronMaterial = new THREE.MeshStandardMaterial({
-    color: 0x38bdf8,
-    emissive: 0x0c4a6e,
+    color: 0x1d4ed8,
+    emissive: 0x0a1e6a,
+    emissiveIntensity: 0.55,
     roughness: 0.2,
   });
 
@@ -164,8 +160,13 @@ export function initAtomLab(scene) {
   atomGroup.position.set(0, 1.55, 0);
   atomGroup.visible = false;
   scene.add(atomGroup);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x64748b, 1.8));
+  const atomLight = new THREE.DirectionalLight(0xffffff, 1.2);
+  atomLight.position.set(3, 5, 6);
+  scene.add(atomLight);
   document.getElementById('atom-charge-down').addEventListener('click', () => changeAtomCharge(-1));
   document.getElementById('atom-charge-up').addEventListener('click', () => changeAtomCharge(1));
+  document.getElementById('atom-back').addEventListener('click', closeAtomFocus);
   updatePanel();
 }
 
@@ -177,6 +178,27 @@ export function selectAtom(symbol) {
   atomGroup.visible = true;
   atomGroup.rotation.set(0, 0, 0);
   rebuildAtom();
+  openAtomFocus();
+}
+
+export function openAtomFocus() {
+  if (!selectedElement) return;
+  focusOpen = true;
+  atomGroup.position.set(2.15, 0.1, 0);
+  atomGroup.scale.setScalar(2.2);
+  document.body.classList.add('atom-focus-open');
+  document.getElementById('atom-focus').hidden = false;
+  document.dispatchEvent(new Event('mimix:atom-focus-open'));
+}
+
+export function closeAtomFocus() {
+  focusOpen = false;
+  atomGroup.visible = false;
+  atomGroup.position.set(0, 1.55, 0);
+  atomGroup.scale.setScalar(1);
+  document.body.classList.remove('atom-focus-open');
+  document.getElementById('atom-focus').hidden = true;
+  document.dispatchEvent(new Event('mimix:atom-focus-close'));
 }
 
 export function rotateAtomBy(deltaX, deltaY) {
@@ -194,15 +216,16 @@ export function changeAtomCharge(delta) {
 }
 
 export function hasSelectedAtom() {
-  return Boolean(selectedElement);
+  return focusOpen;
 }
 
 export function detectAtomControl(landmark) {
   const { x, y } = landmarkToMirroredScreen(landmark);
-  for (const id of ['atom-charge-down', 'atom-charge-up']) {
+  for (const id of ['atom-back', 'atom-charge-down', 'atom-charge-up']) {
     const button = document.getElementById(id);
     const rect = button.getBoundingClientRect();
     if (!button.disabled && x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+      if (id === 'atom-back') return 'back';
       return id === 'atom-charge-down' ? -1 : 1;
     }
   }

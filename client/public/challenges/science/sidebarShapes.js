@@ -281,12 +281,17 @@ function selectCard(card) {
   
   console.log(`Tarjeta seleccionada: ${card.userData.title}`);
   selectAtom(card.userData.title);
+  cardMeshes.forEach((mesh) => { mesh.visible = false; });
   if (previousCard !== card) {
     document.dispatchEvent(new CustomEvent('mimix:card-selected', {
       detail: { cardTitle: card.userData.title },
     }));
   }
 }
+
+document.addEventListener('mimix:atom-focus-close', () => {
+  cardMeshes.forEach((mesh) => { mesh.visible = true; });
+});
 
 // Obtener tarjetas para exportar
 export function getCardMeshes() {

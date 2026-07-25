@@ -2,7 +2,7 @@
 // Detección de gestos de mano y lógica de interacción con tarjetas 3D
 import { camera } from "./threeScene.js";
 import { detectCardInteraction } from "./sidebarShapes.js";
-import { changeAtomCharge, detectAtomControl, hasSelectedAtom, rotateAtomBy } from './atomLab.js';
+import { changeAtomCharge, closeAtomFocus, detectAtomControl, hasSelectedAtom, rotateAtomBy } from './atomLab.js';
 
 let draggingCardIndex = -1;
 let isPinching = false;
@@ -32,6 +32,11 @@ export function detectDrag(handLandmarks) {
     isPinching = true;
     previousPinchPosition = currentPinchPosition;
     const chargeDelta = detectAtomControl(indexTip);
+    if (chargeDelta === 'back') {
+      closeAtomFocus();
+      activePinchAction = 'control';
+      return;
+    }
     if (chargeDelta !== null) {
       changeAtomCharge(chargeDelta);
       activePinchAction = 'control';
