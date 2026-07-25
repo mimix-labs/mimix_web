@@ -19,6 +19,7 @@ const CHALLENGE_LAYOUT = {
 
 export class World {
   constructor() {
+    this._started = false
     const robotVisionQuery = new URLSearchParams(window.location.search).get('vision') === 'robot'
       ? '?vision=robot'
       : ''
@@ -85,7 +86,6 @@ export class World {
     this.loop.add(this.startRing)
     this.loop.add(this.mathChallenge)
     this.loop.add(this.scienceChallenge)
-    this.loop.start()
   }
 
   navigateFromRobot(destination) {
@@ -111,5 +111,14 @@ export class World {
     })
     this.cameraFollower.follow(this.characters.active)
     controller.playAction('greeting')
+    this._startWhenReady()
+  }
+
+  _startWhenReady() {
+    if (!this._started) {
+      this._started = true
+      this.loop.start()
+    }
+    document.getElementById('world-loading')?.remove()
   }
 }

@@ -17,6 +17,20 @@
   display: block;
 }
 
+#world-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: #0b111b;
+  color: #8fd3ff;
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(12px, 1.5vw, 20px);
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 12px #4ab8ff;
+}
+
 #ui {
   position: fixed;
   top: 0;
