@@ -34,6 +34,9 @@ export class CharacterManager {
 
     root.position.set(...spawnPosition)
     root.scale.setScalar(1)
+    // Resolve the exact terrain height before the model ever becomes visible.
+    // This prevents a frame at the fallback spawn height during reloads.
+    this.collisionWorld?.snapToGround(root.position)
 
     // Three.js considera -Z como el frente local. Proyectamos la dirección
     // de la cámara al suelo para que el personaje mire donde ella apunta.
@@ -41,6 +44,7 @@ export class CharacterManager {
       root.rotation.y = Math.atan2(facingDirection.x, facingDirection.z) + Math.PI
     }
 
+    root.visible = false
     this.scene.add(root)
     this._active = root
 
@@ -51,6 +55,7 @@ export class CharacterManager {
       proceduralAnimator: root.getObjectByName('TORSO') ? new WallEAnimator(root) : null,
       collisionWorld: this.collisionWorld,
     })
+    root.visible = true
 
     return this.controller
   }

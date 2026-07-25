@@ -24,11 +24,11 @@
   display: grid;
   place-items: center;
   background: #0b111b;
-  color: #8fd3ff;
+  color: #ffd233;
   font-family: 'Press Start 2P', monospace;
-  font-size: clamp(12px, 1.5vw, 20px);
-  letter-spacing: 0.08em;
-  text-shadow: 0 0 12px #4ab8ff;
+  font-size: clamp(32px, 8vw, 112px);
+  letter-spacing: 0.14em;
+  text-shadow: 0 0 16px rgba(255, 210, 51, 0.72);
 }
 
 #ui {
