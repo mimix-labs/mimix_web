@@ -10,6 +10,13 @@ import { StartRing } from '../fx/StartRing.js'
 import { ChallengeZone } from '../scenes/ChallengeZone.js'
 import { RobotWebBridge } from './RobotWebBridge.js'
 
+// Challenge entrances: positioned on the Home-facing edge of each island.
+// position uses [X, Y, Z]; radius is the activation distance in world units.
+const CHALLENGE_LAYOUT = {
+  mathematics: { position: [0, 0, -42], radius: 4.5 },
+  science: { position: [42, 0, 0], radius: 4.5 },
+}
+
 export class World {
   constructor() {
     const robotVisionQuery = new URLSearchParams(window.location.search).get('vision') === 'robot'
@@ -49,8 +56,8 @@ export class World {
     this.mathChallenge = new ChallengeZone({
       scene: this.engine.scene,
       characters: this.characters,
-      position: ISLAND_LAYOUT.mathematics.position,
-      radius: 2.2,
+      position: CHALLENGE_LAYOUT.mathematics.position,
+      radius: CHALLENGE_LAYOUT.mathematics.radius,
       label: 'Matemáticas',
       destination: `/challenges/mathematics/index.html${robotVisionQuery}`,
     })
@@ -58,8 +65,8 @@ export class World {
     this.scienceChallenge = new ChallengeZone({
       scene: this.engine.scene,
       characters: this.characters,
-      position: ISLAND_LAYOUT.science.position,
-      radius: 2.2,
+      position: CHALLENGE_LAYOUT.science.position,
+      radius: CHALLENGE_LAYOUT.science.radius,
       label: 'Ciencias',
       destination: `/challenges/science/index.html${robotVisionQuery}`,
     })
