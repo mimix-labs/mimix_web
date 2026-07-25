@@ -16,6 +16,8 @@ export class BridgeModel {
     this.walkwayHalfWidth = 0
     this.localPoint = new THREE.Vector3()
     this.worldPoint = new THREE.Vector3()
+    this.deckRaycaster = new THREE.Raycaster()
+    this.down = new THREE.Vector3(0, -1, 0)
     this.group.position.set(...position)
     this.group.rotation.y = rotationY
     this.group.scale.set(...scale)
@@ -59,8 +61,12 @@ export class BridgeModel {
       Math.abs(this.localPoint.z) > this.walkwayHalfWidth
     ) return null
 
-    this.group.getWorldPosition(this.worldPoint)
-    return this.worldPoint.y
+    // Raycast the actual deck geometry at this point. The authored model's
+    // deck is not necessarily at the group's Y origin.
+    this.worldPoint.set(x, 100, z)
+    this.deckRaycaster.set(this.worldPoint, this.down)
+    const hit = this.deckRaycaster.intersectObjects(this.colliders, true)[0]
+    return hit ? hit.point.y : null
   }
 
   dispose() {
