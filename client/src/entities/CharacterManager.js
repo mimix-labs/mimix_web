@@ -1,5 +1,6 @@
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
+import * as THREE from 'three'
 import { CharacterController } from './CharacterController.js'
 import { WallEAnimator } from './walle/WallEAnimator.js'
 
@@ -32,27 +33,37 @@ export class CharacterManager {
     const gltf = await loader.loadAsync(modelPath)
     const root = gltf.scene
 
-    root.position.set(...spawnPosition)
     root.scale.setScalar(1)
-    // Resolve the exact terrain height before the model ever becomes visible.
-    // This prevents a frame at the fallback spawn height during reloads.
-    this.collisionWorld?.snapToGround(root.position)
+    root.updateMatrixWorld(true)
+    const bounds = new THREE.Box3().setFromObject(root)
+    // GLB's root pivot is above the bottom of its tracks. Keep collisions on
+    // a ground-level container and offset only the visible model.
+    // CharacterController already contributes the 0.02 ground clearance.
+    // Keep the visual base aligned with that collision anchor.
+    const visualOffsetY = -bounds.min.y
+    const player = new THREE.Group()
+    player.position.set(...spawnPosition)
+    this.collisionWorld?.snapToGround(player.position)
+    root.position.y = visualOffsetY
 
     // Three.js considera -Z como el frente local. Proyectamos la dirección
     // de la cámara al suelo para que el personaje mire donde ella apunta.
     if (facingDirection?.lengthSq() > 0) {
-      root.rotation.y = Math.atan2(facingDirection.x, facingDirection.z) + Math.PI
+      player.rotation.y = Math.atan2(facingDirection.x, facingDirection.z) + Math.PI
     }
 
     root.visible = false
-    this.scene.add(root)
-    this._active = root
+    player.add(root)
+    this.scene.add(player)
+    this._active = player
 
     this.controller = new CharacterController({
-      mesh:       root,
+      mesh:       player,
       animations: gltf.animations,
       input:      this.input,
-      proceduralAnimator: root.getObjectByName('TORSO') ? new WallEAnimator(root) : null,
+      proceduralAnimator: root.getObjectByName('TORSO')
+        ? new WallEAnimator(root, { groundOffset: visualOffsetY, lockToLocalGround: true })
+        : null,
       collisionWorld: this.collisionWorld,
     })
     root.visible = true

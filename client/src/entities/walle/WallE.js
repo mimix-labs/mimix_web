@@ -7,7 +7,7 @@ export const WALLE = {
   scale:         1.0,
   // El suelo del mapa en el origen está a Y = 0.30. El margen evita que
   // las orugas queden embebidas por redondeos de la malla del terreno.
-  spawnPosition: [0, 0.32, 0],
+  spawnPosition: [0, 0.02, 0],
 
   // Mapping: gesture name → Blender animation clip name
   // Adjust clip names to match your exported Blender armature

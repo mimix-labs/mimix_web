@@ -12,9 +12,11 @@ const WHEEL_NAMES = [
 // pero sus nodos no traen pivotes. Este animador inserta pivotes en posiciones
 // reales de las mallas antes de animarlas, evitando que giren alrededor de 0,0,0.
 export class WallEAnimator {
-  constructor(root) {
+  constructor(root, { groundOffset = 0, lockToLocalGround = false } = {}) {
     this.root = root
     this.baseY = root.position.y
+    this.groundOffset = groundOffset
+    this.lockToLocalGround = lockToLocalGround
     this.time = 0
     this.idleElapsed = 0
     this.nextExpression = this._nextExpressionDelay()
@@ -54,7 +56,9 @@ export class WallEAnimator {
   // La f\u00edsica del personaje actualiza esta altura; las animaciones solo
   // aplican una peque\u00f1a oscilaci\u00f3n visual alrededor de ella.
   setGroundHeight(height) {
-    this.baseY = height
+    this.baseY = this.lockToLocalGround
+      ? this.groundOffset
+      : height + this.groundOffset
   }
 
   _animateAction(delta) {

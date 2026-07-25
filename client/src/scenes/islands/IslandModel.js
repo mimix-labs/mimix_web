@@ -27,7 +27,9 @@ export class IslandModel {
     const gltf = await loader.loadAsync(modelPath)
     const root = gltf.scene
     this.group.add(root)
-    root.updateMatrixWorld(true)
+    // Update from the island group so collision meshes include the configured
+    // world position instead of overlapping at the origin while loading.
+    this.group.updateMatrixWorld(true)
     root.traverse(object => {
       if (!object.isMesh) return
 
