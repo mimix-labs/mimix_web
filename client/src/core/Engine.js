@@ -41,7 +41,7 @@ export class Engine {
       0.1,
       500,
     );
-    this.camera.position.set(80, 100, 100); // frames the complete three-island archipelago
+    this.camera.position.set(6, 7, 6); // close to Wall-E, original elevated view
   }
 
   // Configura los controles
@@ -52,8 +52,8 @@ export class Engine {
     this.controls.screenSpacePanning = false;
     this.controls.enableRotate = false; // sin rotación: solo paneo con clic izquierdo
     this.controls.target.set(0, 0, 0); // la cámara mira al origen (Wall-E + mapa centrados)
-    this.controls.minDistance = 30;
-    this.controls.maxDistance = 180;
+    this.controls.minDistance = 6;
+    this.controls.maxDistance = 16;
   }
 
   // Monta las luces
