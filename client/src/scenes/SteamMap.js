@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { IslandModel } from './islands/IslandModel.js'
-import { Bridge } from './islands/Bridge.js'
+import { BridgeModel } from './islands/BridgeModel.js'
 
 export const ISLAND_LAYOUT = {
   home:        { position: [0, 0, 0],   path: '/assets/models/islands/home.glb' },
@@ -10,6 +10,7 @@ export const ISLAND_LAYOUT = {
 
 const ISLAND_EDGE = 25.6
 const BRIDGE_OVERLAP = 0.35
+const BRIDGE_MODEL_PATH = '/assets/models/resources/bridge.glb'
 
 // Loads the complete three-island world and treats all floor meshes as one
 // collision surface for Wall-E.
@@ -31,8 +32,8 @@ export class SteamMap {
     this.islands.science.group.rotation.y = -Math.PI / 2
 
     this.bridges = [
-      this._createBridge('home', 'mathematics', 0x4FC3F7),
-      this._createBridge('home', 'science', 0x66BB6A),
+      this._createBridge('home', 'mathematics'),
+      this._createBridge('home', 'science'),
     ]
     this.bridges.forEach(bridge => this.scene.add(bridge.group))
 
@@ -41,7 +42,7 @@ export class SteamMap {
     this.down = new THREE.Vector3(0, -1, 0)
   }
 
-  _createBridge(fromKey, toKey, color) {
+  _createBridge(fromKey, toKey) {
     const [fromX, , fromZ] = ISLAND_LAYOUT[fromKey].position
     const [toX, , toZ] = ISLAND_LAYOUT[toKey].position
     const direction = new THREE.Vector2(toX - fromX, toZ - fromZ).normalize()
@@ -53,13 +54,16 @@ export class SteamMap {
       x: toX - direction.x * (ISLAND_EDGE - BRIDGE_OVERLAP),
       z: toZ - direction.y * (ISLAND_EDGE - BRIDGE_OVERLAP),
     }
-    return new Bridge(from, to, { color, width: 3 })
+    return new BridgeModel(from, to, { modelPath: BRIDGE_MODEL_PATH })
   }
 
   update(_delta, _elapsed) {}
 
   get ready() {
-    return Promise.all(Object.values(this.islands).map(island => island.ready))
+    return Promise.all([
+      ...Object.values(this.islands).map(island => island.ready),
+      ...this.bridges.map(bridge => bridge.ready),
+    ])
   }
 
   get colliders() {
