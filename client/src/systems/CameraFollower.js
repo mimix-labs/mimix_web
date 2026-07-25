@@ -19,6 +19,10 @@ export class CameraFollower {
   update(delta) {
     if (!this.targetObject) return
 
+    // MapControls puede cambiar la distancia con la rueda. Capturamos ese
+    // desplazamiento antes de seguir a Wall-E para trasladar la cámara sin
+    // reimponer la distancia con la que inició el juego.
+    this.offset.copy(this.camera.position).sub(this.controls.target)
     this.targetObject.getWorldPosition(this.desiredTarget)
     const blend = 1 - Math.exp(-this.smoothness * delta)
     this.controls.target.lerp(this.desiredTarget, blend)
