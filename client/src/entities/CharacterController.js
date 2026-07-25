@@ -2,6 +2,8 @@ import * as THREE from 'three'
 import { getGesture } from './gestures.js'
 
 const FADE_DURATION = 0.25 // seconds to blend between animations
+const DESCENT_ACCELERATION = 22
+const MAX_DESCENT_SPEED = 4.5
 
 export class CharacterController {
   constructor({ mesh, animations, input, proceduralAnimator = null, collisionWorld = null }) {
@@ -15,6 +17,7 @@ export class CharacterController {
     this._speed     = 5
     this._direction = new THREE.Vector3()
     this._velocity  = new THREE.Vector3()
+    this._descentSpeed = 0
     this._proceduralAnimator = proceduralAnimator
     this._collisionWorld = collisionWorld
 
@@ -54,6 +57,7 @@ export class CharacterController {
   update(delta) {
     this._mixer.update(delta)
     const isMoving = this._handleMovement(delta)
+    if (!isMoving) this._settleOnGround(delta)
     this._proceduralAnimator?.update(delta, isMoving)
   }
 
@@ -80,7 +84,9 @@ export class CharacterController {
         ? this._collisionWorld.resolveMovement(this.mesh.position, desired)
         : desired
       if (resolved) {
-        this.mesh.position.copy(resolved)
+        this.mesh.position.x = resolved.x
+        this.mesh.position.z = resolved.z
+        this._moveTowardGround(resolved.y, delta)
         this._proceduralAnimator?.setGroundHeight(this.mesh.position.y)
         moved = true
       }
@@ -95,6 +101,29 @@ export class CharacterController {
     }
 
     return moved
+  }
+
+  _settleOnGround(delta) {
+    if (!this._collisionWorld) return
+    const ground = this._collisionWorld.getGroundHeight(this.mesh.position.x, this.mesh.position.z)
+    if (ground === null) return
+
+    this._moveTowardGround(ground + 0.02, delta)
+    this._proceduralAnimator?.setGroundHeight(this.mesh.position.y)
+  }
+
+  _moveTowardGround(targetY, delta) {
+    if (targetY >= this.mesh.position.y) {
+      this.mesh.position.y = targetY
+      this._descentSpeed = 0
+      return
+    }
+
+    this._descentSpeed = Math.min(
+      this._descentSpeed + DESCENT_ACCELERATION * delta,
+      MAX_DESCENT_SPEED,
+    )
+    this.mesh.position.y = Math.max(targetY, this.mesh.position.y - this._descentSpeed * delta)
   }
 
   playAction(name) {

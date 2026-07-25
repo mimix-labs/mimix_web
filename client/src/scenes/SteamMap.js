@@ -11,7 +11,6 @@ export const ISLAND_LAYOUT = {
 const BRIDGE_MODEL_PATH = '/assets/models/resources/bridge.glb'
 // Movement limits in world units. Reduce MAX_STEP_UP for a stricter climb limit.
 const MAX_STEP_UP = 2.5
-const MAX_STEP_DOWN = 0.22
 const MAX_WALKABLE_SLOPE_DEGREES = 25
 // Applies to island terrain only. Bridges have their own designated deck.
 const MAX_TERRAIN_HEIGHT_ABOVE_HOME_GROUND = 1.2
@@ -130,7 +129,7 @@ export class SteamMap {
     // Moving on/off the designated bridge deck is an intentional transition.
     if (currentGround !== null && currentHit.surface === 'terrain' && nextHit.surface === 'terrain') {
       const heightChange = nextGround - currentGround
-      if (heightChange > MAX_STEP_UP || heightChange < -MAX_STEP_DOWN) return null
+      if (heightChange > MAX_STEP_UP) return null
     }
     return new THREE.Vector3(desired.x, nextGround + 0.02, desired.z)
   }
