@@ -13,21 +13,21 @@ const BRIDGE_MODEL_PATH = '/assets/models/resources/bridge.glb'
 const MAX_STEP_UP = 0.12
 const MAX_STEP_DOWN = 0.22
 const MAX_WALKABLE_SLOPE_DEGREES = 25
-const MAX_HEIGHT_ABOVE_HOME_GROUND = 1.2
+const MAX_HEIGHT_ABOVE_HOME_GROUND = 100
 const MIN_WALKABLE_NORMAL_Y = Math.cos(THREE.MathUtils.degToRad(MAX_WALKABLE_SLOPE_DEGREES))
 
 // Edit these values to place the original bridge model manually.
 // position: [X, Y, Z] | rotationY: radians | scale: [X, Y, Z]
 export const BRIDGE_LAYOUT = {
   mathematics: {
-    position: [0.5, 0.3, -29],
+    position: [0.5, 2.5, -29],
     rotationY: Math.PI / 2,
-    scale: [3, 1, 1],
+    scale: [3, 3, 3],
   },
   science: {
-    position: [30, 0.3, 0],
+    position: [30, 2.5, 0],
     rotationY: 0,
-    scale: [3, 1, 1],
+    scale: [3, 3, 3],
   },
 }
 
