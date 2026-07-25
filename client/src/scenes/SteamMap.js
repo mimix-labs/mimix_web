@@ -8,9 +8,22 @@ export const ISLAND_LAYOUT = {
   science:     { position: [62, 0, 0],  path: '/assets/models/islands/sciencie.glb' },
 }
 
-const ISLAND_EDGE = 25.6
-const BRIDGE_OVERLAP = 0.35
 const BRIDGE_MODEL_PATH = '/assets/models/resources/bridge.glb'
+
+// Edit these values to place the original bridge model manually.
+// position: [X, Y, Z] | rotationY: radians | scale: [X, Y, Z]
+export const BRIDGE_LAYOUT = {
+  mathematics: {
+    position: [0, 0.3, -31],
+    rotationY: Math.PI / 2,
+    scale: [1, 1, 1],
+  },
+  science: {
+    position: [31, 0.3, 0],
+    rotationY: 0,
+    scale: [1, 1, 1],
+  },
+}
 
 // Loads the complete three-island world and treats all floor meshes as one
 // collision surface for Wall-E.
@@ -32,8 +45,8 @@ export class SteamMap {
     this.islands.science.group.rotation.y = -Math.PI / 2
 
     this.bridges = [
-      this._createBridge('home', 'mathematics'),
-      this._createBridge('home', 'science'),
+      this._createBridge('mathematics'),
+      this._createBridge('science'),
     ]
     this.bridges.forEach(bridge => this.scene.add(bridge.group))
 
@@ -42,19 +55,11 @@ export class SteamMap {
     this.down = new THREE.Vector3(0, -1, 0)
   }
 
-  _createBridge(fromKey, toKey) {
-    const [fromX, , fromZ] = ISLAND_LAYOUT[fromKey].position
-    const [toX, , toZ] = ISLAND_LAYOUT[toKey].position
-    const direction = new THREE.Vector2(toX - fromX, toZ - fromZ).normalize()
-    const from = {
-      x: fromX + direction.x * (ISLAND_EDGE - BRIDGE_OVERLAP),
-      z: fromZ + direction.y * (ISLAND_EDGE - BRIDGE_OVERLAP),
-    }
-    const to = {
-      x: toX - direction.x * (ISLAND_EDGE - BRIDGE_OVERLAP),
-      z: toZ - direction.y * (ISLAND_EDGE - BRIDGE_OVERLAP),
-    }
-    return new BridgeModel(from, to, { modelPath: BRIDGE_MODEL_PATH })
+  _createBridge(key) {
+    return new BridgeModel({
+      modelPath: BRIDGE_MODEL_PATH,
+      ...BRIDGE_LAYOUT[key],
+    })
   }
 
   update(_delta, _elapsed) {}
