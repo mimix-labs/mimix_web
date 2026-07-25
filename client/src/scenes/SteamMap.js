@@ -20,14 +20,14 @@ const MIN_WALKABLE_NORMAL_Y = Math.cos(THREE.MathUtils.degToRad(MAX_WALKABLE_SLO
 // position: [X, Y, Z] | rotationY: radians | scale: [X, Y, Z]
 export const BRIDGE_LAYOUT = {
   mathematics: {
-    position: [0.5, 2.5, -29],
+    position: [0.5, 0.3, -29],
     rotationY: Math.PI / 2,
-    scale: [3, 3, 3],
+    scale: [3, 1, 1],
   },
   science: {
-    position: [30, 2.5, 0],
+    position: [30, 0.3, 0],
     rotationY: 0,
-    scale: [3, 3, 3],
+    scale: [3, 1, 1],
   },
 }
 
