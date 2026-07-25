@@ -12,6 +12,10 @@ export class BridgeModel {
   constructor({ modelPath, position, rotationY = 0, scale = [1, 1, 1] } = {}) {
     this.group = new THREE.Group()
     this.colliders = []
+    this.walkwayHalfLength = 0
+    this.walkwayHalfWidth = 0
+    this.localPoint = new THREE.Vector3()
+    this.worldPoint = new THREE.Vector3()
     this.group.position.set(...position)
     this.group.rotation.y = rotationY
     this.group.scale.set(...scale)
@@ -25,10 +29,14 @@ export class BridgeModel {
 
     const box = new THREE.Box3().setFromObject(root)
     const center = box.getCenter(new THREE.Vector3())
+    const size = box.getSize(new THREE.Vector3())
 
     // Center the asset on its group. Position, rotation and scale remain
     // explicit scene settings rather than automatic deformation.
     root.position.set(-center.x, -center.y, -center.z)
+    // Use the central deck as the only bridge navigation surface, excluding rails.
+    this.walkwayHalfLength = size.x * 0.46
+    this.walkwayHalfWidth = size.z * 0.28
     this.group.add(root)
     this.group.updateMatrixWorld(true)
 
@@ -38,6 +46,21 @@ export class BridgeModel {
       materials.forEach(material => { material.side = THREE.DoubleSide })
       this.colliders.push(object)
     })
+  }
+
+  getWalkwayHeightAt(x, z) {
+    if (!this.walkwayHalfLength || !this.walkwayHalfWidth) return null
+
+    this.worldPoint.set(x, 0, z)
+    this.localPoint.copy(this.worldPoint)
+    this.group.worldToLocal(this.localPoint)
+    if (
+      Math.abs(this.localPoint.x) > this.walkwayHalfLength ||
+      Math.abs(this.localPoint.z) > this.walkwayHalfWidth
+    ) return null
+
+    this.group.getWorldPosition(this.worldPoint)
+    return this.worldPoint.y
   }
 
   dispose() {

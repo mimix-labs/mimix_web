@@ -10,10 +10,11 @@ export const ISLAND_LAYOUT = {
 
 const BRIDGE_MODEL_PATH = '/assets/models/resources/bridge.glb'
 // Movement limits in world units. Reduce MAX_STEP_UP for a stricter climb limit.
-const MAX_STEP_UP = 0.12
+const MAX_STEP_UP = 2.5
 const MAX_STEP_DOWN = 0.22
 const MAX_WALKABLE_SLOPE_DEGREES = 25
-const MAX_HEIGHT_ABOVE_HOME_GROUND = 100
+// Applies to island terrain only. Bridges have their own designated deck.
+const MAX_TERRAIN_HEIGHT_ABOVE_HOME_GROUND = 1.2
 const MIN_WALKABLE_NORMAL_Y = Math.cos(THREE.MathUtils.degToRad(MAX_WALKABLE_SLOPE_DEGREES))
 
 // Edit these values to place the original bridge model manually.
@@ -82,23 +83,30 @@ export class SteamMap {
   get colliders() {
     return [
       ...Object.values(this.islands).flatMap(island => island.colliders),
-      ...this.bridges.flatMap(bridge => bridge.colliders),
     ]
   }
 
   getWalkableGroundHit(x, z) {
+    for (const bridge of this.bridges) {
+      const bridgeHeight = bridge.getWalkwayHeightAt(x, z)
+      if (bridgeHeight !== null) {
+        return { point: { y: bridgeHeight }, surface: 'bridge' }
+      }
+    }
+
     const colliders = this.colliders
     if (!colliders.length) return null
 
     this.raycastOrigin.set(x, 100, z)
     this.raycaster.set(this.raycastOrigin, this.down)
     const hits = this.raycaster.intersectObjects(colliders, true)
-    return hits.find(hit => {
+    const terrainHit = hits.find(hit => {
       if (!hit.face) return false
       this.surfaceNormal.copy(hit.face.normal).transformDirection(hit.object.matrixWorld)
       // Some exported terrain faces point downward, hence the absolute value.
       return Math.abs(this.surfaceNormal.y) >= MIN_WALKABLE_NORMAL_Y
-    }) ?? null
+    })
+    return terrainHit ? { ...terrainHit, surface: 'terrain' } : null
   }
 
   getGroundHeight(x, z) {
@@ -106,16 +114,21 @@ export class SteamMap {
   }
 
   resolveMovement(from, desired) {
-    const currentGround = this.getGroundHeight(from.x, from.z)
-    const nextGround = this.getGroundHeight(desired.x, desired.z)
-    if (nextGround === null) return null
+    const currentHit = this.getWalkableGroundHit(from.x, from.z)
+    const nextHit = this.getWalkableGroundHit(desired.x, desired.z)
+    if (!nextHit) return null
+
+    const currentGround = currentHit?.point.y ?? null
+    const nextGround = nextHit.point.y
 
     if (
+      nextHit.surface === 'terrain' &&
       this.homeGroundHeight !== null &&
-      nextGround > this.homeGroundHeight + MAX_HEIGHT_ABOVE_HOME_GROUND
+      nextGround > this.homeGroundHeight + MAX_TERRAIN_HEIGHT_ABOVE_HOME_GROUND
     ) return null
 
-    if (currentGround !== null) {
+    // Moving on/off the designated bridge deck is an intentional transition.
+    if (currentGround !== null && currentHit.surface === 'terrain' && nextHit.surface === 'terrain') {
       const heightChange = nextGround - currentGround
       if (heightChange > MAX_STEP_UP || heightChange < -MAX_STEP_DOWN) return null
     }
