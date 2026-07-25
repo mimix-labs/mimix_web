@@ -49,8 +49,8 @@ export class Engine {
     this.controls = new MapControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
-    this.controls.screenSpacePanning = false;
-    this.controls.enableRotate = false; // sin rotación: solo paneo con clic izquierdo
+    this.controls.screenSpacePanning = true;
+    this.controls.enableRotate = true; // sin rotación: solo paneo con clic izquierdo
     this.controls.target.set(0, 0, 0); // la cámara mira al origen (Wall-E + mapa centrados)
     this.controls.minDistance = 6;
     this.controls.maxDistance = 16;

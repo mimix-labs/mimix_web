@@ -28,6 +28,8 @@ export class SteamMap {
       new IslandModel(this.scene, config.path, { position: config.position }),
     ]))
 
+    this.islands.science.group.rotation.y = -Math.PI / 2
+
     this.bridges = [
       this._createBridge('home', 'mathematics', 0x4FC3F7),
       this._createBridge('home', 'science', 0x66BB6A),

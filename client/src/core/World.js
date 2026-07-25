@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { ISLAND_LAYOUT, SteamMap } from '../scenes/SteamMap.js'
 import { InputSystem } from '../systems/InputSystem.js'
 import { CameraFollower } from '../systems/CameraFollower.js'
+import { IslandCameraCue } from '../systems/IslandCameraCue.js'
 import { CharacterManager } from '../entities/CharacterManager.js'
 import { StartRing } from '../fx/StartRing.js'
 import { ChallengeZone } from '../scenes/ChallengeZone.js'
@@ -30,6 +31,19 @@ export class World {
       scene: this.engine.scene,
       input: this.input,
       collisionWorld: this.steamMap,
+    })
+
+    this.mathCameraCue = new IslandCameraCue({
+      characters: this.characters,
+      cameraFollower: this.cameraFollower,
+      homePosition: ISLAND_LAYOUT.home.position,
+      islandPosition: ISLAND_LAYOUT.mathematics.position,
+    })
+    this.scienceCameraCue = new IslandCameraCue({
+      characters: this.characters,
+      cameraFollower: this.cameraFollower,
+      homePosition: ISLAND_LAYOUT.home.position,
+      islandPosition: ISLAND_LAYOUT.science.position,
     })
 
     this.mathChallenge = new ChallengeZone({
@@ -59,6 +73,8 @@ export class World {
     this.loop.add(this.steamMap)
     this.loop.add(this.characters)
     this.loop.add(this.cameraFollower)
+    this.loop.add(this.mathCameraCue)
+    this.loop.add(this.scienceCameraCue)
     this.loop.add(this.startRing)
     this.loop.add(this.mathChallenge)
     this.loop.add(this.scienceChallenge)
