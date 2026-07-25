@@ -13,6 +13,7 @@ const BRIDGE_MODEL_PATH = '/assets/models/resources/bridge.glb'
 const MAX_STEP_UP = 0.12
 const MAX_STEP_DOWN = 0.22
 const MAX_WALKABLE_SLOPE_DEGREES = 25
+const MAX_HEIGHT_ABOVE_HOME_GROUND = 1.2
 const MIN_WALKABLE_NORMAL_Y = Math.cos(THREE.MathUtils.degToRad(MAX_WALKABLE_SLOPE_DEGREES))
 
 // Edit these values to place the original bridge model manually.
@@ -35,6 +36,7 @@ export const BRIDGE_LAYOUT = {
 export class SteamMap {
   constructor(scene) {
     this.scene = scene
+    this.homeGroundHeight = null
     this._build()
   }
 
@@ -59,6 +61,13 @@ export class SteamMap {
     this.raycastOrigin = new THREE.Vector3()
     this.down = new THREE.Vector3(0, -1, 0)
     this.surfaceNormal = new THREE.Vector3()
+    this.ready = Promise.all([
+      ...Object.values(this.islands).map(island => island.ready),
+      ...this.bridges.map(bridge => bridge.ready),
+    ]).then(() => {
+      const [homeX, , homeZ] = ISLAND_LAYOUT.home.position
+      this.homeGroundHeight = this.getGroundHeight(homeX, homeZ)
+    })
   }
 
   _createBridge(key) {
@@ -69,13 +78,6 @@ export class SteamMap {
   }
 
   update(_delta, _elapsed) {}
-
-  get ready() {
-    return Promise.all([
-      ...Object.values(this.islands).map(island => island.ready),
-      ...this.bridges.map(bridge => bridge.ready),
-    ])
-  }
 
   get colliders() {
     return [
@@ -107,6 +109,11 @@ export class SteamMap {
     const currentGround = this.getGroundHeight(from.x, from.z)
     const nextGround = this.getGroundHeight(desired.x, desired.z)
     if (nextGround === null) return null
+
+    if (
+      this.homeGroundHeight !== null &&
+      nextGround > this.homeGroundHeight + MAX_HEIGHT_ABOVE_HOME_GROUND
+    ) return null
 
     if (currentGround !== null) {
       const heightChange = nextGround - currentGround

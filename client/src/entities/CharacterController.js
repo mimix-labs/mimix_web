@@ -74,7 +74,11 @@ export class CharacterController {
     if (isMoving) {
       this._direction.normalize()
       const desired = this.mesh.position.clone().addScaledVector(this._direction, this._speed * delta)
-      const resolved = this._collisionWorld?.resolveMovement(this.mesh.position, desired) ?? desired
+      // A null resolution means an edge, wall or forbidden elevation: stop.
+      // Only use free movement when the world has no collision system at all.
+      const resolved = this._collisionWorld
+        ? this._collisionWorld.resolveMovement(this.mesh.position, desired)
+        : desired
       if (resolved) {
         this.mesh.position.copy(resolved)
         this._proceduralAnimator?.setGroundHeight(this.mesh.position.y)
