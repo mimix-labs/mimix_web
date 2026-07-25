@@ -36,9 +36,12 @@ export class BridgeModel {
     // Center the asset on its group. Position, rotation and scale remain
     // explicit scene settings rather than automatic deformation.
     root.position.set(-center.x, -center.y, -center.z)
-    // Use the central deck as the only bridge navigation surface, excluding rails.
-    this.walkwayHalfLength = size.x * 0.46
-    this.walkwayHalfWidth = size.z * 0.28
+    // Use the wooden deck as the only bridge navigation surface. The previous
+    // corridor was too narrow at the curved entries, so Wall-E could reach the
+    // visible planks but still be rejected by navigation. Keep a small margin
+    // before the rail posts while covering the usable board width.
+    this.walkwayHalfLength = size.x * 0.49
+    this.walkwayHalfWidth = size.z * 0.42
     this.group.add(root)
     this.group.updateMatrixWorld(true)
 
