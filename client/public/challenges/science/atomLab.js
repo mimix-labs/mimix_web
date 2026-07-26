@@ -5,6 +5,9 @@ import { ELEMENT_BY_SYMBOL } from './periodicData.js';
 
 const SHELL_CAPACITIES = [2, 8, 18, 32, 32, 18, 8];
 const ORBIT_TILTS = [0.15, -0.45, 0.55, -0.7, 0.3, -0.25, 0.6];
+const ORBIT_START_RADIUS = 0.75;
+const ORBIT_STEP_RADIUS = 0.48;
+const MAX_VISIBLE_ORBIT_RADIUS = 4.2;
 
 let atomGroup;
 let electronGroup;
@@ -101,7 +104,7 @@ function createElectrons(element) {
   });
 
   distribution.forEach((count, shellIndex) => {
-    const radius = 0.75 + shellIndex * 0.48;
+    const radius = ORBIT_START_RADIUS + shellIndex * ORBIT_STEP_RADIUS;
     const shell = new THREE.Group();
     shell.rotation.x = Math.PI / 2 + ORBIT_TILTS[shellIndex];
     shell.rotation.z = shellIndex * 0.55;
@@ -135,12 +138,25 @@ function rebuildAtom() {
   }
   createNucleus(selectedElement);
   createElectrons(selectedElement);
+  fitAtomToFocus();
   updatePanel();
+}
+
+function fitAtomToFocus() {
+  if (!selectedElement || !atomGroup) return;
+  const shellCount = electronDistribution(
+    Math.max(0, selectedElement.atomicNumber - charge),
+  ).length;
+  const outerOrbitRadius = shellCount
+    ? ORBIT_START_RADIUS + (shellCount - 1) * ORBIT_STEP_RADIUS + 0.1
+    : ORBIT_START_RADIUS;
+  const scale = Math.min(2.2, MAX_VISIBLE_ORBIT_RADIUS / outerOrbitRadius);
+  atomGroup.scale.setScalar(scale);
 }
 
 export function initAtomLab(scene) {
   atomGroup = new THREE.Group();
-  atomGroup.position.set(0, 1.55, 0);
+  atomGroup.position.set(0, 0, 0);
   atomGroup.visible = false;
   scene.add(atomGroup);
   scene.add(new THREE.HemisphereLight(0xffffff, 0x64748b, 1.8));
@@ -167,8 +183,8 @@ export function selectAtom(symbol) {
 export function openAtomFocus() {
   if (!selectedElement) return;
   focusOpen = true;
-  atomGroup.position.set(2.15, 0.1, 0);
-  atomGroup.scale.setScalar(2.2);
+  atomGroup.position.set(0, 0, 0);
+  fitAtomToFocus();
   document.body.classList.add('atom-focus-open');
   document.getElementById('atom-focus').hidden = false;
   document.dispatchEvent(new Event('mimix:atom-focus-open'));
@@ -177,7 +193,7 @@ export function openAtomFocus() {
 export function closeAtomFocus() {
   focusOpen = false;
   atomGroup.visible = false;
-  atomGroup.position.set(0, 1.55, 0);
+  atomGroup.position.set(0, 0, 0);
   atomGroup.scale.setScalar(1);
   document.body.classList.remove('atom-focus-open');
   document.getElementById('atom-focus').hidden = true;

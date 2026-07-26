@@ -110,9 +110,11 @@ button.element-cell { cursor: pointer; }
 }
 
 .atom-visual {
+  position: relative;
   display: grid;
   place-items: end center;
   padding: 34px;
+  overflow: hidden;
   color: #64748b;
   background: radial-gradient(ellipse at center, #e4ebf4 0%, #f8fafc 40%, #ffffff 73%);
   font-family: system-ui, sans-serif;
@@ -121,7 +123,12 @@ button.element-cell { cursor: pointer; }
   text-transform: uppercase;
 }
 
-.atom-visual p { margin: 0; }
+#atom-render-region {
+  position: absolute;
+  inset: 26px 26px 80px;
+}
+
+.atom-visual p { position: relative; z-index: 1; margin: 0; }
 
 .atom-focus-open #three-canvas { z-index: 11; }
 .atom-focus-open #main-title,
