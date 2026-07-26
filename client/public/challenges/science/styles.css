@@ -86,26 +86,6 @@ button.element-cell { cursor: pointer; }
 .category-actinide { background: #ffd9dd; }
 .category-unknown { background: #e6e6e6; }
 
-#element-guide {
-  position: fixed;
-  right: 30px;
-  bottom: 30px;
-  z-index: 120;
-  display: grid;
-  gap: 4px;
-  padding: 13px 17px;
-  color: #f8fafc;
-  background: rgba(15, 23, 42, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 16px;
-  box-shadow: 0 12px 35px rgba(2, 6, 23, 0.3);
-  backdrop-filter: blur(12px);
-  pointer-events: none;
-}
-
-#element-guide span { color: #7dd3fc; font-family: system-ui, sans-serif; font-size: 0.67rem; font-weight: 800; letter-spacing: 0.13em; text-transform: uppercase; }
-#element-guide strong { font-family: system-ui, sans-serif; font-size: 0.84rem; }
-
 #atom-focus {
   position: fixed;
   inset: 48px 7vw;
@@ -145,7 +125,6 @@ button.element-cell { cursor: pointer; }
 
 .atom-focus-open #three-canvas { z-index: 11; }
 .atom-focus-open #main-title,
-.atom-focus-open #element-guide,
 .atom-focus-open #periodic-explorer { display: none; }
 
 .atom-kicker { margin: 23px 0 12px; color: #64748b; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.14em; }
@@ -175,7 +154,6 @@ button.element-cell { cursor: pointer; }
   .atom-info { padding: 20px; border-right: 0; border-bottom: 1px solid rgba(148, 163, 184, 0.25); }
   .atom-kicker { margin: 13px 0 8px; }
   #atom-focus dl { margin: 13px 0 8px; }
-  #element-guide { right: 12px; bottom: 12px; }
   .atom-help { display: none; }
 }
 
