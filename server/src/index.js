@@ -37,6 +37,9 @@ const ALLOWED_DESTINATIONS = new Set(['world', 'mathematics', 'science'])
 const ALLOWED_CHALLENGES = new Set(['mathematics', 'science'])
 const ALLOWED_MOTION_ACTIONS = new Set(['forward', 'backward', 'left', 'right', 'stop'])
 const MOTION_DURATION_MS = 300
+// Railway -> Jetson can take longer than the motor pulse itself. This TTL only
+// limits how long an SSE event may spend in transit; it never extends motor run time.
+const MOTION_EVENT_TTL_MS = 3000
 const MOTION_LEASE_MS = 1200
 const controllerSequences = new Map()
 let motionLease = { controllerId: null, expiresAt: 0 }
@@ -240,7 +243,8 @@ app.get('/api/robot/status', (_req, res) => {
 })
 
 // Control remoto acotado: el navegador envía intenciones, nunca PWM ni pulsos.
-// Cada movimiento vence en 300 ms y debe renovarse mientras la tecla siga pulsada.
+// Cada pulso mueve como máximo 300 ms y debe renovarse mientras la tecla siga
+// pulsada. El sobre SSE dispone de un margen separado para atravesar Internet.
 app.post('/api/robot/motion', requireRobotControl, (req, res) => {
   const { action, controllerId, sequence } = req.body ?? {}
   if (!ALLOWED_MOTION_ACTIONS.has(action)) {
@@ -284,7 +288,7 @@ app.post('/api/robot/motion', requireRobotControl, (req, res) => {
     action,
     maxDurationMs: action === 'stop' ? 100 : MOTION_DURATION_MS,
     issuedAt: now,
-    expiresAt: now + (action === 'stop' ? 1000 : MOTION_DURATION_MS),
+    expiresAt: now + MOTION_EVENT_TTL_MS,
   }
   for (const client of robotMotionClients) sendRobotMotion(client, command)
   return res.status(202).json({ accepted: true, command })
