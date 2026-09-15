@@ -13,6 +13,15 @@ import { RobotWebBridge } from './RobotWebBridge.js'
 // Keep the normal follow/zoom view; island cinematic camera cues are disabled.
 const ENABLE_ISLAND_CAMERA_CUES = false
 
+const LOAD_BYTES = {
+  home: 11919488,
+  mathematics: 13768428,
+  science: 8173260,
+  bridgeMathematics: 2239132,
+  bridgeScience: 2239132,
+  character: 250772,
+}
+
 // Challenge entrances: positioned on the Home-facing edge of each island.
 // position uses [X, Y, Z]; radius is the activation distance in world units.
 const CHALLENGE_LAYOUT = {
@@ -21,17 +30,24 @@ const CHALLENGE_LAYOUT = {
 }
 
 export class World {
-  constructor() {
+  constructor({ onLoadingProgress = null } = {}) {
     this._started = false
-    const robotVisionQuery = new URLSearchParams(window.location.search).get('vision') === 'robot'
-      ? '?vision=robot'
+    this._loadingProgress = Object.fromEntries(
+      Object.entries(LOAD_BYTES).map(([key, total]) => [key, { loaded: 0, total }]),
+    )
+    this._onLoadingProgress = onLoadingProgress
+    const requestedVision = new URLSearchParams(window.location.search).get('vision')
+    const visionQuery = ['browser', 'robot'].includes(requestedVision)
+      ? `?vision=${requestedVision}`
       : ''
-    this.robotVisionQuery = robotVisionQuery
+    this.visionQuery = visionQuery
 
     this.engine    = new Engine('canvas')
     this.loop      = new Loop(this.engine)
     this.input     = new InputSystem()
-    this.steamMap  = new SteamMap(this.engine.scene)
+    this.steamMap  = new SteamMap(this.engine.scene, {
+      onAssetProgress: (asset, event) => this._reportAssetProgress(asset, event),
+    })
     this.startRing = new StartRing(this.engine.scene)
     this.cameraFollower = new CameraFollower({
       camera: this.engine.camera,
@@ -63,7 +79,7 @@ export class World {
       position: CHALLENGE_LAYOUT.mathematics.position,
       radius: CHALLENGE_LAYOUT.mathematics.radius,
       label: 'Matemáticas',
-      destination: `/challenges/mathematics/index.html${robotVisionQuery}`,
+      destination: `/challenges/mathematics/index.html${visionQuery}`,
     })
 
     this.scienceChallenge = new ChallengeZone({
@@ -72,7 +88,7 @@ export class World {
       position: CHALLENGE_LAYOUT.science.position,
       radius: CHALLENGE_LAYOUT.science.radius,
       label: 'Ciencias',
-      destination: `/challenges/science/index.html${robotVisionQuery}`,
+      destination: `/challenges/science/index.html${visionQuery}`,
     })
 
     this.robotBridge = new RobotWebBridge({
@@ -96,8 +112,8 @@ export class World {
   navigateFromRobot(destination) {
     const destinations = {
       world: null,
-      mathematics: `/challenges/mathematics/index.html${this.robotVisionQuery}`,
-      science: `/challenges/science/index.html${this.robotVisionQuery}`,
+      mathematics: `/challenges/mathematics/index.html${this.visionQuery}`,
+      science: `/challenges/science/index.html${this.visionQuery}`,
     }
     const target = destinations[destination]
     if (target) window.location.assign(target)
@@ -106,17 +122,41 @@ export class World {
   // Called from main.js once walle.glb is available
   async loadWallE() {
     const { WALLE } = await import('../entities/walle/WallE.js')
-    await this.steamMap.ready
     const cameraDirection = this.engine.camera.getWorldDirection(new THREE.Vector3())
     cameraDirection.y = 0
     cameraDirection.normalize()
 
-    const controller = await this.characters.load(WALLE.modelPath, WALLE.spawnPosition, {
-      facingDirection: cameraDirection,
-    })
+    this._onLoadingProgress?.({ progress: 5, message: 'Cargando el mapa completo…' })
+    const [controller] = await Promise.all([
+      this.characters.load(WALLE.modelPath, WALLE.spawnPosition, {
+        facingDirection: cameraDirection,
+        onProgress: event => this._reportAssetProgress('character', event),
+      }),
+      this.steamMap.ready,
+    ])
+    this.steamMap.snapToGround(controller.mesh.position)
     this.cameraFollower.follow(this.characters.active)
     controller.playAction('greeting')
     this._startWhenReady()
+  }
+
+  _reportAssetProgress(asset, event) {
+    const state = this._loadingProgress[asset]
+    if (!state || !event?.loaded) return
+    state.total = event.total || state.total
+    state.loaded = Math.min(event.loaded, state.total)
+
+    const states = Object.values(this._loadingProgress)
+    const loadedBytes = states.reduce((total, item) => total + item.loaded, 0)
+    const totalBytes = states.reduce((total, item) => total + item.total, 0)
+    const ratio = totalBytes ? loadedBytes / totalBytes : 0
+    const progress = Math.min(99, Math.round(5 + (ratio * 94)))
+    const loadedMb = Math.round(loadedBytes / 1048576)
+    const totalMb = Math.round(totalBytes / 1048576)
+    const message = ratio > 0.98
+      ? 'Montando el mapa completo…'
+      : `Cargando el mapa completo · ${loadedMb} de ${totalMb} MB`
+    this._onLoadingProgress?.({ progress, message })
   }
 
   _startWhenReady() {
@@ -124,6 +164,6 @@ export class World {
       this._started = true
       this.loop.start()
     }
-    document.getElementById('world-loading')?.remove()
+    this._onLoadingProgress?.({ progress: 100, message: '¡Todo listo!' })
   }
 }

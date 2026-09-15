@@ -10,7 +10,7 @@ loader.setDRACOLoader(draco)
 // Carga un GLB de isla, lo añade a la escena y vuelca sus dimensiones
 // (ancho × alto × profundidad, en unidades del mundo) a la consola.
 export class IslandModel {
-  constructor(scene, modelPath, { position = [0, 0, 0] } = {}) {
+  constructor(scene, modelPath, { position = [0, 0, 0], onProgress = null } = {}) {
     this.scene = scene
     this.group = new THREE.Group()
     this.group.position.set(...position)
@@ -20,11 +20,11 @@ export class IslandModel {
     this.raycastOrigin = new THREE.Vector3()
     this.down = new THREE.Vector3(0, -1, 0)
 
-    this.ready = this._load(modelPath)
+    this.ready = this._load(modelPath, onProgress)
   }
 
-  async _load(modelPath) {
-    const gltf = await loader.loadAsync(modelPath)
+  async _load(modelPath, onProgress) {
+    const gltf = await loader.loadAsync(modelPath, onProgress)
     const root = gltf.scene
     this.group.add(root)
     // Update from the island group so collision meshes include the configured

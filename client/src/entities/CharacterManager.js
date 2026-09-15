@@ -22,7 +22,10 @@ export class CharacterManager {
 
   // Load a character GLB and activate it as the player
   // modelPath: e.g. '/assets/models/walle/walle.glb'
-  async load(modelPath, spawnPosition = [0, 1, 0], { facingDirection = null } = {}) {
+  async load(modelPath, spawnPosition = [0, 1, 0], {
+    facingDirection = null,
+    onProgress = null,
+  } = {}) {
     // Unload previous character if any
     if (this._active) {
       this.scene.remove(this._active)
@@ -30,7 +33,7 @@ export class CharacterManager {
       this.controller = null
     }
 
-    const gltf = await loader.loadAsync(modelPath)
+    const gltf = await loader.loadAsync(modelPath, onProgress)
     const root = gltf.scene
 
     root.scale.setScalar(1)
