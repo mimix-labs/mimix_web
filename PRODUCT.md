@@ -1,18 +1,19 @@
 # Mimix — contexto del producto
 
-Mimix es una experiencia web educativa e interactiva que permite explorar retos de Matemáticas y Ciencias dentro de un mundo 3D acompañado por Wall-E. Está pensada para estudiantes y docentes que usan una laptop o una instalación física basada en NVIDIA Jetson.
+Mimix es una plataforma de aprendizaje interactiva basada en retos consecutivos dentro de experiencias digitales. Un agente de aprendizaje puede acompañar a la persona mediante un personaje virtual o un robot físico opcional; Wall-E es el personaje inicial, no una dependencia del producto.
 
 ## Propósito
 
-- Hacer que el aprendizaje STEM se sienta exploratorio, tangible y entretenido.
+- Hacer que el aprendizaje se sienta exploratorio, tangible y entretenido.
 - Permitir interacción convencional con teclado y cámara, además de control por gestos y una integración opcional con robot/Jetson.
-- Llevar al estudiante desde el mundo principal hacia retos breves sin exigir conocimientos técnicos previos.
+- Permitir que nuevos retos y campañas se integren mediante contratos estables, sin acoplarlos al núcleo de la plataforma.
+- Conservar progreso individual y continuidad entre sesiones.
 
 ## Audiencia y contexto
 
-- Estudiantes que necesitan instrucciones claras, poco texto y retroalimentación inmediata.
-- Docentes o facilitadores que preparan la actividad y deben poder explicar los controles rápidamente.
-- Uso individual en laptop y uso guiado en instalaciones educativas con Jetson.
+- Personas de cualquier edad que desean aprender mediante retos interactivos.
+- Uso individual con cuenta propia; no requiere pertenecer a una institución.
+- Uso en laptop, navegador o instalación física basada en Jetson.
 
 ## Voz
 
@@ -32,6 +33,7 @@ Mimix es una experiencia web educativa e interactiva que permite explorar retos 
 - Nunca dejar al usuario frente a una carga sin estado, salida o explicación.
 - Enseñar los controles de forma progresiva y mantener la ayuda disponible.
 - Teclado y ratón siempre disponibles como alternativa a gestos o robot.
+- El personaje y el embodiment pueden cambiar sin alterar progreso, retos ni lógica pedagógica.
 - Objetivo WCAG AA para contraste, foco visible, semántica y navegación con teclado.
 
 ## Anti-referencias

@@ -2,6 +2,8 @@
 
 Mimix es una experiencia educativa 3D para explorar Matemáticas y Ciencias junto a Wall-E. Funciona en una laptop usando MediaPipe en el navegador y también puede conectarse a una NVIDIA Jetson para recibir detección de manos y comandos del robot.
 
+Este README describe la implementación actual. La evolución acordada hacia plataforma extensible, Agent Core neutral, Next.js, NestJS y modo edge está en [arquitectura objetivo](docs/architecture/target-architecture.md), con ejecución dividida en [PRs secuenciales](docs/architecture/delivery-plan.md).
+
 **Demo:** [mimix-web-production.up.railway.app](https://mimix-web-production.up.railway.app)
 
 ## Características
