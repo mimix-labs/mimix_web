@@ -1,5 +1,7 @@
 // Adaptador estático para los retos servidos desde public/. Los únicos
 // destinos reconocidos son parte del contrato de Mimix, no texto del LLM.
+import { getVisionOverrideQuery } from './robotVision.js'
+
 export function startRobotWebBridge(challenge) {
   let context = { page: 'challenge', challenge, selectedObject: null }
 
@@ -16,8 +18,7 @@ export function startRobotWebBridge(challenge) {
   }
 
   function destinationUrl(destination) {
-    const vision = new URLSearchParams(window.location.search).get('vision')
-    const query = vision === 'robot' ? '?vision=robot' : ''
+    const query = getVisionOverrideQuery()
     const destinations = {
       world: `/${query}`,
       mathematics: `/challenges/mathematics/index.html${query}`,

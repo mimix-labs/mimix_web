@@ -9,7 +9,13 @@ loader.setDRACOLoader(draco)
 
 // Places a bridge GLB without deforming its authored proportions.
 export class BridgeModel {
-  constructor({ modelPath, position, rotationY = 0, scale = [1, 1, 1] } = {}) {
+  constructor({
+    modelPath,
+    position,
+    rotationY = 0,
+    scale = [1, 1, 1],
+    onProgress = null,
+  } = {}) {
     this.group = new THREE.Group()
     this.colliders = []
     this.walkwayHalfLength = 0
@@ -22,11 +28,11 @@ export class BridgeModel {
     this.group.position.set(...position)
     this.group.rotation.y = rotationY
     this.group.scale.set(...scale)
-    this.ready = this._load(modelPath)
+    this.ready = this._load(modelPath, onProgress)
   }
 
-  async _load(modelPath) {
-    const gltf = await loader.loadAsync(modelPath)
+  async _load(modelPath, onProgress) {
+    const gltf = await loader.loadAsync(modelPath, onProgress)
     const root = gltf.scene
     root.updateMatrixWorld(true)
 

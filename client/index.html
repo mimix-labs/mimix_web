@@ -4,14 +4,36 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mimix</title>
+    <meta name="description" content="Explora Matemáticas y Ciencias en un mundo 3D interactivo junto a Wall-E." />
+    <link rel="preload" href="/assets/models/islands/home.glb" as="fetch" crossorigin />
+    <link rel="preload" href="/assets/models/islands/mathematics.glb" as="fetch" crossorigin />
+    <link rel="preload" href="/assets/models/islands/sciencie.glb" as="fetch" crossorigin />
+    <link rel="preload" href="/assets/models/resources/bridge.glb" as="fetch" crossorigin />
+    <link rel="preload" href="/assets/models/walle/walle.glb" as="fetch" crossorigin />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/ui/styles.css" />
   </head>
   <body class="overflow-hidden bg-black">
     <canvas id="canvas"></canvas>
-    <div id="world-loading" role="status" aria-live="polite">
-      <span>MIMIX</span>
+    <div id="world-loading" role="status" aria-live="polite" aria-label="Cargando Mimix">
+      <div class="loading-card">
+        <span class="loading-brand" aria-hidden="true">MIMIX</span>
+        <p id="loading-message">Preparando tu aventura…</p>
+        <div
+          id="loading-progress"
+          class="loading-progress"
+          role="progressbar"
+          aria-label="Progreso de carga"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="5"
+        >
+          <span id="loading-progress-bar" style="width: 5%"></span>
+        </div>
+        <p class="loading-hint">La primera visita puede tardar un poco. Las siguientes serán más rápidas.</p>
+        <button id="loading-retry" type="button" hidden>Volver a intentar</button>
+      </div>
     </div>
     <div id="ui"></div>
     <script type="module" src="/src/main.js"></script>

@@ -34,26 +34,28 @@ export const BRIDGE_LAYOUT = {
 // Loads the complete three-island world and treats all floor meshes as one
 // collision surface for Wall-E.
 export class SteamMap {
-  constructor(scene) {
+  constructor(scene, { onAssetProgress = null } = {}) {
     this.scene = scene
     this.homeGroundHeight = null
-    this._build()
+    this._build(onAssetProgress)
   }
 
-  _build() {
+  _build(onAssetProgress) {
     const grid = new THREE.GridHelper(42, 42, 0x333344, 0x202834)
     this.scene.add(grid)
 
     this.islands = Object.fromEntries(Object.entries(ISLAND_LAYOUT).map(([key, config]) => [
       key,
-      new IslandModel(this.scene, config.path, { position: config.position }),
+      new IslandModel(this.scene, config.path, {
+        position: config.position,
+        onProgress: event => onAssetProgress?.(key, event),
+      }),
     ]))
-
     this.islands.science.group.rotation.y = -Math.PI / 2
 
     this.bridges = [
-      this._createBridge('mathematics'),
-      this._createBridge('science'),
+      this._createBridge('mathematics', event => onAssetProgress?.('bridgeMathematics', event)),
+      this._createBridge('science', event => onAssetProgress?.('bridgeScience', event)),
     ]
     this.bridges.forEach(bridge => this.scene.add(bridge.group))
 
@@ -61,19 +63,24 @@ export class SteamMap {
     this.raycastOrigin = new THREE.Vector3()
     this.down = new THREE.Vector3(0, -1, 0)
     this.surfaceNormal = new THREE.Vector3()
-    this.ready = Promise.all([
-      ...Object.values(this.islands).map(island => island.ready),
-      ...this.bridges.map(bridge => bridge.ready),
-    ]).then(() => {
+    this.homeReady = this.islands.home.ready.then(() => {
       const [homeX, , homeZ] = ISLAND_LAYOUT.home.position
       this.homeGroundHeight = this.getGroundHeight(homeX, homeZ)
     })
+
+    // All world assets download concurrently, but the world is not revealed
+    // until every island and bridge has been parsed and attached to the scene.
+    this.ready = Promise.all([
+      ...Object.values(this.islands).map(island => island.ready),
+      ...this.bridges.map(bridge => bridge.ready),
+    ]).then(() => this.homeReady)
   }
 
-  _createBridge(key) {
+  _createBridge(key, onProgress) {
     return new BridgeModel({
       modelPath: BRIDGE_MODEL_PATH,
       ...BRIDGE_LAYOUT[key],
+      onProgress,
     })
   }
 

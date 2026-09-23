@@ -1,0 +1,200 @@
+:root {
+  --challenge-help-surface: #111a26;
+  --challenge-help-soft: #1e2938;
+  --challenge-help-text: #f7f8fa;
+  --challenge-help-muted: #b7c2d0;
+  --challenge-help-accent: #f5c400;
+  --challenge-help-focus: #8fd3ff;
+  --challenge-help-layer: 1300;
+}
+
+.challenge-help-shell,
+.challenge-help-shell * {
+  box-sizing: border-box;
+}
+
+.challenge-help-shell {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: var(--challenge-help-layer);
+  color: var(--challenge-help-text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.challenge-help-shell [hidden] {
+  display: none !important;
+}
+
+.challenge-help-panel {
+  position: relative;
+  width: min(360px, calc(100vw - 40px));
+  padding: 24px;
+  border: 1px solid #405069;
+  border-radius: 14px;
+  background: var(--challenge-help-surface);
+}
+
+.challenge-help-panel h2 {
+  max-width: 280px;
+  margin: 0;
+  color: var(--challenge-help-text);
+  font: 800 1.3rem/1.2 Inter, ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.challenge-help-panel > p {
+  margin: 10px 0 0;
+  color: var(--challenge-help-muted);
+  font: 500 0.875rem/1.5 Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.challenge-help-panel ol {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: hand-step;
+}
+
+.challenge-help-panel li {
+  position: relative;
+  min-height: 34px;
+  padding-left: 46px;
+  counter-increment: hand-step;
+}
+
+.challenge-help-panel li::before {
+  content: counter(hand-step);
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--challenge-help-accent);
+  color: #111;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.challenge-help-panel li strong,
+.challenge-help-panel li span {
+  display: block;
+}
+
+.challenge-help-panel li strong {
+  color: var(--challenge-help-text);
+  font-size: 0.875rem;
+  line-height: 1.3;
+}
+
+.challenge-help-panel li span {
+  margin-top: 3px;
+  color: var(--challenge-help-muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.challenge-help-panel .challenge-help-tip {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--challenge-help-soft);
+  color: var(--challenge-help-text);
+  font-size: 0.75rem;
+}
+
+.challenge-help-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--challenge-help-muted);
+  font: 400 1.5rem/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.challenge-help-close:hover {
+  background: var(--challenge-help-soft);
+  color: var(--challenge-help-text);
+}
+
+.challenge-help-ready,
+.challenge-help-trigger {
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--challenge-help-accent);
+  color: #111;
+  font: 800 0.875rem/1 Inter, ui-sans-serif, system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.challenge-help-ready {
+  width: 100%;
+  margin-top: 16px;
+  padding: 0 18px;
+}
+
+.challenge-help-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 15px 0 8px;
+}
+
+.challenge-help-trigger span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  background: #111;
+  color: var(--challenge-help-accent);
+}
+
+.challenge-help-ready:hover,
+.challenge-help-trigger:hover {
+  background: #ffd633;
+}
+
+.challenge-help-ready:focus-visible,
+.challenge-help-trigger:focus-visible,
+.challenge-help-close:focus-visible {
+  outline: 3px solid var(--challenge-help-focus);
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .challenge-help-shell {
+    top: 12px;
+    left: 12px;
+  }
+
+  .challenge-help-panel {
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    padding: 20px;
+    overflow: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .challenge-help-shell *,
+  .challenge-help-shell *::before,
+  .challenge-help-shell *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

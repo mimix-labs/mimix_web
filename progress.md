@@ -18,10 +18,10 @@ backend Express corre en el puerto 4000 y el cliente Vite en el puerto 5173.
 - **Integracion con robot:** el cliente mantiene un puente de eventos con el
   backend para recibir ordenes semanticas y conectar los retos con la vision
   de la Jetson.
-- **Vision nativa:** al usar `?vision=robot`, las zonas y retos reciben el
-  flujo de vision de la Jetson. Con `vision_service.py` activo, los retos
-  detectan la fuente nativa automaticamente; el parametro queda disponible
-  para forzar el modo durante depuracion.
+- **Vision configurable:** el backend usa `MIMIX_VISION_MODE=jetson` para
+  recibir el flujo nativo de la Jetson. Sin esa variable utiliza `browser` y
+  los retos ejecutan MediaPipe en la webcam de la laptop. `?vision=robot` y
+  `?vision=browser` quedan disponibles como overrides de depuracion.
 - **Tabla periodica:** se eliminaron los contenedores visuales sobrantes y el
   mensaje flotante de ayuda. El encabezado ahora dice **Explora los
   elementos**.
@@ -38,8 +38,9 @@ npm run server
 npm run client
 ```
 
-En la demostracion fisica, `mimix_robot/deploy/jetson/start_mimix.sh
---physical` inicia ambos automaticamente.
+En la demostracion fisica,
+`mimix_robot/deploy/jetson/start_mimix.sh --physical` debe iniciar el backend
+con `MIMIX_VISION_MODE=jetson`.
 
 ## Acceso desde un celular en la red local
 

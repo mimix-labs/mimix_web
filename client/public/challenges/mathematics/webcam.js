@@ -109,4 +109,3 @@ function handleHandResults(canvasElement, canvasCtx, results) {
       previousLeftFistY = null;
     }
 }
-
