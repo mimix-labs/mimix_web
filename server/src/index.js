@@ -6,8 +6,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import 'dotenv/config'
 
-const app = express()
-const PORT = process.env.PORT || 4000
+export const app = express()
+const PORT = Number.parseInt(process.env.PORT ?? '4000', 10)
 const HOST = process.env.HOST || '0.0.0.0'
 const CLIENT_DIST = fileURLToPath(new URL('../../client/dist/', import.meta.url))
 const VISION_FRAME_MAX_AGE_MS = 5000
@@ -366,10 +366,18 @@ app.get('*', (req, res, next) => {
   return res.sendFile(path.join(CLIENT_DIST, 'index.html'))
 })
 
-const server = app.listen(PORT, HOST, () => {
-  console.log(`Mimix server running on http://${HOST}:${PORT} (vision: ${visionMode})`)
-})
+export function startServer({ port = PORT, host = HOST } = {}) {
+  return app.listen(port, host, () => {
+    console.log(`Mimix server running on http://${host}:${port} (vision: ${visionMode})`)
+  })
+}
 
-process.on('SIGTERM', () => {
-  server.close(() => process.exit(0))
-})
+const isEntrypoint = process.argv[1]
+  && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+
+if (isEntrypoint) {
+  const server = startServer()
+  process.on('SIGTERM', () => {
+    server.close(() => process.exit(0))
+  })
+}
