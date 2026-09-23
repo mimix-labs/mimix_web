@@ -1,0 +1,27 @@
+---
+description: Flujo obligatorio de ramas, commits, autoría y PRs de Mimix
+alwaysApply: true
+---
+
+# Flujo Git de Mimix
+
+- Un chat implementa un solo PR o una sola hoja revisable.
+- Trabajar siempre en la rama exacta indicada por el prompt aprobado.
+- Nunca crear ni usar ramas con prefijo `codex/`.
+- Formato de rama: `<tipo>/<alcance>-<resultado>` en minúsculas y kebab-case.
+- Tipos permitidos: `feat`, `fix`, `refactor`, `docs`, `test`, `ci`, `chore`.
+- Crear ramas desde `main` actualizado, salvo dependencia apilada explícita.
+- Antes de cambiar de rama, inspeccionar estado, rama, worktrees, ramas y commits recientes.
+- Preservar cambios manuales y ajenos. No mover, descartar, sobrescribir ni hacer stash sin autorización.
+- Usar Conventional Commits: `<tipo>(<alcance>): <descripción imperativa>`.
+- Cada commit debe contener una unidad coherente y dejar validaciones relevantes pasando.
+- Mantener `user.name` y `user.email` configurados por el desarrollador. Nunca modificarlos.
+- Nunca añadir `Co-authored-by`, `Generated-by` ni atribución a Codex, agentes o modelos de IA.
+- No usar `git add .` ni `git add -A`; preparar solo archivos o hunks declarados.
+- Antes del primer commit, verificar alcance, archivos, validaciones y división propuesta de commits.
+- Crear rama, commits ordenados, push y PR queda autorizado por estas reglas; no pedir aprobación adicional.
+- Después de abrir o actualizar el PR, informar URL, commits, validaciones, riesgos y rollback.
+- Nunca hacer merge a `main`. El usuario revisa y confirma exclusivamente el merge.
+- Nunca hacer force-push, rebase destructivo ni eliminar ramas sin autorización explícita.
+- Cada PR debe incluir objetivo, alcance, no objetivos, pruebas, riesgos, rollback y documentación afectada.
+- No iniciar siguiente fase hasta que su prerrequisito esté fusionado en `main`, salvo stack explícitamente aprobado.
