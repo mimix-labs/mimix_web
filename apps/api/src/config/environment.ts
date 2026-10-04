@@ -1,6 +1,8 @@
 import { isAbsolute } from 'node:path'
 
 export interface ApiConfig {
+  dataStore: 'file' | 'postgres'
+  databaseUrl: string
   authMode: 'legacy' | 'clerk'
   allowedOrigins: string[]
   rateLimits: { anonymous: number; user: number; machine: number; landmarks: number; legacy: number }
@@ -44,11 +46,18 @@ export function parseEnvironment(env: NodeJS.ProcessEnv): ApiConfig {
     landmarks: quota('MIMIX_RATE_LIMIT_LANDMARKS', '3600'),
     legacy: quota('MIMIX_RATE_LIMIT', '1200'),
   }
+  const dataStore = env.MIMIX_DATA_STORE ?? 'file'
+  if (dataStore !== 'file' && dataStore !== 'postgres') fail('MIMIX_DATA_STORE')
+  const databaseUrl = env.DATABASE_URL ?? ''
+  if (dataStore === 'postgres') {
+    if (authMode !== 'clerk') fail('MIMIX_AUTH_MODE must be clerk for postgres')
+    try { const url = new URL(databaseUrl); if (!['postgres:', 'postgresql:'].includes(url.protocol) || !url.hostname || url.pathname.length < 2) fail('DATABASE_URL') } catch { fail('DATABASE_URL') }
+  }
   const identityFile = env.MIMIX_IDENTITY_FILE ?? ''
   const clerk = { secretKey: env.CLERK_SECRET_KEY ?? '', jwtKey: env.CLERK_JWT_KEY, issuer: env.CLERK_ISSUER ?? '', authorizedParties: [] as string[] }
   if (authMode === 'clerk') {
     if (!clerk.secretKey.startsWith('sk_')) fail('CLERK_SECRET_KEY')
-    if (!isAbsolute(identityFile)) fail('MIMIX_IDENTITY_FILE')
+    if (dataStore === 'file' && !isAbsolute(identityFile)) fail('MIMIX_IDENTITY_FILE')
     try { const issuer = new URL(clerk.issuer); if (issuer.protocol !== 'https:' || issuer.origin !== clerk.issuer) fail('CLERK_ISSUER') } catch { fail('CLERK_ISSUER') }
     clerk.authorizedParties = origins(env.CLERK_AUTHORIZED_PARTIES ?? '', 'CLERK_AUTHORIZED_PARTIES')
   }
@@ -71,7 +80,7 @@ export function parseEnvironment(env: NodeJS.ProcessEnv): ApiConfig {
   if (bridgeToken && bridgeToken === controlToken) fail('MIMIX_ROBOT_CONTROL_TOKEN must differ from bridge token')
   const logLevel = env.LOG_LEVEL ?? 'info'
   if (!['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'].includes(logLevel)) fail('LOG_LEVEL')
-  return { authMode: authMode as ApiConfig['authMode'], allowedOrigins, rateLimits, identityFile, clerk, port, host, runtime: runtime as ApiConfig['runtime'], visionMode: visionMode as ApiConfig['visionMode'], videoUrl, bridgeToken, controlToken, logLevel: logLevel as ApiConfig['logLevel'] }
+  return { dataStore: dataStore as ApiConfig['dataStore'], databaseUrl, authMode: authMode as ApiConfig['authMode'], allowedOrigins, rateLimits, identityFile, clerk, port, host, runtime: runtime as ApiConfig['runtime'], visionMode: visionMode as ApiConfig['visionMode'], videoUrl, bridgeToken, controlToken, logLevel: logLevel as ApiConfig['logLevel'] }
 }
 
 export function legacyEnvironment(config: ApiConfig): NodeJS.ProcessEnv {

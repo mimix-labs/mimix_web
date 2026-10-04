@@ -7,7 +7,7 @@ export interface IdentityProvider {
   /** Mandatory on every accepted request, after the verified actor's quota check. */
   verifySession(identity: VerifiedIdentity): Promise<void>
 }
-export interface IdentityRepository { resolve(identity: VerifiedIdentity): User }
+export interface IdentityRepository { resolve(identity: VerifiedIdentity): User | Promise<User> }
 export class IdentityError extends Error {
   constructor(readonly status: 401 | 503) { super(status === 401 ? 'invalid session' : 'identity unavailable') }
 }

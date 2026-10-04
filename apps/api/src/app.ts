@@ -9,11 +9,15 @@ import { ApiErrorFilter } from './common/error.filter.js'
 import { LegacyService } from './legacy/legacy.service.js'
 import { HttpSecurityPolicy, type IdentityDependencies } from './security/policy.js'
 import type { User } from './modules/identity/identity.contract.js'
+import { dataServices } from './database/services.js'
+import { addLearningPaths } from './modules/learning/openapi.js'
 import { addLegacyPaths } from './openapi.js'
 
 export async function createApi(config: ApiConfig, dependencies: IdentityDependencies = {}): Promise<NestFastifyApplication> {
-  const policy = new HttpSecurityPolicy(config, dependencies)
+  const services = dataServices(config, dependencies)
+  const policy = new HttpSecurityPolicy(config, services.identity)
   const adapter = new FastifyAdapter({
+    bodyLimit: 16384,
     routerOptions: { ignoreTrailingSlash: true, caseSensitive: false },
     logger: config.logLevel === 'silent' ? false : {
       level: config.logLevel,
@@ -24,7 +28,7 @@ export async function createApi(config: ApiConfig, dependencies: IdentityDepende
     },
     requestIdHeader: false,
   })
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule.register(config), adapter, {
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule.register(config, services.learning, services.close), adapter, {
     logger: config.logLevel === 'silent' ? false : new ConsoleLogger({ json: true, colors: false }),
     abortOnError: false,
   })
@@ -61,6 +65,7 @@ export async function createApi(config: ApiConfig, dependencies: IdentityDepende
     .addApiKey({ type: 'apiKey', in: 'header', name: 'X-Mimix-Robot-Token', description: 'Deprecated shared secret for the robot bridge; never a user session.' }, 'BridgeToken')
     .addApiKey({ type: 'apiKey', in: 'header', name: 'X-Mimix-Control-Token', description: 'Deprecated operator credential; distinct from bridge token.' }, 'ControlToken')
     .build()), config)
+  addLearningPaths(document, config)
   SwaggerModule.setup('api/docs', app, document, { ui: false, jsonDocumentUrl: '/api/openapi.json' })
   await app.init()
   return app
