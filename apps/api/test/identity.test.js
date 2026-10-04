@@ -16,6 +16,12 @@ function token(overrides = {}, key = privateKey) {
   return `${data}.${sign('RSA-SHA256', Buffer.from(data), key).toString('base64url')}`
 }
 
+async function authenticate(provider, value) {
+  const identity = await provider.verifyToken(value)
+  await provider.verifySession(identity)
+  return identity
+}
+
 test('first signup, concurrent login and restart preserve internal UUID without email linking', async t => {
   const { FileIdentityRepository } = await import('../dist/modules/identity/identity.repository.js')
   const dir = mkdtempSync(join(tmpdir(), 'mimix-identity-'))
@@ -37,19 +43,19 @@ test('Clerk adapter verifies real signatures, claims and live session before map
   const { ClerkIdentityProvider } = await import('../dist/modules/identity/clerk.provider.js')
   let session = { id: 'sess_one', userId: 'user_one', status: 'active', expireAt: Date.now() + 60000 }
   const provider = new ClerkIdentityProvider({ secretKey: 'sk_test_placeholder', jwtKey, issuer, authorizedParties: [origin] }, { getSession: async () => session })
-  assert.deepEqual(await provider.authenticate(token()), { provider: 'clerk', issuer, subject: 'user_one', sessionId: 'sess_one' })
+  assert.deepEqual(await authenticate(provider, token()), { provider: 'clerk', issuer, subject: 'user_one', sessionId: 'sess_one' })
   for (const claims of [{ exp: 1 }, { nbf: 9999999999 }, { iss: 'https://evil.test' }, { azp: 'https://evil.test' }, { azp: undefined }, { sid: undefined }, { sub: 'user_other' }, { sts: 'pending' }]) {
-    await assert.rejects(provider.authenticate(token(claims)), /invalid session/)
+    await assert.rejects(authenticate(provider, token(claims)), /invalid session/)
   }
-  await assert.rejects(provider.authenticate('invalid'), /invalid session/)
+  await assert.rejects(authenticate(provider, 'invalid'), /invalid session/)
   const other = generateKeyPairSync('rsa', { modulusLength: 2048 })
-  await assert.rejects(provider.authenticate(token({}, other.privateKey)), /invalid session/)
+  await assert.rejects(authenticate(provider, token({}, other.privateKey)), /invalid session/)
   session = { ...session, status: 'revoked' }
-  await assert.rejects(provider.authenticate(token()), /invalid session/)
+  await assert.rejects(authenticate(provider, token()), /invalid session/)
   session = { ...session, status: 'active', expireAt: 0 }
-  await assert.rejects(provider.authenticate(token()), /invalid session/)
+  await assert.rejects(authenticate(provider, token()), /invalid session/)
   const unavailable = new ClerkIdentityProvider({ secretKey: 'sk_test_placeholder', jwtKey, issuer, authorizedParties: [origin] }, { getSession: async () => { throw new Error('private service detail') } })
-  await assert.rejects(unavailable.authenticate(token()), /identity unavailable/)
+  await assert.rejects(authenticate(unavailable, token()), /identity unavailable/)
 })
 
 test('signed Clerk login reaches HTTP mapping and a revoked token cannot create another identity', async t => {

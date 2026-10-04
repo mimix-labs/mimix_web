@@ -3,7 +3,7 @@
 Base remota verificada: `e60d461998deabc1e89445897fc56a83b2bcc064` (PR #5 fusionado).
 Rama: `feat/identity-clerk-google`. Node 22.23.2, pnpm 10.34.6, Docker 29.1.3.
 
-## Evidencia ejecutada
+## Evidencia inicial (commit 383ed51)
 
 - `pnpm install --frozen-lockfile`: exit 0; lockfile consistente.
 - `pnpm lint`: exit 0, sin warnings ESLint.
@@ -39,6 +39,37 @@ Regresiones RED → GREEN verificadas:
   suite security 7/7 y después `pnpm check` completo verde. No hubo otros hallazgos
   Critical/Important/Minor. El veredicto original del revisor requería ese arreglo;
   el autor verificó la corrección con RED/GREEN, sin fingir una segunda aprobación.
+
+## Corrección de cuotas por actor y ruta
+
+El límite global por IP permitía que tráfico desconocido agotara la cuota de
+usuarios y máquinas detrás del proxy; además, rechazaba el frame 1201 de la
+telemetría de 30 FPS. Se sustituyó por pools independientes, sujeto firmado/ruta
+para usuarios, rol/ruta para máquinas y cuotas separadas para tráfico anónimo.
+Landmarks dispone de 3600/min por defecto. La consulta de sesión revocable ocurre
+después de la cuota del sujeto y antes del mapeo de identidad.
+
+- TDD: las nueve regresiones iniciales fallaron, incluyendo bloqueo por tráfico
+  anónimo y frame 1201 en Nest/Express, legacy/Clerk; pasaron tras el arreglo.
+- Suite nueva: 11/11, incluidos 2160 frames por combinación de runtime/modo,
+  rotación de token/sesión, rutas canónicas, X-Forwarded-For no fiable, aislamiento
+  al llenar el pool anónimo, expiración de ventanas y OpenAPI/configuración.
+- La revisión independiente encontró otro P1: OPTIONS compartía cuota de IP y
+  podía impedir el preflight autenticado. Regresión HTTP 2/2 RED → GREEN; ahora
+  los preflights de origen, ruta, método y headers permitidos están exentos.
+  Los desconocidos/malformados conservan su cuota anónima. El revisor ejecutó
+  nuevamente ambas regresiones y cerró sin Critical, Important ni Minor pendientes.
+- Verificación final tras ese arreglo: `pnpm install --frozen-lockfile` exit 0 y
+  `pnpm check` exit 0, 8/8 tareas. Son 12 pruebas raíz + 40 API + 5 contratos Nest
+  + 1 smoke de producción = 58. Incluye lint, typecheck y builds requeridos.
+- Docker reconstruido: `mimix:identity-clerk`, imagen `7164856c6af1`; smoke 4/4
+  (Nest/Express, legacy/Clerk), con aislamiento de cuotas y preflight en modo Clerk.
+- Total final: **62 pruebas**; `git diff --check` sin errores.
+
+Los límites son por proceso y requieren una réplica. Anónimos tras el mismo proxy
+comparten cuota de su clase/ruta. Health y preflights válidos requieren protección
+volumétrica en ingress; verificar la firma/JWKS antes de identificar al sujeto
+también tiene coste. La consulta BAPI de sesión sí queda limitada por sujeto/ruta.
 
 ## Límites de la evidencia y decisiones
 

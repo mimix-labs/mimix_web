@@ -23,10 +23,13 @@ for (const runtime of ['nest', 'express']) {
     const dir = mkdtempSync(join(tmpdir(), 'mimix-security-'))
     const config = parseEnvironment({ ...environment, MIMIX_IDENTITY_FILE: join(dir, 'users.json') })
     let valid = true
-    const provider = { authenticate: async value => {
+    const provider = { verifyToken: async value => {
       const { IdentityError } = await import('../dist/modules/identity/identity.contract.js')
-      if (value !== 'test-user-token' || !valid) throw new IdentityError(401)
+      if (value !== 'test-user-token') throw new IdentityError(401)
       return { provider: 'clerk', issuer: environment.CLERK_ISSUER, subject: 'user_one', sessionId: 'sess_one' }
+    }, verifySession: async () => {
+      const { IdentityError } = await import('../dist/modules/identity/identity.contract.js')
+      if (!valid) throw new IdentityError(401)
     } }
     let base, close
     if (runtime === 'nest') {
@@ -86,22 +89,20 @@ for (const runtime of ['nest', 'express']) {
   })
 }
 
-test('rate limit precedes provider calls and ignores spoofed forwarding headers', async t => {
-  let calls = 0
-  const app = await createApi(parseEnvironment({ ...environment, MIMIX_RATE_LIMIT: '2' }), { provider: { authenticate: async () => { calls++; throw new Error('secret') } } })
+test('invalid credential quota ignores spoofed forwarding headers', async t => {
+  const app = await createApi(parseEnvironment({ ...environment, MIMIX_RATE_LIMIT_ANONYMOUS: '2' }), { provider: { verifyToken: async () => { throw new Error('secret') }, verifySession: async () => { throw new Error('must not check unverified sessions') } } })
   t.after(() => app.close()); await app.listen(0, '127.0.0.1')
   const base = await app.getUrl()
   for (let n = 0; n < 2; n++) await fetch(base + '/api/identity/me', { headers: { authorization: 'Bearer invalid' } })
   const blocked = await fetch(base + '/api/identity/me', { headers: { authorization: 'Bearer invalid', 'x-forwarded-for': '1.2.3.4' } })
   assert.equal(blocked.status, 429)
   assert.ok(Number(blocked.headers.get('retry-after')) > 0)
-  assert.equal(calls, 2)
   assert.equal((await fetch(base + '/api/health')).status, 200)
 })
 
 test('unlisted native handlers stay inaccessible in compatibility and Clerk modes', async t => {
   for (const mode of ['legacy', 'clerk']) {
-    const app = await createApi(parseEnvironment({ ...environment, MIMIX_AUTH_MODE: mode }), { repository: { resolve: () => { throw new Error('must not map') } }, provider: { authenticate: async () => { throw new Error('must not authenticate') } } })
+    const app = await createApi(parseEnvironment({ ...environment, MIMIX_AUTH_MODE: mode }), { repository: { resolve: () => { throw new Error('must not map') } }, provider: { verifyToken: async () => { throw new Error('must not authenticate') }, verifySession: async () => { throw new Error('unused') } } })
     app.getHttpAdapter().get('/api/new-private-route', () => ({ private: 'must not escape' }))
     t.after(() => app.close())
     await app.listen(0, '127.0.0.1')
@@ -117,7 +118,7 @@ test('direct legacy launcher refuses Clerk mode instead of silently serving publ
 })
 
 test('OpenAPI describes the active security mode for every legacy route', async t => {
-  const app = await createApi(parseEnvironment(environment), { repository: { resolve: () => { throw new Error('unused') } }, provider: { authenticate: async () => { throw new Error('unused') } } })
+  const app = await createApi(parseEnvironment(environment), { repository: { resolve: () => { throw new Error('unused') } }, provider: { verifyToken: async () => { throw new Error('unused') }, verifySession: async () => { throw new Error('unused') } } })
   t.after(() => app.close())
   await app.listen(0, '127.0.0.1')
   const doc = await (await fetch((await app.getUrl()) + '/api/openapi.json')).json()

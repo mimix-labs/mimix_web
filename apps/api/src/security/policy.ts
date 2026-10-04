@@ -24,7 +24,35 @@ const matches = (actual: string | string[] | undefined, expected: string): boole
 export class HttpSecurityPolicy {
   private readonly provider?: IdentityProvider
   private readonly repository?: IdentityRepository
-  private readonly buckets = new Map<string, { count: number; reset: number }>()
+  // Separate bounded pools: unauthenticated cardinality cannot fill an authenticated pool.
+  private readonly buckets = {
+    anonymous: new Map<string, { count: number; reset: number }>(),
+    legacy: new Map<string, { count: number; reset: number }>(),
+    user: new Map<string, { count: number; reset: number }>(),
+    operator: new Map<string, { count: number; reset: number }>(),
+    bridge: new Map<string, { count: number; reset: number }>(),
+  }
+  private consume(pool: keyof HttpSecurityPolicy['buckets'], key: string, limit: number, headers: Record<string, string>): boolean {
+    const now = Date.now()
+    const buckets = this.buckets[pool]
+    // Entries are inserted in expiry order; stop at the first live window.
+    for (const [key, bucket] of buckets) {
+      if (bucket.reset > now) break
+      buckets.delete(key)
+    }
+    let bucket = buckets.get(key)
+    if (!bucket) {
+      if (buckets.size >= 10000) { headers['retry-after'] = '60'; return false }
+      bucket = { count: 0, reset: now + 60000 }
+      buckets.set(key, bucket)
+    }
+    if (bucket.count >= limit) {
+      headers['retry-after'] = String(Math.max(1, Math.ceil((bucket.reset - now) / 1000)))
+      return false
+    }
+    bucket.count++
+    return true
+  }
   constructor(private readonly config: ApiConfig, dependencies: IdentityDependencies = {}) {
     if (config.authMode === 'clerk') {
       this.provider = dependencies.provider ?? new ClerkIdentityProvider(config.clerk)
@@ -45,39 +73,63 @@ export class HttpSecurityPolicy {
       headers['access-control-allow-origin'] = origin
     }
     if (!api) return { headers }
-    if (path !== '/api/health') {
-      const now = Date.now()
-      for (const [key, bucket] of this.buckets) if (bucket.reset <= now) this.buckets.delete(key)
-      let bucket = this.buckets.get(request.ip)
-      if (!bucket) {
-        if (this.buckets.size >= 10000) return reject(429, 'rate limit exceeded')
-        bucket = { count: 0, reset: now + 60000 }; this.buckets.set(request.ip, bucket)
-      }
-      if (++bucket.count > this.config.rateLimit) { headers['retry-after'] = String(Math.ceil((bucket.reset - now) / 1000)); return reject(429, 'rate limit exceeded') }
-    }
+    const quota = (pool: keyof HttpSecurityPolicy['buckets'], actor: string, route: string, limit: number): PolicyResult | undefined =>
+      this.consume(pool, JSON.stringify([actor, route]), limit, headers) ? undefined : reject(429, 'rate limit exceeded')
+    const anonymous = (route: string): PolicyResult | undefined => quota('anonymous', request.ip, route, this.config.rateLimits.anonymous)
     if (request.method === 'OPTIONS') {
+      const requestedMethod = request.headers['access-control-request-method']
+      const requestedHeaders = request.headers['access-control-request-headers'] ?? ''
+      const allowedHeaders = ['authorization', 'content-type', 'x-mimix-control-token', 'x-mimix-robot-token']
+      const validPreflight = origin && typeof requestedMethod === 'string'
+        && routeAccess[`${requestedMethod === 'HEAD' ? 'GET' : requestedMethod} ${path}`]
+        && typeof requestedHeaders === 'string'
+        && requestedHeaders.split(',').every(header => !header.trim() || allowedHeaders.includes(header.trim().toLowerCase()))
+      // A browser sends no actor credential on preflight. Charging it to the proxy's
+      // shared IP would let anonymous traffic prevent authenticated requests entirely.
+      if (!validPreflight) {
+        const limited = anonymous('invalid-preflight')
+        if (limited) return limited
+      }
       headers['access-control-allow-methods'] = 'GET,HEAD,PUT,PATCH,POST,DELETE'
       headers['access-control-allow-headers'] = 'authorization,content-type,x-mimix-control-token,x-mimix-robot-token'
       return { status: 204, headers }
     }
     const method = request.method === 'HEAD' ? 'GET' : request.method
-    const access = routeAccess[`${method} ${path}`]
-    if (!access) return reject(404, 'not found')
+    const route = `${method} ${path}`
+    const access = routeAccess[route]
+    if (!access) return anonymous('unknown') ?? reject(404, 'not found')
     if (path === '/api/identity/me') headers['cache-control'] = 'no-store'
-    if (this.config.authMode === 'legacy' && path !== '/api/identity/me') return { headers }
-    if (access === 'public') return { headers }
+    if (path === '/api/health') return { headers }
+    if (access === 'public') return anonymous(route) ?? { headers }
+
+    const secret = access === 'bridge' ? this.config.bridgeToken : access === 'operator' ? this.config.controlToken : ''
+    const credential = access === 'bridge' ? request.headers['x-mimix-robot-token'] : request.headers['x-mimix-control-token']
+    // Valid machine credentials are isolated even in compatibility mode. Existing legacy
+    // handlers still enforce their original bridge/control requirements afterwards.
+    if ((access === 'bridge' || access === 'operator') && secret && matches(credential, secret)) {
+      return quota(access, access, route, path === '/api/vision/hand-landmarks' ? this.config.rateLimits.landmarks : this.config.rateLimits.machine) ?? { headers }
+    }
+    if (this.config.authMode === 'legacy' && path !== '/api/identity/me') {
+      return quota('legacy', request.ip, route, path === '/api/vision/hand-landmarks' ? this.config.rateLimits.landmarks : this.config.rateLimits.legacy) ?? { headers }
+    }
     if (access === 'user') {
       const authorization = request.headers.authorization
-      if (!authorization || !/^Bearer [^\s]+$/i.test(authorization)) return reject(401, 'invalid session')
+      if (!authorization || !/^Bearer [^\s,]+$/i.test(authorization)) return anonymous('invalid-credential') ?? reject(401, 'invalid session')
       if (!this.provider || !this.repository) return reject(503, 'identity unavailable')
+      let identity
+      try { identity = await this.provider.verifyToken(authorization.slice(7)) } catch (error) {
+        return anonymous('invalid-credential') ?? reject(error instanceof IdentityError ? error.status : 503, error instanceof IdentityError ? error.message : 'identity unavailable')
+      }
+      // Only cryptographically verified identity may select an actor quota. Neither raw
+      // token rotation nor untrusted claims/IP headers can select another user's bucket.
+      const actor = JSON.stringify([identity.provider, identity.issuer, identity.subject])
+      const limited = quota('user', actor, route, this.config.rateLimits.user)
+      if (limited) return limited
       try {
-        const identity = await this.provider.authenticate(authorization.slice(7))
+        await this.provider.verifySession(identity)
         return { headers, user: this.repository.resolve(identity) }
       } catch (error) { return reject(error instanceof IdentityError ? error.status : 503, error instanceof IdentityError ? error.message : 'identity unavailable') }
     }
-    const secret = access === 'bridge' ? this.config.bridgeToken : this.config.controlToken
-    if (!secret) return reject(503, 'required credential is not configured')
-    const header = access === 'bridge' ? 'x-mimix-robot-token' : 'x-mimix-control-token'
-    return matches(request.headers[header], secret) ? { headers } : reject(401, 'invalid credential')
+    return anonymous('invalid-credential') ?? reject(secret ? 401 : 503, secret ? 'invalid credential' : 'required credential is not configured')
   }
 }

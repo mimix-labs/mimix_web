@@ -14,10 +14,11 @@ credenciales, pérdida de UUID al reiniciar y lectura de estado global entre usu
 
 ## Contrato y decisiones
 
-- `IdentityProvider.authenticate(token)` devuelve proveedor, emisor, sujeto y sesión
-  verificados. Clerk comprueba firma, expiración, nbf, emisor exacto, azp obligatorio,
+- `IdentityProvider.verifyToken(token)` verifica firma y devuelve proveedor, emisor,
+  sujeto y sesión; `verifySession(identity)` comprueba después el estado remoto.
+  La política exige ambas etapas antes de mapear o autorizar al usuario. Clerk comprueba firma, expiración, nbf, emisor exacto, azp obligatorio,
   sujeto y sid; rechaza sesiones pendientes. Consulta `getSession` en cada petición
-  y exige sesión activa, id/sujeto coincidentes y vencimiento futuro. No hay caché
+  aceptada dentro de cuota y exige sesión activa, id/sujeto coincidentes y vencimiento futuro. No hay caché
   positiva de sesiones revocables. Un fallo BAPI devuelve 503 (404 de sesión: 401).
 - `User.id` y `ExternalIdentity.id` son UUID v4 internos. La clave externa única es
   `(provider, issuer, subject)`; nunca email. Google pertenece a Clerk, no es el
@@ -39,8 +40,12 @@ credenciales, pérdida de UUID al reiniciar y lectura de estado global entre usu
   con cookies ni query string. El frontend estático es explícitamente público.
 - Se conserva la política compartida al cambiar `MIMIX_API_RUNTIME=express`.
   El lanzador histórico directo de `server` rechaza modo Clerk sin política.
-- CORS exacto en ambos runtimes y límite por IP/minuto antes de verificar tokens.
-  No se confía en X-Forwarded-For. Mapa acotado a 10 000 IP, en memoria y por proceso.
+- CORS exacto y cuotas separadas por actor/ruta en ambos runtimes: anónimo 60/min,
+  usuario firmado 120/min, operador/bridge 600/min y landmarks 3600/min. Legacy
+  público conserva 1200/min por IP/ruta salvo landmarks. Firma antes de cuota de
+  usuario; consulta de sesión después. Cinco pools acotados e independientes evitan
+  que tráfico anónimo ocupe contadores autenticados. Configuración y límites de
+  esta protección están detallados en el runbook; no se confía en X-Forwarded-For.
 
 ## Acceso explícito por modo
 
@@ -56,7 +61,7 @@ credenciales, pérdida de UUID al reiniciar y lectura de estado global entre usu
 | POST robot/context | Público | Control de operador |
 | GET vision/status, vision/stream, vision/video | Público | Control de operador |
 | GET robot/commands/stream, robot/status | Público | Control de operador |
-| OPTIONS API | Público, sujeto a CORS y límite | Igual |
+| OPTIONS API | Público; preflight válido exento, desconocido/malformado limitado | Igual |
 | Cualquier otra ruta/método API | 404 | 404 |
 
 `Bridge` = `X-Mimix-Robot-Token`; `Control` = `X-Mimix-Control-Token`.

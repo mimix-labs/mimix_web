@@ -3,7 +3,7 @@ import { isAbsolute } from 'node:path'
 export interface ApiConfig {
   authMode: 'legacy' | 'clerk'
   allowedOrigins: string[]
-  rateLimit: number
+  rateLimits: { anonymous: number; user: number; machine: number; landmarks: number; legacy: number }
   identityFile: string
   clerk: { secretKey: string; jwtKey?: string; issuer: string; authorizedParties: string[] }
   port: number
@@ -31,9 +31,19 @@ export function parseEnvironment(env: NodeJS.ProcessEnv): ApiConfig {
   }
   const originText = env.MIMIX_ALLOWED_ORIGINS ?? (env.NODE_ENV === 'production' ? 'https://mimix-web-production.up.railway.app' : 'http://localhost:5173,http://localhost:4000')
   const allowedOrigins = origins(originText, 'MIMIX_ALLOWED_ORIGINS')
-  const rateText = env.MIMIX_RATE_LIMIT ?? '1200'
-  const rateLimit = Number(rateText)
-  if (!/^\d+$/.test(rateText) || !Number.isSafeInteger(rateLimit) || rateLimit < 1 || rateLimit > 100000) fail('MIMIX_RATE_LIMIT')
+  const quota = (field: string, fallback: string): number => {
+    const value = env[field] ?? fallback
+    const limit = Number(value)
+    if (!/^\d+$/.test(value) || !Number.isSafeInteger(limit) || limit < 1 || limit > 100000) fail(field)
+    return limit
+  }
+  const rateLimits = {
+    anonymous: quota('MIMIX_RATE_LIMIT_ANONYMOUS', '60'),
+    user: quota('MIMIX_RATE_LIMIT_USER', '120'),
+    machine: quota('MIMIX_RATE_LIMIT_MACHINE', '600'),
+    landmarks: quota('MIMIX_RATE_LIMIT_LANDMARKS', '3600'),
+    legacy: quota('MIMIX_RATE_LIMIT', '1200'),
+  }
   const identityFile = env.MIMIX_IDENTITY_FILE ?? ''
   const clerk = { secretKey: env.CLERK_SECRET_KEY ?? '', jwtKey: env.CLERK_JWT_KEY, issuer: env.CLERK_ISSUER ?? '', authorizedParties: [] as string[] }
   if (authMode === 'clerk') {
@@ -61,7 +71,7 @@ export function parseEnvironment(env: NodeJS.ProcessEnv): ApiConfig {
   if (bridgeToken && bridgeToken === controlToken) fail('MIMIX_ROBOT_CONTROL_TOKEN must differ from bridge token')
   const logLevel = env.LOG_LEVEL ?? 'info'
   if (!['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'].includes(logLevel)) fail('LOG_LEVEL')
-  return { authMode: authMode as ApiConfig['authMode'], allowedOrigins, rateLimit, identityFile, clerk, port, host, runtime: runtime as ApiConfig['runtime'], visionMode: visionMode as ApiConfig['visionMode'], videoUrl, bridgeToken, controlToken, logLevel: logLevel as ApiConfig['logLevel'] }
+  return { authMode: authMode as ApiConfig['authMode'], allowedOrigins, rateLimits, identityFile, clerk, port, host, runtime: runtime as ApiConfig['runtime'], visionMode: visionMode as ApiConfig['visionMode'], videoUrl, bridgeToken, controlToken, logLevel: logLevel as ApiConfig['logLevel'] }
 }
 
 export function legacyEnvironment(config: ApiConfig): NodeJS.ProcessEnv {

@@ -60,7 +60,7 @@ export async function createApi(config: ApiConfig, dependencies: IdentityDepende
     .setDescription('Nest/Fastify foundation with a temporary Express compatibility adapter.')
     .addApiKey({ type: 'apiKey', in: 'header', name: 'X-Mimix-Robot-Token', description: 'Deprecated shared secret for the robot bridge; never a user session.' }, 'BridgeToken')
     .addApiKey({ type: 'apiKey', in: 'header', name: 'X-Mimix-Control-Token', description: 'Deprecated operator credential; distinct from bridge token.' }, 'ControlToken')
-    .build()), config.authMode)
+    .build()), config)
   SwaggerModule.setup('api/docs', app, document, { ui: false, jsonDocumentUrl: '/api/openapi.json' })
   await app.init()
   return app

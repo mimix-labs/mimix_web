@@ -54,7 +54,8 @@ for (const runtime of ['nest', 'express']) {
       '--env', 'PORT=48004', '--env', `MIMIX_API_RUNTIME=${runtime}`, '--env', 'MIMIX_AUTH_MODE=clerk',
       '--env', 'CLERK_SECRET_KEY=sk_test_placeholder', '--env', 'CLERK_ISSUER=https://test.clerk.accounts.dev',
       '--env', 'CLERK_AUTHORIZED_PARTIES=https://mimix.test', '--env', 'MIMIX_ALLOWED_ORIGINS=https://mimix.test',
-      '--env', 'MIMIX_IDENTITY_FILE=/data/users.json', '--env', 'MIMIX_ROBOT_BRIDGE_TOKEN=fixture-bridge', image)
+      '--env', 'MIMIX_IDENTITY_FILE=/data/users.json', '--env', 'MIMIX_ROBOT_BRIDGE_TOKEN=fixture-bridge',
+      '--env', 'MIMIX_ROBOT_CONTROL_TOKEN=fixture-control', '--env', 'MIMIX_RATE_LIMIT_ANONYMOUS=2', '--env', 'MIMIX_RATE_LIMIT_MACHINE=2', image)
     t.after(() => docker('rm', '--force', id))
     const base = `http://127.0.0.1:${docker('port', id, '48004').split(':').at(-1)}`
     let ready = false
@@ -65,6 +66,15 @@ for (const runtime of ['nest', 'express']) {
     assert.ok(ready, docker('logs', id))
     assert.equal((await fetch(base + '/api/identity/me')).status, 401)
     assert.equal((await fetch(base + '/api/challenges/events', { method: 'POST' })).status, 401)
+    for (let i = 0; i < 2; i++) assert.equal((await fetch(base + `/api/unknown-${i}`)).status, 404)
+    assert.equal((await fetch(base + '/api/unknown-more', { headers: { 'x-forwarded-for': '1.2.3.4' } })).status, 429)
+    for (let i = 0; i < 3; i++) await fetch(base + '/api/unknown-preflight', { method: 'OPTIONS' })
+    const preflight = await fetch(base + '/api/robot/motion', { method: 'OPTIONS', headers: { origin: 'https://mimix.test', 'access-control-request-method': 'POST', 'access-control-request-headers': 'content-type,x-mimix-control-token' } })
+    assert.equal(preflight.status, 204)
+    const operator = { 'x-mimix-control-token': 'fixture-control' }
+    for (let i = 0; i < 2; i++) assert.equal((await fetch(base + '/api/robot/status', { headers: operator })).status, 200)
+    assert.equal((await fetch(base + '/api/robot/status', { headers: { ...operator, 'x-forwarded-for': '2.3.4.5' } })).status, 429)
+
     assert.equal((await fetch(base + '/api/robot/context', { headers: { 'x-mimix-robot-token': 'fixture-bridge' } })).status, 200)
     const denied = await fetch(base + '/api/health', { headers: { origin: 'https://evil.test' } })
     assert.equal(denied.status, 403)

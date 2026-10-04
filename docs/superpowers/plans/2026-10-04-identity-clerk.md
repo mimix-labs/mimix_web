@@ -24,7 +24,8 @@ No secretos, cambios de autoría, frontend o tokens Clerk para robot.
 ## Task 1: Identidad y persistencia
 
 Files: `apps/api/src/modules/identity/*`, `apps/api/test/identity.test.js`.
-Interfaces: `IdentityProvider.authenticate(token): Promise<VerifiedIdentity>`;
+Interfaces: `IdentityProvider.verifyToken(token): Promise<VerifiedIdentity>` y
+`verifySession(identity): Promise<void>`;
 `IdentityRepository.resolve(identity): User`; adapter Clerk y archivo durable.
 - [x] Tests de alta/login/concurrencia/reinicio, corrupción y tokens negativos; observar RED.
 - [x] Implementar contratos, adapter y repositorio; verificar GREEN.

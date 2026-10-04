@@ -9,7 +9,11 @@ Nunca usar claves secretas en Vite, imagen, argumentos CLI o repositorio.
 | --- | --- |
 | `MIMIX_AUTH_MODE` | `legacy` por defecto; `clerk` activa identidad y permisos estrictos. |
 | `MIMIX_ALLOWED_ORIGINS` | Orígenes HTTP(S) exactos separados por coma; sin ruta, comodín ni slash final. Default desarrollo: localhost:5173 y localhost:4000; producción: https://mimix-web-production.up.railway.app. Sobrescribir en otros dominios. |
-| `MIMIX_RATE_LIMIT` | Entero 1–100000; default 1200 solicitudes API por IP/minuto. Health exento. |
+| `MIMIX_RATE_LIMIT` | Default 1200/min por IP/ruta pública legacy, excepto landmarks. Se conserva la variable anterior con alcance reducido. |
+| `MIMIX_RATE_LIMIT_ANONYMOUS` | Default 60/min por IP: buckets separados para desconocidas (todas juntas), credenciales inválidas (juntas), preflight inválido y cada ruta pública. |
+| `MIMIX_RATE_LIMIT_USER` | Default 120/min por proveedor/emisor/sujeto verificado y ruta. |
+| `MIMIX_RATE_LIMIT_MACHINE` | Default 600/min por rol autenticado (operador o bridge) y ruta; no depende de IP. |
+| `MIMIX_RATE_LIMIT_LANDMARKS` | Default 3600/min para POST landmarks: por bridge autenticado, o IP en legacy. Acepta 1800/min más margen. |
 | `MIMIX_IDENTITY_FILE` | Ruta absoluta en volumen persistente, obligatoria en Clerk. Ejemplo `/data/mimix/identity.json`. |
 | `CLERK_SECRET_KEY` | Secreto de instancia del servidor, obligatorio en Clerk. |
 | `CLERK_ISSUER` | Emisor HTTPS exacto de la instancia autorizada, sin slash final. |
@@ -29,13 +33,47 @@ como dato sensible aunque no contenga credenciales. No editar mientras el servid
 esté escribiendo. Para backup consistente, detener el único escritor y copiar el
 archivo; restaurar con sus permisos antes de arrancar.
 
-El rate limit es una ventana fija de un minuto, por IP real del socket. Devuelve
-429 y `Retry-After`; no confía en headers reenviados. Tras un proxy Railway los
-clientes pueden compartir cuota: dimensionar según carga medida y complementar
-con límites en el ingress. La telemetría de 30 FPS necesita más de 1800 solicitudes
-por minuto más margen para la UI. Los límites reinician con el proceso y no son
-distribuidos. Las sesiones consultan BAPI por petición: considerar latencia y cuota
-Clerk al dimensionar; no habilitar caché positiva que oculte revocaciones.
+Todas las cuotas aceptan enteros 1–100000 y usan ventanas fijas de un minuto;
+GET/HEAD health y preflights CORS válidos de rutas inventariadas están exentos. 429 incluye `Retry-After`. Cada ruta usa método +
+pathname canónico: HEAD comparte GET, mayúsculas, slash final y query no cambian
+bucket. No hay una cuota global compartida entre tráfico anónimo, usuarios y robot.
+Los nombres arbitrarios de rutas inexistentes usan un solo bucket `unknown` por IP.
+
+Antes de consumir una cuota de usuario, el SDK verifica firma, expiración, emisor y
+azp. La clave es el sujeto **firmado**, no el JWT crudo ni un claim sin verificar.
+Después del límite se consulta siempre el estado de sesión; no se cachea una sesión
+activa. Cambiar token/sesión del mismo sujeto no restablece la cuota. Una sesión
+revocada o error BAPI consume solo la cuota de su sujeto y ruta, nunca la de otro.
+Las credenciales de operador y bridge se comparan primero; en modo Clerk las
+incorrectas consumen la cuota anónima. En legacy usan la cuota de su ruta legacy y
+el handler conserva su autenticación histórica donde corresponde. Las válidas
+tienen cuotas propias incluso en modo legacy.
+
+Hay cinco pools de memoria independientes (anónimo, legacy, usuario, operador,
+bridge), cada uno acotado a 10 000 claves; llenarlos no expulsa contadores vivos.
+Un pool lleno devuelve 429 con `Retry-After: 60` para nuevas claves de ese pool,
+sin impedir acceso a otros pools. Los límites reinician con el proceso y no son
+distribuidos. Requieren una réplica. La rotación de secreto requiere reinicio.
+
+No se confía en X-Forwarded-For ni se activa trust proxy. Tras Railway, clientes
+anónimos de la misma IP del socket siguen compartiendo cuota **en la misma clase y
+ruta**. El usuario verificado y los roles de máquina quedan aislados; sin identidad
+no se puede distinguir de forma fiable a dos anónimos tras ese proxy. Un atacante
+anónimo no consume las cuotas autenticadas enviando rutas desconocidas ni secretos
+incorrectos. El preflight no tiene credenciales de actor: si el origen, método,
+ruta y headers pedidos están permitidos, responde 204 sin gastar cuota. No accede
+a dominio ni BAPI. Preflights desconocidos/malformados comparten una cuota anónima
+independiente y no bloquean los válidos. El ingress debe controlar el abuso
+volumétrico de estas respuestas estáticas, como hace con health.
+
+La firma se verifica antes de limitar un Bearer para no permitir que una IP anónima
+sature la cuota de usuarios válidos. Esto tiene coste criptográfico; JWKS también
+puede requerir red cuando no está en caché. Configurar `CLERK_JWT_KEY` permite
+verificación local sin JWKS. La consulta de **sesión** BAPI queda después de la cuota.
+Complementar con protección de ingress y medir capacidad/latencia; el rate limit
+aplicativo no es protección completa contra DDoS. No habilitar caché positiva que
+oculte revocaciones. OpenAPI publica la cuota efectiva en `x-rate-limit` y el header
+`Retry-After` de 429, incluidos los overrides del entorno.
 
 ## Google en Clerk
 
