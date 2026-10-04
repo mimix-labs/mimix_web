@@ -1,0 +1,32 @@
+{
+  "name": "@mimix/challenge-sdk",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "mimix-challenge-validate": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "fixtures"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.types.json && tsc -p tsconfig.browser.json",
+    "test": "node --test test/*.test.js",
+    "validate": "node dist/cli.js"
+  },
+  "dependencies": {
+    "@mimix/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "typescript": "^5.9.3"
+  }
+}

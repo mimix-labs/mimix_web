@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "sdk-minimal",
+  "version": "1.0.0",
+  "title": "Dos más dos",
+  "description": "Fixture contractual: una respuesta conocida, sin UI ni hardware.",
+  "entrypoint": "index.js",
+  "objectives": [{ "id": "sum", "description": "Reconocer que dos más dos son cuatro." }],
+  "completion": { "description": "Registrar la respuesta correcta y el evento de finalización." },
+  "capabilities": { "required": ["progress"], "optional": ["agent", "embodiment"] }
+}
