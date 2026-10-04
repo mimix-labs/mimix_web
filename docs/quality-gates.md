@@ -1,6 +1,6 @@
 # Quality gates de Fase 0
 
-Los gates cubren el código actual de Express y Vite. Los comandos se ejecutan
+Los gates cubren el código de Nest/Fastify, adaptador Express y Vite. Los comandos se ejecutan
 desde la raíz con Node.js 22 y pnpm 10.34.6, orquestados por Turborepo.
 
 ## Inventario previo
@@ -34,8 +34,8 @@ pnpm check
 ```
 
 La instalación usa el único `pnpm-lock.yaml` para raíz, cliente y servidor.
-`test` cubre el shell del frontend, `/api/health` y defaults seguros de rutas
-críticas. `test:smoke` depende del build y comprueba la aplicación servida en
+`test` cubre el shell del frontend, defaults seguros, contratos HTTP/SSE contra
+Express y Nest, configuración, logging, errores y apagado con streams activos. `test:smoke` depende del build y comprueba la aplicación servida en
 producción, Matemáticas, Ciencias y el límite `/api/*`. Los gates de raíz no
 usan caché; el build de Vite almacena y restaura `client/dist`.
 
@@ -44,12 +44,12 @@ usan caché; el build de Vite almacena y restaura `client/dist`.
 El job `Quality gates` bloquea el merge cuando falla cualquiera de estos pasos:
 
 1. instalación congelada;
-2. lint de JavaScript;
-3. typecheck del servidor y los smoke tests;
-4. tests smoke sin build;
-5. build Vite;
+2. lint de JavaScript y TypeScript;
+3. typecheck estricto de `apps/api` y checkJs del adaptador y pruebas;
+4. contratos y pruebas (Turbo compila antes la API requerida);
+5. builds Vite y API;
 6. smoke test del artefacto de producción;
-7. build Docker y smoke HTTP del contenedor como usuario `node`.
+7. build Docker y smoke HTTP como usuario `node` para Nest y Express rollback.
 
 La rama `main` debe protegerse en GitHub exigiendo el check `Quality gates`.
 Esa configuración vive fuera del repositorio y debe activarla un administrador.
@@ -61,7 +61,7 @@ Esa configuración vive fuera del repositorio y debe activarla un administrador.
 - `Secret audit (informational)` escanea el historial completo con Gitleaks
   8.30.1, binario y checksum fijados. No bloquea hasta revisar falsos positivos
   y establecer un proceso de rotación.
-- El typecheck cubre el servidor y las pruebas. El cliente legacy se incorpora
+- El typecheck cubre la API TypeScript estricta, el adaptador y las pruebas existentes. El cliente legacy se incorpora
   cuando sus scripts globales se migren a módulos tipables.
 - `no-unused-vars` permanece desactivado por helpers legacy intencionalmente
   inactivos. Se vuelve obligatorio durante la migración de retos a paquetes.
@@ -78,3 +78,5 @@ la rama base verde y actualizar este documento en el mismo PR.
 
 No hay migración de datos ni contratos. El rollback de pnpm/Turbo y de sus gates
 se describe en [la guía del workspace](pnpm-workspace.md#rollback).
+
+Los detalles del backend y rollback actual están en el [runbook API](runbooks/api-foundation.md).

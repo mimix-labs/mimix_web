@@ -1,12 +1,12 @@
 # Despliegue en Railway
 
 Mimix Web se despliega como un solo servicio. El `Dockerfile` compila el
-cliente Vite y copia el resultado dentro de la imagen del backend Express. De
+cliente Vite y la API TypeScript; Nest/Fastify monta el adaptador Express temporal. De
 esta forma la web, la API y los streams SSE comparten el mismo dominio.
 
 El build usa pnpm 10.34.6 y el lockfile único con `--frozen-lockfile`. La imagen
-final conserva los enlaces de pnpm, incluye solo dependencias de producción del
-servidor y arranca Node directamente como usuario `node`. No necesita pnpm,
+final conserva los enlaces de pnpm, incluye solo dependencias de producción de
+API/adaptador y arranca Node directamente como usuario `node`. No necesita pnpm,
 Turbo ni acceso al registro npm al arrancar. El puerto y el healthcheck no cambian.
 
 Para comprobar la imagen antes de desplegar:
@@ -107,3 +107,10 @@ MIMIX_ROBOT_BRIDGE_TOKEN=token-largo-para-la-jetson
 El navegador nunca envía PWM ni pulsos de motores. Solo puede pedir `forward`,
 `backward`, `left`, `right` o `stop`. Cada movimiento vence en 300 ms y pasa por
 el nodo ROS `safety` antes de llegar al ESP32.
+
+## Fundación API
+
+El runtime por defecto es Nest/Fastify. `MIMIX_API_RUNTIME=express` restaura
+temporalmente Express con un reinicio. Health, puerto, assets y contratos de
+producto permanecen estables. OpenAPI existe solo en Nest. Validación, auth
+temporal y rollback completo: [runbook API](runbooks/api-foundation.md).

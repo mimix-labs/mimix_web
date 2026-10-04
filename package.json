@@ -7,19 +7,19 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "client": "pnpm --filter mimix-client dev",
-    "server": "pnpm --filter mimix-server dev",
-    "start": "pnpm --filter mimix-server start",
+    "server": "pnpm --filter @mimix/api dev",
+    "start": "pnpm --filter @mimix/api start",
     "install:all": "pnpm install",
     "ci:install": "pnpm install --frozen-lockfile",
     "lint": "turbo run lint:repo",
     "lint:repo": "eslint . --max-warnings 0",
-    "typecheck": "turbo run typecheck:repo",
+    "typecheck": "turbo run typecheck:repo typecheck",
     "typecheck:repo": "tsc --project jsconfig.json",
-    "test": "turbo run test:repo",
-    "test:repo": "node --test test/smoke/api.test.js test/smoke/frontend.test.js",
+    "test": "turbo run test:repo test",
+    "test:repo": "node --test test/smoke/api.test.js test/smoke/frontend.test.js test/contracts/*.test.js",
     "test:smoke": "turbo run test:production",
     "test:production": "node --test test/smoke/production.test.js",
-    "check": "turbo run lint:repo typecheck:repo test:repo test:production"
+    "check": "turbo run lint:repo typecheck:repo typecheck test:repo test test:production"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -31,7 +31,8 @@
     "globals": "^17.12.0",
     "railway": "^3.11.0",
     "turbo": "2.11.7",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "8.71.0"
   },
   "packageManager": "pnpm@10.34.6",
   "engines": {

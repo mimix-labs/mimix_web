@@ -5,12 +5,18 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "dev": "node --watch src/index.js",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "dev:legacy": "node --watch src/index.js"
   },
   "dependencies": {
     "express": "^4.19.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.0"
+  },
+  "exports": {
+    "./legacy": {
+      "types": "./src/legacy.d.ts",
+      "import": "./src/legacy.js"
+    }
   }
 }

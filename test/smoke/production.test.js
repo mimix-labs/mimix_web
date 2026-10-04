@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict'
-import { once } from 'node:events'
 import test from 'node:test'
 
-import { app } from '../../server/src/index.js'
+import { createApi } from '../../apps/api/dist/app.js'
+import { parseEnvironment } from '../../apps/api/dist/config/environment.js'
 
 test('production build serves the frontend, health and challenge routes', async () => {
-  const server = app.listen(0, '127.0.0.1')
-  await once(server, 'listening')
+  const app = await createApi(parseEnvironment({ LOG_LEVEL: 'silent' }))
+  await app.listen(0, '127.0.0.1')
+  const server = app.getHttpServer()
   const address = server.address()
   assert(address && typeof address === 'object')
   const baseUrl = `http://127.0.0.1:${address.port}`
@@ -32,8 +33,6 @@ test('production build serves the frontend, health and challenge routes', async 
     const missingApi = await fetch(`${baseUrl}/api/not-found`)
     assert.equal(missingApi.status, 404)
   } finally {
-    await new Promise((resolve, reject) => {
-      server.close((error) => error ? reject(error) : resolve(undefined))
-    })
+    await app.close()
   }
 })

@@ -2,7 +2,11 @@
 
 ## Alcance
 
-La Fase 0 convierte las tres instalaciones npm en un workspace pnpm 10.34.6,
+La fundación backend agrega ahora `apps/api` (Nest/Fastify). El diseño de la
+conversión original se conserva abajo como antecedente; scripts y runtime
+actuales se describen en el [runbook API](runbooks/api-foundation.md).
+
+La migración original de Fase 0 convirtió las tres instalaciones npm en un workspace pnpm 10.34.6,
 con Turborepo 2.11.7 para orquestar tareas. `client/` sigue siendo Vite y
 `server/` sigue siendo Express; no cambia código de producto, rutas ni contratos.
 No se crean todavía `apps/` o `packages/`: se evita mover los imports relativos,
@@ -35,13 +39,13 @@ a `esbuild`, necesario para Vite.
 
 | Comando desde raíz | Efecto |
 | --- | --- |
-| `pnpm dev` | Vite y Express en paralelo; tareas persistentes sin caché. |
+| `pnpm dev` | Vite y Nest/Fastify en paralelo; tareas persistentes sin caché. |
 | `pnpm client` / `pnpm server` | Desarrollo de un proceso, compatible con el flujo anterior. |
-| `pnpm build` | Build Vite; Turbo guarda `client/dist`. Express ejecuta JavaScript sin compilación. |
-| `pnpm start` | Servidor Express con el frontend ya compilado. |
+| `pnpm build` | Build Vite y API; Turbo guarda `client/dist` y `apps/api/dist`. |
+| `pnpm start` | API compilada con el frontend; runtime Nest o rollback Express. |
 | `pnpm lint` | ESLint en todo el repositorio. |
-| `pnpm typecheck` | TypeScript sobre servidor y pruebas con el `jsconfig.json` actual. |
-| `pnpm test` | Seis pruebas de API y shell del frontend. |
+| `pnpm typecheck` | TypeScript estricto de API y checkJs legacy/pruebas. |
+| `pnpm test` | Pruebas de API, shell y contratos de ambos runtimes. |
 | `pnpm test:smoke` | Build requerido y smoke de producción. |
 | `pnpm check` | Lint, typecheck, tests, build y smoke en un solo grafo. |
 | `pnpm ci:install` | Alias de instalación congelada. |

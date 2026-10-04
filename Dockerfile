@@ -5,29 +5,34 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY client/package.json ./client/package.json
 COPY server/package.json ./server/package.json
+COPY apps/api/package.json ./apps/api/package.json
 
-FROM base AS client-build
+FROM base AS build
 RUN pnpm install --frozen-lockfile
 COPY turbo.json ./
 COPY client/ ./client/
+COPY server/src/ ./server/src/
+COPY apps/api/tsconfig.json ./apps/api/tsconfig.json
+COPY apps/api/src/ ./apps/api/src/
 RUN pnpm build
 
 FROM base AS production-deps
-RUN pnpm --filter mimix-server install --frozen-lockfile --prod
+RUN pnpm --filter @mimix/api... install --frozen-lockfile --prod
 
 FROM node:22-alpine AS production
-
 ENV NODE_ENV=production
-WORKDIR /app/server
+WORKDIR /app
 
-# Preserve pnpm's relative symlinks into /app/node_modules/.pnpm.
-COPY --from=production-deps /app/node_modules/ /app/node_modules/
-COPY --from=production-deps /app/server/node_modules/ ./node_modules/
-COPY server/package.json ./
-COPY --chown=node:node server/src/ ./src/
-COPY --chown=node:node --from=client-build /app/client/dist/ /app/client/dist/
+# Preserve store and workspace symlinks; no package manager is needed at runtime.
+COPY --from=production-deps /app/node_modules/ ./node_modules/
+COPY --from=production-deps /app/server/node_modules/ ./server/node_modules/
+COPY --from=production-deps /app/apps/api/node_modules/ ./apps/api/node_modules/
+COPY server/package.json ./server/package.json
+COPY --chown=node:node server/src/ ./server/src/
+COPY apps/api/package.json ./apps/api/package.json
+COPY --chown=node:node --from=build /app/apps/api/dist/ ./apps/api/dist/
+COPY --chown=node:node --from=build /app/client/dist/ ./client/dist/
 
 USER node
 EXPOSE 4000
-
-CMD ["node", "src/index.js"]
+CMD ["node", "apps/api/dist/main.js"]
