@@ -2,14 +2,28 @@
   "name": "mimix",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "npm run build --prefix client",
     "client": "npm run dev --prefix client",
     "server": "npm run dev --prefix server",
     "start": "npm run start --prefix server",
-    "install:all": "npm install --prefix client && npm install --prefix server"
+    "install:all": "npm install && npm install --prefix client && npm install --prefix server",
+    "ci:install": "npm ci && npm ci --prefix client && npm ci --prefix server",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --project jsconfig.json",
+    "test": "node --test test/smoke/api.test.js test/smoke/frontend.test.js",
+    "test:smoke": "node --test test/smoke/production.test.js"
   },
   "devDependencies": {
-    "railway": "^3.11.0"
+    "@eslint/js": "^10.0.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.25",
+    "@types/node": "^24.5.2",
+    "@types/punycode": "^2.1.4",
+    "eslint": "^10.11.0",
+    "globals": "^17.12.0",
+    "railway": "^3.11.0",
+    "typescript": "^5.9.3"
   }
 }
