@@ -65,3 +65,27 @@ smokes Docker; total **72 pruebas locales** (58 + 9 + 5). No se ejecuta merge ni
 Handoff tras revisión/merge del usuario: prompt07 `feat/challenge-sdk-manifest`,
 desde main actualizado; usar challengeId/challengeVersion y schemaVersion 1 sin
 reescribir eventos anteriores. Este chat no inicia esa fase.
+
+## Estabilidad de readiness — corrección posterior a 8d55dd8
+
+La verificación coordinadora observó un fallo intermitente de runtime.test.js con
+la suite paralela: el proceso Nest no estaba listo dentro de 100 intentos separados
+por 25 ms, aunque aislado pasó cinco veces. Se extrajo la espera para reproducir
+un arranque controlado de 3 segundos; el algoritmo anterior falló. También se
+comprobó que una conexión aceptada sin respuesta podía dejar el sondeo pendiente.
+
+El helper de pruebas ahora espera una respuesta HTTP completa con deadline global
+de 15 segundos, cancela fetch y pausas al vencer o terminar el hijo y solo reintenta
+ECONNREFUSED. Conserva código/señal de salida y diagnóstico; errores HTTP y contenido
+incorrecto se comprueban una sola vez fuera del retry. No cambia código productivo.
+Cuatro regresiones cubren arranque lento, salida temprana, HTTP 503 e in-flight timeout;
+RED observado con el algoritmo anterior, GREEN 7/7 con runtimes reales incluidos.
+
+Después del ajuste final de lint (preservar la causa capturada): instalación
+congelada exit 0 y **tres `corepack pnpm check` completos consecutivos**, sin reducir
+paralelismo ni reintentar automáticamente tests fallidos: 30.000 s, 27.389 s y
+24.714 s. Cada corrida pasó 8/8 tareas y **62 pruebas** (12 raíz + 44 API + 5 contratos
+Nest + 1 producción). PostgreSQL repitió 9/9; Docker build y smoke 5/5, incluido
+backup/restauración y ambos runtimes. Total vigente: **76 pruebas**. La imagen
+productiva no cambia por archivos exclusivos de test. CI del nuevo commit se
+registra en el mismo PR #7. Sin merge ni prompt07.

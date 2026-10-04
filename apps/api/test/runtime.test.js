@@ -3,6 +3,7 @@ import { fork } from 'node:child_process'
 import { createServer } from 'node:net'
 import { once } from 'node:events'
 import test from 'node:test'
+import { waitForResponse } from './helpers/readiness.js'
 import { getPort } from '../../../test/contracts/helpers.js'
 
 for (const runtime of ['nest', 'express']) {
@@ -20,18 +21,9 @@ for (const runtime of ['nest', 'express']) {
     child.stderr.on('data', data => { output += data })
     t.after(() => { if (child.exitCode === null) child.kill('SIGKILL') })
     const base = `http://127.0.0.1:${port}`
-    let ready = false
-    for (let attempt = 0; attempt < 100; attempt++) {
-      try {
-        assert.deepEqual(await (await fetch(base + '/api/vision/config')).json(), { mode: 'jetson' })
-        ready = true
-        break
-      } catch {
-        if (child.exitCode !== null) throw new Error(output)
-        await new Promise(resolve => setTimeout(resolve, 25))
-      }
-    }
-    assert.ok(ready, output)
+    const ready = await waitForResponse(child, base + '/api/vision/config', { output: () => output })
+    assert.equal(ready.status, 200, output)
+    assert.deepEqual(JSON.parse(ready.body), { mode: 'jetson' })
     const abort = new AbortController()
     t.after(() => abort.abort())
     const response = await fetch(base + '/api/robot/commands/stream', { signal: abort.signal })
