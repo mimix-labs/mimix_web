@@ -91,7 +91,7 @@ No hay migraciones SQL ni variables/secretos nuevos. Rollback: revertir este PR 
 restaurar imagen anterior, conservando datos PostgreSQL. No se copian harness/tests
 al contenedor de producción. Compatibilidad v1 del SDK y retos actuales preservada.
 
-Un único PR hacia main; comprobar su commit final en GitHub antes de merge. CI
+[PR #9](https://github.com/mimix-labs/mimix_web/pull/9), único PR hacia main; comprobar su commit final en GitHub antes de merge. CI
 vuelve a verificar instalación, lint/tipos/tests, PostgreSQL, build, smoke/Docker
 y matriz de tres engines. Auditorías de dependencias/secretos siguen informativas
 por configuración existente. El usuario decide el merge; prompt 09 queda fuera

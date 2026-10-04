@@ -42,4 +42,8 @@
 **Files:** Dockerfile, package.json, turbo.json, .github/workflows/ci.yml, docs/architecture/challenge-runtime.md, docs/runbooks/challenge-runtime-verification.md.
 - [x] Gates congelados, unitarios/tipos, Chromium/Firefox/WebKit, smoke/Docker.
 - [x] Revisión independiente y correcciones importantes con regresión RED→GREEN.
-- [ ] Commit/push, un PR adjunto, esperar CI final; documentar límites y rollback sin merge.
+- [x] Commit/push, un PR adjunto; límites y rollback documentados sin merge.
+
+Entrega: [PR #9](https://github.com/mimix-labs/mimix_web/pull/9). Antes de cerrar
+el trabajo se exige comprobar CI sobre su commit final; el estado vivo reside en
+los checks del PR, no en una captura histórica de este documento.
