@@ -1,4 +1,11 @@
+import { isAbsolute } from 'node:path'
+
 export interface ApiConfig {
+  authMode: 'legacy' | 'clerk'
+  allowedOrigins: string[]
+  rateLimits: { anonymous: number; user: number; machine: number; landmarks: number; legacy: number }
+  identityFile: string
+  clerk: { secretKey: string; jwtKey?: string; issuer: string; authorizedParties: string[] }
   port: number
   host: string
   runtime: 'nest' | 'express'
@@ -12,6 +19,39 @@ export const API_CONFIG = Symbol('API_CONFIG')
 
 export function parseEnvironment(env: NodeJS.ProcessEnv): ApiConfig {
   const fail = (key: string): never => { throw new Error(`Invalid configuration: ${key}`) }
+  const authMode = env.MIMIX_AUTH_MODE ?? 'legacy'
+  if (authMode !== 'legacy' && authMode !== 'clerk') fail('MIMIX_AUTH_MODE')
+  const origins = (value: string, field: string): string[] => {
+    const entries = value.split(',').map(v => v.trim()).filter(Boolean)
+    if (!entries.length) fail(field)
+    for (const entry of entries) {
+      try { const url = new URL(entry); if (!['https:', 'http:'].includes(url.protocol) || url.origin !== entry) fail(field) } catch { fail(field) }
+    }
+    return entries
+  }
+  const originText = env.MIMIX_ALLOWED_ORIGINS ?? (env.NODE_ENV === 'production' ? 'https://mimix-web-production.up.railway.app' : 'http://localhost:5173,http://localhost:4000')
+  const allowedOrigins = origins(originText, 'MIMIX_ALLOWED_ORIGINS')
+  const quota = (field: string, fallback: string): number => {
+    const value = env[field] ?? fallback
+    const limit = Number(value)
+    if (!/^\d+$/.test(value) || !Number.isSafeInteger(limit) || limit < 1 || limit > 100000) fail(field)
+    return limit
+  }
+  const rateLimits = {
+    anonymous: quota('MIMIX_RATE_LIMIT_ANONYMOUS', '60'),
+    user: quota('MIMIX_RATE_LIMIT_USER', '120'),
+    machine: quota('MIMIX_RATE_LIMIT_MACHINE', '600'),
+    landmarks: quota('MIMIX_RATE_LIMIT_LANDMARKS', '3600'),
+    legacy: quota('MIMIX_RATE_LIMIT', '1200'),
+  }
+  const identityFile = env.MIMIX_IDENTITY_FILE ?? ''
+  const clerk = { secretKey: env.CLERK_SECRET_KEY ?? '', jwtKey: env.CLERK_JWT_KEY, issuer: env.CLERK_ISSUER ?? '', authorizedParties: [] as string[] }
+  if (authMode === 'clerk') {
+    if (!clerk.secretKey.startsWith('sk_')) fail('CLERK_SECRET_KEY')
+    if (!isAbsolute(identityFile)) fail('MIMIX_IDENTITY_FILE')
+    try { const issuer = new URL(clerk.issuer); if (issuer.protocol !== 'https:' || issuer.origin !== clerk.issuer) fail('CLERK_ISSUER') } catch { fail('CLERK_ISSUER') }
+    clerk.authorizedParties = origins(env.CLERK_AUTHORIZED_PARTIES ?? '', 'CLERK_AUTHORIZED_PARTIES')
+  }
   const portText = env.PORT ?? '4000'
   const port = Number(portText)
   if (!/^\d+$/.test(portText) || !Number.isInteger(port) || port < 1 || port > 65535) fail('PORT')
@@ -31,11 +71,12 @@ export function parseEnvironment(env: NodeJS.ProcessEnv): ApiConfig {
   if (bridgeToken && bridgeToken === controlToken) fail('MIMIX_ROBOT_CONTROL_TOKEN must differ from bridge token')
   const logLevel = env.LOG_LEVEL ?? 'info'
   if (!['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'].includes(logLevel)) fail('LOG_LEVEL')
-  return { port, host, runtime: runtime as ApiConfig['runtime'], visionMode: visionMode as ApiConfig['visionMode'], videoUrl, bridgeToken, controlToken, logLevel: logLevel as ApiConfig['logLevel'] }
+  return { authMode: authMode as ApiConfig['authMode'], allowedOrigins, rateLimits, identityFile, clerk, port, host, runtime: runtime as ApiConfig['runtime'], visionMode: visionMode as ApiConfig['visionMode'], videoUrl, bridgeToken, controlToken, logLevel: logLevel as ApiConfig['logLevel'] }
 }
 
 export function legacyEnvironment(config: ApiConfig): NodeJS.ProcessEnv {
   return {
+    MIMIX_CORS_ORIGINS: config.allowedOrigins.join(','),
     MIMIX_VISION_MODE: config.visionMode,
     MIMIX_VISION_VIDEO_URL: config.videoUrl,
     MIMIX_ROBOT_BRIDGE_TOKEN: config.bridgeToken,

@@ -5,6 +5,8 @@ export interface LegacyAdapter {
   close(): void
 }
 export function createLegacyApp(options?: {
+  corsEnabled?: boolean
+  beforeRoutes?: import('express').RequestHandler
   env?: NodeJS.ProcessEnv
   logger?: { info(record: object): void }
 }): LegacyAdapter

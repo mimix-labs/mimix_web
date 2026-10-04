@@ -1,8 +1,10 @@
+import type { ApiConfig } from './config/environment.js'
+import { routeAccess } from './security/policy.js'
 import type { OpenAPIObject, OperationObject, SchemaObject } from '@nestjs/swagger'
 
 // Transitional routes still run in Express, so they are documented explicitly.
 // Their behavior is pinned by the same contract suite used for both runtimes.
-export function addLegacyPaths(document: OpenAPIObject): OpenAPIObject {
+export function addLegacyPaths(document: OpenAPIObject, config: Pick<ApiConfig, 'authMode' | 'rateLimits'>): OpenAPIObject {
   const object = (properties: SchemaObject['properties'], required: string[] = []): SchemaObject => ({ type: 'object', properties, required })
   const string: SchemaObject = { type: 'string' }
   const routes: Array<[string, 'get' | 'post', string, number, SchemaObject?, string?]> = [
@@ -38,7 +40,35 @@ export function addLegacyPaths(document: OpenAPIObject): OpenAPIObject {
     }
     if (path.includes('/commands') || path === '/api/robot/motion') operation.responses['409'] = { description: 'No eligible connected recipient' }
     if (path === '/api/robot/motion') operation.responses['423'] = { description: 'Lease held by another controller' }
+    if (config.authMode === 'clerk') {
+      const access = routeAccess[`${method.toUpperCase()} ${path}`]
+      operation.security = access === 'public' ? [] : [{ [access === 'user' ? 'bearer' : access === 'bridge' ? 'BridgeToken' : 'ControlToken']: [] }]
+      operation.description = `Clerk mode. Access: ${access}. Shared robot/vision state remains restricted to bridge or operator credentials until DeviceSession. No Clerk token is sent to a robot.`
+      if (access !== 'public') {
+        operation.responses['401'] = { description: 'Missing, invalid or revoked credential' }
+        operation.responses['503'] = { description: 'Identity provider or required credential unavailable' }
+      }
+    }
     document.paths[path] = { ...document.paths[path], [method]: operation }
+  }
+  for (const [path, item] of Object.entries(document.paths)) {
+    for (const method of ['get', 'post'] as const) {
+      const operation = item[method]
+      const access = routeAccess[`${method.toUpperCase()} ${path}`]
+      if (!operation || !access || path === '/api/health') continue
+      const landmarks = path === '/api/vision/hand-landmarks'
+      const legacy = config.authMode === 'legacy' && access !== 'public' && path !== '/api/identity/me'
+      const limit = landmarks ? config.rateLimits.landmarks : access === 'public' ? config.rateLimits.anonymous : legacy ? config.rateLimits.legacy : access === 'user' ? config.rateLimits.user : config.rateLimits.machine
+      operation.responses['429'] = {
+        description: 'Actor and canonical route quota exceeded. Anonymous failures/unknown routes do not consume authenticated quotas.',
+        headers: { 'Retry-After': { description: 'Seconds until retry', schema: { type: 'integer', minimum: 1 } } },
+      }
+      Object.assign(operation, { 'x-rate-limit': {
+        windowSeconds: 60, limit, validCorsPreflightExempt: true, anonymousFailureLimit: config.rateLimits.anonymous,
+        actor: access === 'public' || legacy ? 'socket IP + canonical route' : access === 'user' ? 'verified provider/issuer/subject + canonical route' : `${access} credential + canonical route`,
+        ...(legacy && (access === 'operator' || access === 'bridge') ? { validCredentialLimit: landmarks ? config.rateLimits.landmarks : config.rateLimits.machine } : {}),
+      } })
+    }
   }
   return document
 }

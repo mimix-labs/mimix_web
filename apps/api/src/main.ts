@@ -1,14 +1,14 @@
 import { config as loadEnv } from 'dotenv'
 import { fileURLToPath } from 'node:url'
-import { createLegacyApp } from 'mimix-server/legacy'
+import { createSecuredLegacy } from './security/legacy.js'
 import { createApi } from './app.js'
-import { legacyEnvironment, parseEnvironment } from './config/environment.js'
+import { parseEnvironment } from './config/environment.js'
 
 loadEnv({ path: fileURLToPath(new URL('../../../server/.env', import.meta.url)) })
 try {
   const config = parseEnvironment(process.env)
   if (config.runtime === 'express') {
-    const legacy = createLegacyApp({ env: legacyEnvironment(config) })
+    const legacy = createSecuredLegacy(config)
     const server = legacy.app.listen(config.port, config.host)
     for (const signal of ['SIGTERM', 'SIGINT']) process.once(signal, () => {
       legacy.close()

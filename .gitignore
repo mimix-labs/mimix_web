@@ -6,3 +6,5 @@ dist/
 *.log
 graphify-out/
 .turbo/
+# Transitional identity snapshots contain account identifiers.
+.identity-data/

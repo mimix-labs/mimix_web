@@ -1,10 +1,11 @@
-import { Controller, Get } from '@nestjs/common'
+import { Controller, Get, SetMetadata } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
 @ApiTags('health')
 @Controller('api/health')
 export class HealthController {
   @Get()
+  @SetMetadata('identity:public', true)
   @ApiOkResponse({ schema: { type: 'object', required: ['status', 'project'], properties: { status: { type: 'string', enum: ['ok'] }, project: { type: 'string', enum: ['mimix'] } } } })
   health(): { status: string; project: string } {
     return { status: 'ok', project: 'mimix' }

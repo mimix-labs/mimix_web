@@ -63,6 +63,10 @@ La API valida configuración al arrancar y publica OpenAPI en
 `/api/openapi.json`. `MIMIX_API_RUNTIME=express` permite rollback temporal
 tras reiniciar. Consulta el [runbook del backend](docs/runbooks/api-foundation.md).
 
+La identidad Clerk/Google y la protección incremental de API se describen en el
+[runbook de identidad](docs/runbooks/identity-clerk.md). El modo inicial conserva
+la compatibilidad del cliente; activar Clerk requiere completar su checklist.
+
 ## Modos de visión
 
 ### Laptop o Railway
