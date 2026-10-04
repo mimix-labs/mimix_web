@@ -14,7 +14,7 @@ Nunca usar claves secretas en Vite, imagen, argumentos CLI o repositorio.
 | `MIMIX_RATE_LIMIT_USER` | Default 120/min por proveedor/emisor/sujeto verificado y ruta. |
 | `MIMIX_RATE_LIMIT_MACHINE` | Default 600/min por rol autenticado (operador o bridge) y ruta; no depende de IP. |
 | `MIMIX_RATE_LIMIT_LANDMARKS` | Default 3600/min para POST landmarks: por bridge autenticado, o IP en legacy. Acepta 1800/min más margen. |
-| `MIMIX_IDENTITY_FILE` | Ruta absoluta en volumen persistente, obligatoria en Clerk. Ejemplo `/data/mimix/identity.json`. |
+| `MIMIX_IDENTITY_FILE` | Ruta absoluta en volumen persistente, obligatoria en Clerk con MIMIX_DATA_STORE=file. Ejemplo `/data/mimix/identity.json`. |
 | `CLERK_SECRET_KEY` | Secreto de instancia del servidor, obligatorio en Clerk. |
 | `CLERK_ISSUER` | Emisor HTTPS exacto de la instancia autorizada, sin slash final. |
 | `CLERK_AUTHORIZED_PARTIES` | Orígenes de clientes autorizados; azp es obligatorio. |
@@ -25,7 +25,7 @@ Configurar CORS y azp con el origen del cliente (incluido puerto), no con el dom
 de Clerk. CORS no autentica clientes sin navegador. No aceptar `Origin: null`.
 Las respuestas con origen permitido reflejan solo ese origen y `Vary: Origin`.
 
-Mantener **un proceso y una réplica**. En Docker montar `/data` con propietario
+Con `MIMIX_DATA_STORE=file`, mantener **un proceso y una réplica**. En Docker montar `/data` con propietario
 UID/GID 1000 (usuario `node`) y permisos de escritura, idealmente 0700. No guardar
 identidades en la capa efímera de imagen. Para local usar una ruta absoluta bajo
 `.identity-data/`, ignorada por Git y Docker. El snapshot final usa 0600; respaldarlo
@@ -128,12 +128,12 @@ configuración de instancia y credenciales de despliegue.
 
 Instalar con lockfile congelado, construir y arrancar mediante `pnpm start` o
 `node apps/api/dist/main.js`. `MIMIX_API_RUNTIME=express` conserva la política y /me;
-solo retira Nest/OpenAPI. No usar `node server/src/index.js` para activación Clerk:
+retira Nest y conserva el documento OpenAPI compatible. No usar `node server/src/index.js` para activación Clerk:
 el lanzador antiguo la rechaza y solo permanece para compatibilidad legacy.
 
 Para volver de Nest a Express, mantener `MIMIX_AUTH_MODE=clerk`, las claves y el
 mismo volumen, reiniciar y verificar /health, /identity/me y rechazos de escritura.
-Para revertir la **activación** y recuperar la web actual, cambiar explícitamente
+En modo file, para revertir la **activación** y recuperar la web actual, cambiar explícitamente
 `MIMIX_AUTH_MODE=legacy` y reiniciar: reabre las excepciones públicas inventariadas,
 no borra identidades. Esta decisión reduce protección; debe ser consciente.
 
@@ -142,6 +142,10 @@ reversión, conservar el backup/volumen y recordar que esa versión no protege l
 rutas con Clerk ni aplica el nuevo CORS/límite. No hacer rollback borrando snapshots.
 Volver al código nuevo con el mismo archivo recupera los UUID existentes.
 
-Fase siguiente: importar `users` y `identities` v1 en PostgreSQL conservando ambos
+El prompt 06 añade importación de `users` y `identities` v1 en PostgreSQL conservando ambos
 UUID y unicidad `(provider, issuer, subject)`, validar conteos y referencias, hacer
-backup y sustituir `IdentityRepository`. No se implementa esa migración aquí.
+backup y sustituir `IdentityRepository`; la operación se describe en el runbook enlazado abajo.
+
+Activación SQL, importación/exportación de UUID y rollback: [runbook de aprendizaje](learning-event-store.md).
+Con `MIMIX_DATA_STORE=postgres`, el repositorio de identidad es asíncrono y transaccional;
+las cuotas HTTP siguen siendo locales y requieren una réplica.

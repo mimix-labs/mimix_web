@@ -31,6 +31,7 @@ COPY server/package.json ./server/package.json
 COPY --chown=node:node server/src/ ./server/src/
 COPY apps/api/package.json ./apps/api/package.json
 COPY --chown=node:node --from=build /app/apps/api/dist/ ./apps/api/dist/
+COPY --chown=node:node apps/api/migrations/ ./apps/api/migrations/
 COPY --chown=node:node --from=build /app/client/dist/ ./client/dist/
 
 USER node

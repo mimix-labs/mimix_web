@@ -17,6 +17,18 @@ jobs:
     name: Quality gates
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: mimix-ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -43,6 +55,11 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: PostgreSQL migrations, ownership, concurrency and reconstruction
+        run: pnpm --filter @mimix/api test:postgres
+        env:
+          MIMIX_TEST_DATABASE_URL: postgres://postgres:mimix-ci-only@127.0.0.1:5432/postgres
+
       - name: Build
         run: pnpm build
 
@@ -54,6 +71,9 @@ jobs:
 
       - name: Container smoke test (Nest and Express rollback)
         run: node --test test/smoke/container.test.js
+
+      - name: Container PostgreSQL persistence and backup restore
+        run: node --test test/smoke/postgres-container.test.js
 
   dependency-audit:
     name: Dependency audit (informational)

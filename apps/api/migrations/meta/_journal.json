@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791140657560,
+      "tag": "0000_learning-store",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791140747945,
+      "tag": "0001_immutable-history",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791140951464,
+      "tag": "0002_strict-event-payload",
+      "breakpoints": true
+    }
+  ]
+}
