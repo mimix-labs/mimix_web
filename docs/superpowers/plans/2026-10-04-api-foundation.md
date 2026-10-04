@@ -49,10 +49,19 @@ No hardware is required: MJPEG uses a local HTTP fixture, SSE uses real sockets.
   assertions failed first and passed after implementation.
 - New API uses Nest 12.1.2 and Fastify 5.12.5, compatible with existing Node 22.
 - Existing dependency resolutions retained; no existing package removed from lock.
-- Full `pnpm check`: 8 tasks, 27 test executions; Docker: both runtimes pass.
+- Full `pnpm check --force`: 8 tasks, 36 test executions including nested
+  regressions; Docker: both runtimes pass, including unmatched JSON requests.
 - `pnpm dev`: TypeScript watch, Vite proxy, OpenAPI and env propagation passed.
 - Independent review found MJPEG shutdown and status-415 regressions. Both gained
   failing reproductions, fixes and passing regressions; full suite then passed.
+- Follow-up review reproduced five JSON fallthrough timeouts and a downstream
+  MJPEG response left open after upstream disconnect. Tests failed before fixes
+  and now pass: native routing chooses the parser before handing ownership to
+  Express, and MJPEG tracking lasts until downstream close. Native parameterized
+  JSON routes, CORS and bounded shutdown are covered alongside these regressions.
+- The follow-up fix review caught Fastify preflight defaults differing from
+  Express. A failing regression now protects allowed methods, reflected headers
+  and OPTIONS without preflight headers; explicit CORS options preserve them.
 - Deferred: inherited public routes/CORS, memory-only state, hardware/ARM64 and
   deployment administration. No new domain features were introduced.
 - Final commit, PR and remote CI evidence are recorded in the PR description.

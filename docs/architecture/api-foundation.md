@@ -7,8 +7,11 @@ Base: `6dcbf94`, después del workspace pnpm/Turbo. Alcance: prompt 04.
 Un proceso NestJS sobre Fastify en `apps/api`, con TypeScript estricto,
 configuración validada antes de escuchar, logs JSON, errores sin detalles
 internos y OpenAPI. Health se implementa en Nest; el resto conserva handlers
-Express mediante middleware temporal sobre las peticiones/respuestas HTTP
-crudas. Así no se duplican estados ni se agrega un salto de red.
+Express mediante un hook `onRequest` sobre las peticiones/respuestas HTTP
+crudas. Las rutas registradas en Fastify permanecen en su ciclo nativo; para
+las demás, `reply.hijack()` entrega a Express la responsabilidad de completar
+la respuesta, incluido el 404 final. Un cuerpo nunca pasa por ambos parsers.
+Así no se duplican estados ni se agrega un salto de red.
 
 Reescribir todos los handlers a la vez ampliaría el riesgo en SSE y control
 físico. Mantener dos servidores obligaría a coordinar estado y despliegue.

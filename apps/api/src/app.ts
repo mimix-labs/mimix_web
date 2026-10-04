@@ -3,7 +3,6 @@ import { ConsoleLogger } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
-import type { IncomingMessage, ServerResponse } from 'node:http'
 import { AppModule } from './app.module.js'
 import type { ApiConfig } from './config/environment.js'
 import { ApiErrorFilter } from './common/error.filter.js'
@@ -27,14 +26,21 @@ export async function createApi(config: ApiConfig): Promise<NestFastifyApplicati
     abortOnError: false,
   })
   const legacy = app.get(LegacyService)
-  // Middie receives raw Node HTTP objects. Express owns body parsing for every
-  // legacy route; do not consume the stream in Fastify before this middleware.
-  app.use((req: IncomingMessage, res: ServerResponse, next: (error?: unknown) => void) => {
-    const path = (req.url ?? '/').split('?')[0].replace(/\/$/, '').toLowerCase()
-    if (path === '/api/health' || path === '/api/openapi.json') return next()
-    legacy.adapter.app(req, res, next)
+  // Choose the owner before either body parser runs. Registered native routes
+  // stay in Fastify; Express owns every other request through its final response.
+  adapter.getInstance().addHook('onRequest', (request, reply, done) => {
+    if (request.routeOptions.url !== undefined) return done()
+    reply.hijack()
+    legacy.adapter.app(request.raw, reply.raw, (error?: unknown) => {
+      if (reply.raw.destroyed || reply.raw.writableEnded) return
+      if (reply.raw.headersSent) return reply.raw.end()
+      reply.raw.statusCode = error ? 500 : 404
+      reply.raw.setHeader('content-type', 'application/json; charset=utf-8')
+      reply.raw.end(JSON.stringify({ error: error ? 'internal server error' : 'not found' }))
+    })
   })
-  app.enableCors()
+  // Preserve Express cors() defaults for Fastify's wildcard OPTIONS route too.
+  app.enableCors({ methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', strictPreflight: false })
   app.useGlobalFilters(new ApiErrorFilter())
   const document = addLegacyPaths(SwaggerModule.createDocument(app, new DocumentBuilder()
     .setTitle('Mimix API').setVersion('0.1.0')

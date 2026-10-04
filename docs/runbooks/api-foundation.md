@@ -44,6 +44,8 @@ los logs de ciclo de vida de Nest usan su logger JSON.
 - Los errores funcionales legacy (400/401/409/423/503) mantienen sus cuerpos.
 - API inexistente: 404; en Nest devuelve JSON. HTML de errores de Express no
   constituye un contrato cliente; su sustitución evita filtrar detalles internos.
+- Un método sin handler también devuelve 404, incluso con cuerpo JSON. El
+  adaptador completa la respuesta sin devolver el stream consumido a Fastify.
 
 ## Autenticación temporal y deprecación
 
@@ -69,7 +71,8 @@ CORS permisivo y estado de una réplica son deuda explícita, no garantías nuev
 ## Cortes siguientes
 
 Extraer grupos de handlers a sus módulos solo cuando su fase entregue contratos
-revisados. Al migrar una ruta, retirarla del middleware de compatibilidad y de la
+revisados. Las rutas registradas en Fastify tienen prioridad antes del parsing.
+Al migrar una ruta, retirar su handler del adaptador de compatibilidad y de la
 sección manual de OpenAPI, preservando el contrato o versionándolo explícitamente.
 La fundación actual migra health; el siguiente PR autorizado corresponde al
 prompt 05, no implementado aquí. Los diez módulos vacíos no exponen endpoints.
@@ -88,6 +91,8 @@ node --test test/smoke/container.test.js
 El smoke arranca Nest y Express desde la misma imagen con `PORT` personalizado,
 valida health, frontend, retos, 404 y usuario no root, y comprueba SIGTERM con SSE
 activo. Los clientes, heartbeats y upstreams se cierran antes de cerrar Fastify.
+Un corte abrupto del upstream MJPEG termina la respuesta downstream; su registro
+se conserva hasta el cierre downstream para que el apagado pueda drenarla.
 
 Rollback inmediato, autorizado por el responsable de despliegue:
 

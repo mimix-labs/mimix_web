@@ -25,6 +25,13 @@ for (const runtime of ['nest', 'express']) {
       assert.ok((await response.text()).includes(marker))
     }
     assert.equal((await fetch(base + '/api/not-found')).status, 404)
+    for (const [method, path] of [['POST', '/api/not-found'], ['POST', '/api/vision/config'], ['PUT', '/api/robot/context'], ['DELETE', '/api/robot/motion']]) {
+      const response = await fetch(base + path, {
+        method, headers: { 'content-type': 'application/json' }, body: '{}', signal: AbortSignal.timeout(1000),
+      })
+      assert.equal(response.status, 404, `${method} ${path}`)
+      await response.text()
+    }
     assert.equal(docker('exec', id, 'id', '-u'), '1000')
     if (runtime === 'nest') {
       const spec = await (await fetch(base + '/api/openapi.json')).json()

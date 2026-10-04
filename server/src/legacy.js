@@ -295,6 +295,9 @@ export function createLegacyApp({ env = process.env, logger = { info: record => 
   })
 
   app.get('/api/vision/video', (req, res) => {
+    const endDownstream = () => {
+      if (!res.destroyed && !res.writableEnded) res.end()
+    }
     const videoUrl = new URL(
       env.MIMIX_VISION_VIDEO_URL || 'http://127.0.0.1:8081/stream.mjpg',
     )
@@ -305,19 +308,27 @@ export function createLegacyApp({ env = process.env, logger = { info: record => 
         videoResponse.headers['content-type'] || 'multipart/x-mixed-replace',
       )
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+      videoResponse.once('aborted', endDownstream)
+      videoResponse.once('error', endDownstream)
+      videoResponse.once('close', () => {
+        if (!videoResponse.complete) endDownstream()
+      })
       videoResponse.pipe(res)
     })
 
     videoRequests.set(upstream, res)
-    upstream.on('close', () => videoRequests.delete(upstream))
     upstream.on('error', (error) => {
+      if (res.destroyed || res.writableEnded) return
       if (!res.headersSent) {
         res.status(503).json({ error: `vision video unavailable: ${error.message}` })
       } else {
-        res.end()
+        endDownstream()
       }
     })
-    res.on('close', () => upstream.destroy())
+    res.once('close', () => {
+      videoRequests.delete(upstream)
+      upstream.destroy()
+    })
   })
 
   // Punto de integración para los retos internos. Por ahora registra eventos
