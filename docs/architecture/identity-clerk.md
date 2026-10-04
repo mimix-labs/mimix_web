@@ -24,7 +24,7 @@ credenciales, pérdida de UUID al reiniciar y lectura de estado global entre usu
   `(provider, issuer, subject)`; nunca email. Google pertenece a Clerk, no es el
   identificador interno. Cambiar emisor o proveedor crea un vínculo nuevo: no hay
   vinculación automática de cuentas ni migración entre instancias Clerk.
-- `IdentityRepository` aísla un snapshot JSON v1 temporal. Una transacción síncrona
+- En el modo por defecto `MIMIX_DATA_STORE=file`, `IdentityRepository` aísla un snapshot JSON v1 temporal. Una transacción síncrona
   lee, resuelve o crea, escribe con permisos 0600, fsync, rename y fsync de directorio.
   Conserva UUID tras concurrencia HTTP/reinicio. Datos corruptos, huérfanos o UUID
   duplicados se rechazan; no se reinicia el archivo silenciosamente. Requiere un
@@ -72,7 +72,10 @@ usuario: DeviceSession deberá sustituirlos con grants acotados/revocables.
 
 El evento legacy solo valida y registra aceptación sin payload ni datos personales;
 no ofrece almacenamiento ni autorización de progreso por propietario. El prompt 06
-deberá usar el UUID verificado y autorizar usuario/intento antes de persistir eventos.
+añade `/api/learning/*` con UUID verificado, ownership y persistencia PostgreSQL
+activados por `MIMIX_DATA_STORE=postgres` (requiere Clerk). Véase el
+[runbook de aprendizaje](../runbooks/learning-event-store.md). En ese modo, el puerto
+IdentityRepository admite resolución asíncrona y migra UUID desde el snapshot v1.
 
 ## Límites aceptados
 

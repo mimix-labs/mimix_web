@@ -18,6 +18,7 @@
         "HOST",
         "MIMIX_*",
         "CLERK_*",
+        "DATABASE_URL",
         "LOG_LEVEL",
         "NODE_ENV"
       ]

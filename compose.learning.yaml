@@ -1,0 +1,19 @@
+# Local PostgreSQL only. Cloud uses a managed PostgreSQL service with backups/TLS.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: mimix
+      POSTGRES_USER: mimix
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD locally}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - learning-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mimix -d mimix"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  learning-postgres:

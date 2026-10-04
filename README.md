@@ -67,6 +67,10 @@ La identidad Clerk/Google y la protección incremental de API se describen en el
 [runbook de identidad](docs/runbooks/identity-clerk.md). El modo inicial conserva
 la compatibilidad del cliente; activar Clerk requiere completar su checklist.
 
+El almacén de intentos y eventos PostgreSQL se activa explícitamente con
+`MIMIX_DATA_STORE=postgres`. Migración de UUID, contratos de progreso, backup y
+rollback: [runbook de aprendizaje](docs/runbooks/learning-event-store.md).
+
 ## Modos de visión
 
 ### Laptop o Railway

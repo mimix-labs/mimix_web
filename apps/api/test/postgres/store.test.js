@@ -70,3 +70,21 @@ test('PostgreSQL event store preserves identity and serializes owned learning hi
   const page = await store.progress(user.id)
   assert.equal((await store.progress(user.id, page.items[0].attempt.id)).items.length, 1)
 })
+
+test('restricted application role can append but cannot mutate immutable history', async t => {
+  const { fixture } = await import('./support.js')
+  const { Database } = await import('../../dist/database/database.js')
+  const { LearningStore } = await import('../../dist/modules/learning/store.js')
+  const { PostgresIdentityRepository } = await import('../../dist/modules/identity/postgres.repository.js')
+  const f = await fixture(t), role = `app_${randomUUID().replaceAll('-', '')}`
+  await f.database.pool.query(`CREATE ROLE "${role}" LOGIN PASSWORD 'test-only'; GRANT USAGE ON SCHEMA public TO "${role}"; GRANT SELECT,INSERT ON users,external_identities,attempts,learning_events TO "${role}"; GRANT SELECT,INSERT,UPDATE ON attempt_progress TO "${role}"; GRANT UPDATE(id) ON attempts TO "${role}"`)
+  const url = new URL(f.url); url.username = role; url.password = 'test-only'
+  const db = new Database(url.toString())
+  t.after(async () => { await db.close(); const { Pool } = await import('pg'); const admin = new Pool({ connectionString: process.env.MIMIX_TEST_DATABASE_URL }); try { await admin.query(`DROP ROLE "${role}"`) } finally { await admin.end() } })
+  const user = await new PostgresIdentityRepository(db).resolve({ provider: 'clerk', issuer: 'https://restricted.test', subject: 'user', sessionId: 's' })
+  const store = new LearningStore(db), result = await store.create(user.id, { idempotencyKey: randomUUID(), challengeId: 'math', challengeVersion: '1' })
+  await store.append(user.id, result.attempt.id, { eventId: randomUUID(), sequence: 2, type: 'attempt_completed', payload: {} })
+  assert.equal((await store.get(user.id, result.attempt.id)).progress.status, 'completed')
+  await assert.rejects(db.pool.query('UPDATE attempts SET challenge_id=challenge_id'))
+  await assert.rejects(db.pool.query('DELETE FROM learning_events'))
+})
