@@ -23,6 +23,8 @@ subdependencias deprecadas y script opcional `@scarf/scarf` ignorado ya existía
 | `pnpm test:smoke` | 1/1; producción sirve aplicación y ambos retos |
 | `pnpm check` | 14 tareas completadas |
 | `pnpm --filter @mimix/api test:postgres` | 9/9 con PostgreSQL 17 desechable |
+| `docker build --tag mimix:challenge-sdk .` | OK; incluye contratos en runtime |
+| Smoke Docker Nest/Express y PostgreSQL | 5/5; incluye persistencia y backup/restore |
 | CLI del fixture | JSON `ok: true`, exit 0 |
 | Consumidor temporal con tarballs | Instala ambos paquetes y ejecuta bin `mimix-challenge-validate` |
 
@@ -59,6 +61,13 @@ real a través de un bridge. Los tests PostgreSQL cubren el backend real existen
 `pnpm dev` y `pnpm server` compilan la dependencia compartida antes de arrancar
 API; un consumidor que invoque directamente scripts de paquete debe preparar
 sus dependencias de workspace. No se necesitan migraciones SQL ni nuevas variables.
+
+## CI y PR
+
+PR: https://github.com/mimix-labs/mimix_web/pull/8. El CI vuelve a ejecutar instalación
+congelada, lint, tipos, tests, PostgreSQL, build y smoke de producción/Docker. El
+resultado vigente debe comprobarse sobre el commit final en los checks del PR;
+las auditorías de dependencias y secretos son informativas por configuración previa.
 
 ## Handoff
 

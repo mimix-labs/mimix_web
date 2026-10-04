@@ -50,4 +50,7 @@
 - [x] Documentar API, comandos, matriz previa y responsabilidades pendientes exactas.
 - [x] Ejecutar instalación congelada, lint/typecheck/tests/build/smoke/check, PostgreSQL y Docker aplicables.
 - [x] Revisión independiente de diff completo; corregir importantes con RED→GREEN.
-- [ ] Commit, push, un PR a main, adjuntar y esperar CI. Registrar evidencia y riesgos sin merge.
+- [x] Commit, push y un PR a main adjunto; evidencia y riesgos registrados sin merge.
+
+Gate de cierre: esperar CI del commit final y reportarlo junto al PR. El resultado
+es dinámico y se consulta en los checks del PR #8.
