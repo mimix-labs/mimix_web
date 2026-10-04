@@ -4,16 +4,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npm run build --prefix client",
-    "client": "npm run dev --prefix client",
-    "server": "npm run dev --prefix server",
-    "start": "npm run start --prefix server",
-    "install:all": "npm install && npm install --prefix client && npm install --prefix server",
-    "ci:install": "npm ci && npm ci --prefix client && npm ci --prefix server",
-    "lint": "eslint . --max-warnings 0",
-    "typecheck": "tsc --project jsconfig.json",
-    "test": "node --test test/smoke/api.test.js test/smoke/frontend.test.js",
-    "test:smoke": "node --test test/smoke/production.test.js"
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "client": "pnpm --filter mimix-client dev",
+    "server": "pnpm --filter mimix-server dev",
+    "start": "pnpm --filter mimix-server start",
+    "install:all": "pnpm install",
+    "ci:install": "pnpm install --frozen-lockfile",
+    "lint": "turbo run lint:repo",
+    "lint:repo": "eslint . --max-warnings 0",
+    "typecheck": "turbo run typecheck:repo",
+    "typecheck:repo": "tsc --project jsconfig.json",
+    "test": "turbo run test:repo",
+    "test:repo": "node --test test/smoke/api.test.js test/smoke/frontend.test.js",
+    "test:smoke": "turbo run test:production",
+    "test:production": "node --test test/smoke/production.test.js",
+    "check": "turbo run lint:repo typecheck:repo test:repo test:production"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -24,6 +30,11 @@
     "eslint": "^10.11.0",
     "globals": "^17.12.0",
     "railway": "^3.11.0",
+    "turbo": "2.11.7",
     "typescript": "^5.9.3"
+  },
+  "packageManager": "pnpm@10.34.6",
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -1,6 +1,6 @@
 # Progreso de Mimix Web
 
-Actualizado: 27 de julio de 2026.
+Actualizado: 4 de octubre de 2026.
 
 ## Estado actual
 
@@ -34,8 +34,8 @@ backend Express corre en el puerto 4000 y el cliente Vite en el puerto 5173.
 Desde este repositorio se pueden iniciar los dos procesos de forma separada:
 
 ```bash
-npm run server
-npm run client
+pnpm server
+pnpm client
 ```
 
 En la demostracion fisica,
@@ -61,11 +61,13 @@ usa como pantalla e interfaz remota.
 
 ## Dependencias y control de cambios
 
-- Las dependencias reales estan bloqueadas en `client/package-lock.json` y
-  `server/package-lock.json`.
-- El `package-lock.json` de la raiz no contiene dependencias y se ignora para
-  evitar versionar un archivo vacio generado por ejecutar `npm install` en la
-  carpeta equivocada.
+- Fase 0: workspace pnpm 10.34.6 y Turborepo 2.11.7 sobre `client/` y `server/`.
+- Un único `pnpm-lock.yaml`; instalación con `pnpm install --frozen-lockfile`.
+- `pnpm dev` inicia ambas aplicaciones y `pnpm check` ejecuta lint, typecheck,
+  seis pruebas, build y smoke de producción. CI valida también Docker.
+- No se movieron fuentes ni se migró Express/Vite. La siguiente fase es el
+  prompt 04 (`refactor/api-nestjs-foundation`), solo tras el merge de este PR.
+- Migración, límites actuales y rollback en `docs/pnpm-workspace.md`.
 
 ## Archivos de referencia
 
