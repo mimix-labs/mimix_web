@@ -8,7 +8,11 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test test/*.test.js && MIMIX_CONTRACT_RUNTIME=nest node --test ../../test/contracts/legacy.test.js",
-    "start": "node dist/main.js"
+    "start": "node dist/main.js",
+    "test:postgres": "node --test test/postgres/*.test.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node dist/database/cli.js migrate",
+    "db:rebuild": "node dist/database/cli.js rebuild"
   },
   "dependencies": {
     "@clerk/backend": "3.22.0",
@@ -17,14 +21,20 @@
     "@nestjs/platform-fastify": "12.1.2",
     "@nestjs/swagger": "12.0.2",
     "dotenv": "^16.4.0",
+    "drizzle-orm": "0.45.3",
+    "express": "4.22.1",
     "fastify": "5.12.5",
     "mimix-server": "workspace:*",
+    "pg": "8.23.1",
     "reflect-metadata": "0.2.2",
-    "rxjs": "7.8.2"
+    "rxjs": "7.8.2",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@types/express": "^4.17.25",
     "@types/node": "^24.5.2",
+    "@types/pg": "8.23.1",
+    "drizzle-kit": "0.31.11",
     "tsx": "4.23.15",
     "typescript": "^5.9.3"
   }
