@@ -21,6 +21,9 @@
         "DATABASE_URL",
         "LOG_LEVEL",
         "NODE_ENV"
+      ],
+      "dependsOn": [
+        "^build"
       ]
     },
     "//#lint:repo": {
@@ -49,7 +52,16 @@
       "cache": false
     },
     "typecheck": {
-      "cache": false
+      "cache": false,
+      "dependsOn": [
+        "^build"
+      ]
+    },
+    "@mimix/challenge-sdk#typecheck": {
+      "cache": false,
+      "dependsOn": [
+        "build"
+      ]
     }
   }
 }

@@ -7,7 +7,7 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "client": "pnpm --filter mimix-client dev",
-    "server": "pnpm --filter @mimix/api dev",
+    "server": "turbo run dev --filter @mimix/api",
     "start": "pnpm --filter @mimix/api start",
     "install:all": "pnpm install",
     "ci:install": "pnpm install --frozen-lockfile",

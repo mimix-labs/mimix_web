@@ -71,6 +71,10 @@ El almacén de intentos y eventos PostgreSQL se activa explícitamente con
 `MIMIX_DATA_STORE=postgres`. Migración de UUID, contratos de progreso, backup y
 rollback: [runbook de aprendizaje](docs/runbooks/learning-event-store.md).
 
+## Challenge SDK
+
+Los nuevos contratos y el SDK neutral se documentan en [Challenge SDK v1](docs/architecture/challenge-sdk.md). Incluyen manifest, CLI y fixture de referencia; Matemáticas y Ciencias conservan su implementación actual.
+
 ## Modos de visión
 
 ### Laptop o Railway
@@ -119,10 +123,12 @@ client/                    Aplicación Vite, mundo Three.js y retos
   src/                     Escena principal, entidades, sistemas y UI
   public/challenges/       Experiencias de Matemáticas y Ciencias
 apps/api/                  API Nest/Fastify, configuración, health y OpenAPI
+packages/contracts/        Esquemas Zod compartidos de retos y aprendizaje
+packages/challenge-sdk/    API pública de retos, CLI y fixture mínimo
 server/                    Adaptador Express temporal: SSE y puente de visión/robot
 docs/                      Arquitectura, integración y despliegue
 .railway/railway.ts        Infraestructura de Railway
-pnpm-workspace.yaml        Workspace actual: client, server y apps/*
+pnpm-workspace.yaml        Workspace actual: client, server, apps/* y packages/*
 pnpm-lock.yaml             Único lockfile del repositorio
 turbo.json                 Orquestación de tareas y caché del build
 Dockerfile                 Build de producción
