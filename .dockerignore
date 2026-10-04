@@ -13,3 +13,7 @@ graphify-out
 **/.env.*
 !**/.env.example
 .identity-data
+
+**/harness-dist
+**/test-results
+**/playwright-report

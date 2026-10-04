@@ -44,7 +44,7 @@ aborta operaciones pendientes. Revocar required cancela instancia. La política 
 usuario/intento/lease físico sigue en adaptador/backend, no en el reto.
 
 Cada operación recibe AbortSignal y una clave session:id que el adaptador puede
-usar para idempotencia. Máximo 8 llamadas simultáneas, 1000 por instancia, 16 KiB
+usar para idempotencia. Máximo 8 llamadas simultáneas, 1000 por instancia, 16384 unidades UTF-16
 por mensaje. Timeouts de carga/hook/operación (default 5s, configurable 50–30000ms).
 Timeout/cancelación abortan trabajo y suprimen respuestas tardías; un adaptador
 que ignore AbortSignal puede haber completado efectos: no se reintenta solo.

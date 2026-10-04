@@ -26,20 +26,20 @@
 
 **Files:** packages/contracts/src/runtime.ts; packages/challenge-runtime/{package.json,tsconfig.json,src/policy.ts,test/policy.test.js}.
 **Interfaces:** Esquemas hello/connect, childMessage, hostMessage; resolveGrants(manifest,approved,available), validateBundle.
-- [ ] Escribir tests de versiones/campos desconocidos, payloads, grants, bundle.
-- [ ] Observar RED, implementar y ejecutar tests hasta GREEN.
+- [x] Escribir tests de versiones/campos desconocidos, payloads, grants, bundle.
+- [x] Observar RED, implementar y ejecutar tests hasta GREEN.
 
 ### Task 2: Host y bootstrap
 
 **Files:** packages/challenge-runtime/src/{host,child,frame,index}.ts; scripts/build.mjs; harness/*; test/browser/*.spec.ts.
 **Interfaces:** mountChallenge(options)→RuntimeHandle con ready/state/start/pause/resume/dispose/cancel/revoke; HostAdapters con señal y requestId.
-- [ ] Escribir prueba navegador fixture/estados y rechazo de hostiles; observar RED.
-- [ ] Implementar framing/CSP/handshake, canal, RPC autorizado y lifecycle con deadlines.
-- [ ] Añadir pruebas RED→GREEN de revocación, timeout, cancelación y aislamiento real.
+- [x] Escribir prueba navegador fixture/estados y rechazo de hostiles; observar RED.
+- [x] Implementar framing/CSP/handshake, canal, RPC autorizado y lifecycle con deadlines.
+- [x] Añadir pruebas RED→GREEN de revocación, timeout, cancelación y aislamiento real.
 
 ### Task 3: Integración y entrega
 
 **Files:** Dockerfile, package.json, turbo.json, .github/workflows/ci.yml, docs/architecture/challenge-runtime.md, docs/runbooks/challenge-runtime-verification.md.
-- [ ] Gates congelados, unitarios/tipos, Chromium/Firefox/WebKit, smoke/Docker.
-- [ ] Revisión independiente y correcciones importantes con regresión RED→GREEN.
+- [x] Gates congelados, unitarios/tipos, Chromium/Firefox/WebKit, smoke/Docker.
+- [x] Revisión independiente y correcciones importantes con regresión RED→GREEN.
 - [ ] Commit/push, un PR adjunto, esperar CI final; documentar límites y rollback sin merge.

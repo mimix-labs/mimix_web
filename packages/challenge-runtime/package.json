@@ -1,0 +1,14 @@
+{
+  "name": "@mimix/challenge-runtime", "version": "1.0.0", "private": true, "type": "module",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.types.json --noEmit",
+    "test": "node --test test/*.test.js",
+    "test:browser": "playwright test",
+    "harness": "node harness/server.mjs"
+  },
+  "dependencies": { "@mimix/contracts": "workspace:*", "@mimix/challenge-sdk": "workspace:*", "zod": "4.6.5" },
+  "devDependencies": { "@playwright/test": "1.63.0", "esbuild": "0.28.2", "typescript": "^5.9.3", "@types/node": "^24.5.2" }
+}

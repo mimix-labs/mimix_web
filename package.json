@@ -19,7 +19,8 @@
     "test:repo": "node --test test/smoke/api.test.js test/smoke/frontend.test.js test/contracts/*.test.js",
     "test:smoke": "turbo run test:production",
     "test:production": "node --test test/smoke/production.test.js",
-    "check": "turbo run lint:repo typecheck:repo typecheck test:repo test test:production"
+    "check": "turbo run lint:repo typecheck:repo typecheck test:repo test test:production",
+    "test:browser": "turbo run test:browser --filter @mimix/challenge-runtime"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
