@@ -114,3 +114,10 @@ El runtime por defecto es Nest/Fastify. `MIMIX_API_RUNTIME=express` restaura
 temporalmente Express con un reinicio. Health, puerto, assets y contratos de
 producto permanecen estables. OpenAPI existe solo en Nest. Validación, auth
 temporal y rollback completo: [runbook API](runbooks/api-foundation.md).
+
+## Identidad incremental
+
+Para activar Clerk/Google, montar primero el volumen de identidad, configurar los
+orígenes del despliegue y completar el [runbook de identidad](runbooks/identity-clerk.md).
+El default `MIMIX_AUTH_MODE=legacy` conserva el cliente actual. El rollback Express
+del entrypoint API mantiene la política de autenticación configurada.

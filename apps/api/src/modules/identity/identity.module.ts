@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
-
-// Domain boundary only; behavior is introduced in its delivery phase.
-@Module({})
+import { APP_GUARD } from '@nestjs/core'
+import { IdentityController } from './identity.controller.js'
+import { IdentityGuard } from './identity.guard.js'
+@Module({ controllers: [IdentityController], providers: [{ provide: APP_GUARD, useClass: IdentityGuard }] })
 export class IdentityModule {}

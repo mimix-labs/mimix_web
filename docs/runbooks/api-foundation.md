@@ -49,6 +49,10 @@ los logs de ciclo de vida de Nest usan su logger JSON.
 
 ## Autenticación temporal y deprecación
 
+**Actualización prompt 05:** la política vigente, CORS, límites y rollback seguro
+están en [identidad Clerk](identity-clerk.md). El resto de esta sección registra
+la línea base del prompt 04; sus rutas públicas solo continúan en modo `legacy`.
+
 Las políticas se centralizan en `server/src/bridge-auth.js`, con comparación de
 hashes en tiempo constante. Se mantienen **dos roles distintos**:
 

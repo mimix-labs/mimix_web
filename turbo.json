@@ -17,6 +17,7 @@
         "PORT",
         "HOST",
         "MIMIX_*",
+        "CLERK_*",
         "LOG_LEVEL",
         "NODE_ENV"
       ]

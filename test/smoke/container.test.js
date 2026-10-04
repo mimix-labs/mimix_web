@@ -47,3 +47,31 @@ for (const runtime of ['nest', 'express']) {
     assert.equal((await reader.read()).done, true)
   })
 }
+
+for (const runtime of ['nest', 'express']) {
+  test(`production container enforces Clerk policy before legacy handlers: ${runtime}`, { timeout: 30000 }, async t => {
+    const id = docker('run', '--detach', '--publish', '127.0.0.1::48004', '--tmpfs', '/data:uid=1000,gid=1000,mode=0700',
+      '--env', 'PORT=48004', '--env', `MIMIX_API_RUNTIME=${runtime}`, '--env', 'MIMIX_AUTH_MODE=clerk',
+      '--env', 'CLERK_SECRET_KEY=sk_test_placeholder', '--env', 'CLERK_ISSUER=https://test.clerk.accounts.dev',
+      '--env', 'CLERK_AUTHORIZED_PARTIES=https://mimix.test', '--env', 'MIMIX_ALLOWED_ORIGINS=https://mimix.test',
+      '--env', 'MIMIX_IDENTITY_FILE=/data/users.json', '--env', 'MIMIX_ROBOT_BRIDGE_TOKEN=fixture-bridge', image)
+    t.after(() => docker('rm', '--force', id))
+    const base = `http://127.0.0.1:${docker('port', id, '48004').split(':').at(-1)}`
+    let ready = false
+    for (let attempt = 0; attempt < 60; attempt++) {
+      try { assert.equal((await fetch(base + '/api/health')).status, 200); ready = true; break }
+      catch { await new Promise(resolve => setTimeout(resolve, 100)) }
+    }
+    assert.ok(ready, docker('logs', id))
+    assert.equal((await fetch(base + '/api/identity/me')).status, 401)
+    assert.equal((await fetch(base + '/api/challenges/events', { method: 'POST' })).status, 401)
+    assert.equal((await fetch(base + '/api/robot/context', { headers: { 'x-mimix-robot-token': 'fixture-bridge' } })).status, 200)
+    const denied = await fetch(base + '/api/health', { headers: { origin: 'https://evil.test' } })
+    assert.equal(denied.status, 403)
+    assert.equal(denied.headers.get('access-control-allow-origin'), null)
+    const allowed = await fetch(base + '/api/vision/config', { headers: { origin: 'https://mimix.test' } })
+    assert.equal(allowed.headers.get('access-control-allow-origin'), 'https://mimix.test')
+    docker('stop', '--time', '5', id)
+    assert.equal(docker('inspect', '--format', '{{.State.ExitCode}}', id), '0')
+  })
+}

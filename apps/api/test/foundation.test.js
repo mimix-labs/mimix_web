@@ -34,26 +34,26 @@ test('unmatched JSON requests return 404 and allow shutdown without client abort
 
 test('native routes own JSON parsing while legacy and preflight remain reachable', async t => {
   const app = await module.createApi(config.parseEnvironment({ LOG_LEVEL: 'silent' }))
-  app.getHttpAdapter().post('/api/native/:id', request => ({ id: request.params.id, body: request.body }))
+  app.getHttpAdapter().post('/api/challenges/events', request => ({ body: request.body }))
   t.after(() => app.close())
   await app.listen(0, '127.0.0.1')
   const base = await app.getUrl()
-  const native = await fetch(base + '/API/native/example/?source=test', {
+  const native = await fetch(base + '/API/challenges/events/?source=test', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"value":42}', signal: AbortSignal.timeout(1000),
   })
   assert.equal(native.status, 200)
-  assert.deepEqual(await native.json(), { id: 'example', body: { value: 42 } })
+  assert.deepEqual(await native.json(), { body: { value: 42 } })
   assert.deepEqual(await (await fetch(base + '/API/vision/config/?source=test')).json(), { mode: 'browser' })
   for (const headers of [
-    { origin: 'https://example.test', 'access-control-request-method': 'DELETE', 'access-control-request-headers': 'content-type,x-mimix-control-token' },
-    { origin: 'https://example.test', 'access-control-request-method': 'PUT' },
+    { origin: 'http://localhost:5173', 'access-control-request-method': 'DELETE', 'access-control-request-headers': 'content-type,x-mimix-control-token' },
+    { origin: 'http://localhost:5173', 'access-control-request-method': 'PUT' },
     {},
   ]) {
     const preflight = await fetch(base + '/api/robot/motion', { method: 'OPTIONS', headers })
     assert.equal(preflight.status, 204)
-    assert.equal(preflight.headers.get('access-control-allow-origin'), '*')
+    assert.equal(preflight.headers.get('access-control-allow-origin'), headers.origin ?? null)
     assert.equal(preflight.headers.get('access-control-allow-methods'), 'GET,HEAD,PUT,PATCH,POST,DELETE')
-    if (headers['access-control-request-headers']) assert.equal(preflight.headers.get('access-control-allow-headers'), headers['access-control-request-headers'])
+    if (headers['access-control-request-headers']) assert.ok(headers['access-control-request-headers'].split(',').every(header => preflight.headers.get('access-control-allow-headers').includes(header)))
   }
 })
 
@@ -98,10 +98,10 @@ test('application close drains an active legacy SSE connection', async t => {
 
 test('unexpected exceptions are generic and do not expose internals', async t => {
   const app = await module.createApi(config.parseEnvironment({ LOG_LEVEL: 'silent' }))
-  app.getHttpAdapter().get('/api/test-error', () => { throw new Error('private-internal-value') })
+  app.getHttpAdapter().get('/api/vision/config', () => { throw new Error('private-internal-value') })
   t.after(() => app.close())
   await app.listen(0, '127.0.0.1')
-  const response = await fetch((await app.getUrl()) + '/api/test-error')
+  const response = await fetch((await app.getUrl()) + '/api/vision/config')
   assert.equal(response.status, 500)
   assert.deepEqual(await response.json(), { error: 'internal server error' })
 })

@@ -1,8 +1,9 @@
+import { routeAccess } from './security/policy.js'
 import type { OpenAPIObject, OperationObject, SchemaObject } from '@nestjs/swagger'
 
 // Transitional routes still run in Express, so they are documented explicitly.
 // Their behavior is pinned by the same contract suite used for both runtimes.
-export function addLegacyPaths(document: OpenAPIObject): OpenAPIObject {
+export function addLegacyPaths(document: OpenAPIObject, authMode: 'legacy' | 'clerk' = 'legacy'): OpenAPIObject {
   const object = (properties: SchemaObject['properties'], required: string[] = []): SchemaObject => ({ type: 'object', properties, required })
   const string: SchemaObject = { type: 'string' }
   const routes: Array<[string, 'get' | 'post', string, number, SchemaObject?, string?]> = [
@@ -38,6 +39,16 @@ export function addLegacyPaths(document: OpenAPIObject): OpenAPIObject {
     }
     if (path.includes('/commands') || path === '/api/robot/motion') operation.responses['409'] = { description: 'No eligible connected recipient' }
     if (path === '/api/robot/motion') operation.responses['423'] = { description: 'Lease held by another controller' }
+    operation.responses['429'] = { description: 'Per-IP rate limit exceeded; retry after the Retry-After header' }
+    if (authMode === 'clerk') {
+      const access = routeAccess[`${method.toUpperCase()} ${path}`]
+      operation.security = access === 'public' ? [] : [{ [access === 'user' ? 'bearer' : access === 'bridge' ? 'BridgeToken' : 'ControlToken']: [] }]
+      operation.description = `Clerk mode. Access: ${access}. Shared robot/vision state remains restricted to bridge or operator credentials until DeviceSession. No Clerk token is sent to a robot.`
+      if (access !== 'public') {
+        operation.responses['401'] = { description: 'Missing, invalid or revoked credential' }
+        operation.responses['503'] = { description: 'Identity provider or required credential unavailable' }
+      }
+    }
     document.paths[path] = { ...document.paths[path], [method]: operation }
   }
   return document

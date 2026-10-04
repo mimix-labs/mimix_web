@@ -8,9 +8,12 @@ import { createBridgeAuth } from './bridge-auth.js'
 
 
 /**
- * @param {{ env?: NodeJS.ProcessEnv, logger?: { info: (record: object) => void } }} options
+ * @param {{ env?: NodeJS.ProcessEnv, logger?: { info: (record: object) => void }, corsEnabled?: boolean, beforeRoutes?: import('express').RequestHandler }} options
  */
-export function createLegacyApp({ env = process.env, logger = { info: record => console.log(JSON.stringify(record)) } } = {}) {
+export function createLegacyApp({ env = process.env, corsEnabled = true, beforeRoutes, logger = { info: record => console.log(JSON.stringify(record)) } } = {}) {
+  if (env.MIMIX_AUTH_MODE && env.MIMIX_AUTH_MODE !== 'legacy' && !beforeRoutes) {
+    throw new Error('Use the secured API entrypoint for Clerk mode')
+  }
   const app = express()
   const CLIENT_DIST = fileURLToPath(new URL('../../client/dist/', import.meta.url))
   const VISION_FRAME_MAX_AGE_MS = 5000
@@ -49,7 +52,8 @@ export function createLegacyApp({ env = process.env, logger = { info: record => 
   const controllerSequences = new Map()
   let motionLease = { controllerId: null, expiresAt: 0 }
 
-  app.use(cors())
+  if (corsEnabled) app.use(cors({ origin: env.MIMIX_CORS_ORIGINS ? env.MIMIX_CORS_ORIGINS.split(',') : ['http://localhost:5173', 'http://localhost:4000'] }))
+  if (beforeRoutes) app.use(beforeRoutes)
   app.use(express.json())
 
   app.get('/api/health', (_req, res) => {
