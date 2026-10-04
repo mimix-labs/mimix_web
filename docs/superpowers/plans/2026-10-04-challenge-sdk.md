@@ -27,27 +27,27 @@
 **Files:** packages/contracts/{package.json,tsconfig.json,src/*,test/*}; apps/api/src/modules/learning/contract.ts; configuración workspace/Turbo/ESLint/Docker.
 **Interfaces:** Produce challengeManifestSchema, learningRecordSchema, speakInputSchema, behaviorIntentSchema, challengeErrorSchema y tipos inferidos; API añade eventId/sequence.
 
-- [ ] Escribir tests de manifest válido/inválido, capabilities, payloads e imports públicos.
-- [ ] Ejecutar node:test y observar RED por contrato ausente.
-- [ ] Implementar esquemas estrictos y extracción de learning sin alterar HTTP.
-- [ ] Ejecutar build/tests de contratos y API: todo verde; commit.
+- [x] Escribir tests de manifest válido/inválido, capabilities, payloads e imports públicos.
+- [x] Ejecutar node:test y observar RED por contrato ausente.
+- [x] Implementar esquemas estrictos y extracción de learning sin alterar HTTP.
+- [x] Ejecutar build/tests de contratos y API: todo verde; commit.
 
 ### Task 2: SDK, CLI y fixture
 
 **Files:** packages/challenge-sdk/{package.json,tsconfig*.json,src/*,test/*,fixtures/minimal/*}.
 **Interfaces:** Consume esquemas Task 1; produce defineChallenge(manifest, factory), ChallengeContext, ChallengeLifecycle, MimixAPI y validateManifest(input); CLI con JSON/exit codes.
 
-- [ ] Escribir pruebas de definición/fixture, CLI (válido, JSON roto, versión, ruta, symlink, sin ejecución), y consumidor TS con usos negativos.
-- [ ] Ejecutar y observar RED por SDK/CLI ausentes.
-- [ ] Implementar API/tipos, validador, CLI y fixture sin runtime.
-- [ ] Ejecutar pruebas y typecheck de SDK: todo verde; commit.
+- [x] Escribir pruebas de definición/fixture, CLI (válido, JSON roto, versión, ruta, symlink, sin ejecución), y consumidor TS con usos negativos.
+- [x] Ejecutar y observar RED por SDK/CLI ausentes.
+- [x] Implementar API/tipos, validador, CLI y fixture sin runtime.
+- [x] Ejecutar pruebas y typecheck de SDK: todo verde; commit.
 
 ### Task 3: Documentación y gates de entrega
 
 **Files:** README.md, docs/architecture/challenge-sdk.md, docs/runbooks/challenge-sdk-verification.md, plan.
 **Interfaces:** Consume los exports/CLI anteriores; documenta compatibilidad, lifecycle, errores, host futuro y rollback.
 
-- [ ] Documentar API, comandos, matriz previa y responsabilidades pendientes exactas.
-- [ ] Ejecutar instalación congelada, lint/typecheck/tests/build/smoke/check, PostgreSQL y Docker aplicables.
-- [ ] Revisión independiente de diff completo; corregir importantes con RED→GREEN.
+- [x] Documentar API, comandos, matriz previa y responsabilidades pendientes exactas.
+- [x] Ejecutar instalación congelada, lint/typecheck/tests/build/smoke/check, PostgreSQL y Docker aplicables.
+- [x] Revisión independiente de diff completo; corregir importantes con RED→GREEN.
 - [ ] Commit, push, un PR a main, adjuntar y esperar CI. Registrar evidencia y riesgos sin merge.
