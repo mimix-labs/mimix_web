@@ -28,7 +28,7 @@ Dentro de los retos, la interacción por manos depende del modo de visión confi
 ## Requisitos
 
 - Node.js 22 o posterior.
-- npm.
+- pnpm 10.34.6 (versión fijada en `packageManager`).
 - Navegador moderno con WebGL; HTTPS o `localhost` para usar la webcam.
 
 ## Desarrollo local
@@ -36,7 +36,8 @@ Dentro de los retos, la interacción por manos depende del modo de visión confi
 Instala las dependencias:
 
 ```bash
-npm run install:all
+npm install --global pnpm@10.34.6
+pnpm install --frozen-lockfile
 ```
 
 Copia las variables del servidor y conserva el modo para laptop:
@@ -45,14 +46,18 @@ Copia las variables del servidor y conserva el modo para laptop:
 cp server/.env.example server/.env
 ```
 
-Inicia el backend y el cliente en dos terminales:
+Inicia el backend y el cliente juntos:
 
 ```bash
-npm run server
-npm run client
+pnpm dev
 ```
 
 La aplicación quedará disponible en `http://localhost:5173` y Vite enviará las solicitudes `/api` al backend en `http://localhost:4000`.
+
+También puedes usar `pnpm server` y `pnpm client` en terminales separadas.
+`pnpm lint`, `pnpm typecheck` y `pnpm test` ejecutan los gates de la raíz;
+`pnpm check` incluye además el build y el smoke de producción.
+Consulta [el workspace pnpm/Turbo](docs/pnpm-workspace.md) para migración y rollback.
 
 ## Modos de visión
 
@@ -77,8 +82,8 @@ La Jetson publica landmarks de manos hacia la API y puede enviar comandos de nav
 ## Compilar y ejecutar producción
 
 ```bash
-npm run build
-npm start
+pnpm build
+pnpm start
 ```
 
 Express sirve el contenido compilado de `client/dist` y la API desde el mismo origen. El puerto se toma de `PORT` y, por defecto, es `4000`.
@@ -104,6 +109,9 @@ client/                    Aplicación Vite, mundo Three.js y retos
 server/                    API Express, SSE y puente de visión/robot
 docs/                      Arquitectura, integración y despliegue
 .railway/railway.ts        Infraestructura de Railway
+pnpm-workspace.yaml        Workspace actual: client y server
+pnpm-lock.yaml             Único lockfile del repositorio
+turbo.json                 Orquestación de tareas y caché del build
 Dockerfile                 Build de producción
 ```
 

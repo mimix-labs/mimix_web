@@ -21,33 +21,52 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            client/package-lock.json
-            server/package-lock.json
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install frozen dependencies
-        run: npm run ci:install
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: npm run lint
+        run: pnpm lint
 
       - name: Typecheck
-        run: npm run typecheck
+        run: pnpm typecheck
 
       - name: Test
-        run: npm test
+        run: pnpm test
 
       - name: Build
-        run: npm run build
+        run: pnpm build
 
       - name: Production smoke test
-        run: npm run test:smoke
+        run: pnpm test:smoke
+
+      - name: Build production container
+        run: docker build --tag mimix:ci .
+
+      - name: Container smoke test
+        run: |
+          docker run --detach --name mimix-ci --publish 127.0.0.1:4000:4000 mimix:ci
+          trap 'docker logs mimix-ci; docker rm --force mimix-ci' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4000/api/health; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:4000/api/health | grep -F '"status":"ok"'
+          curl --fail --silent http://127.0.0.1:4000/ | grep -F 'id="canvas"'
+          curl --fail --silent http://127.0.0.1:4000/challenges/mathematics/ | grep -i '<title>'
+          curl --fail --silent http://127.0.0.1:4000/challenges/science/ | grep -i '<title>'
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:4000/api/not-found)" = 404
 
   dependency-audit:
     name: Dependency audit (informational)
@@ -55,25 +74,17 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            client/package-lock.json
-            server/package-lock.json
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
       - name: Install frozen dependencies
-        run: npm run ci:install
-      - name: Audit root dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Audit workspace dependencies
         continue-on-error: true
-        run: npm audit --audit-level=high
-      - name: Audit client dependencies
-        continue-on-error: true
-        run: npm audit --prefix client --audit-level=high
-      - name: Audit server dependencies
-        continue-on-error: true
-        run: npm audit --prefix server --audit-level=high
+        run: pnpm audit --audit-level=high
 
   secret-audit:
     name: Secret audit (informational)

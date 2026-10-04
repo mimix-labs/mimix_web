@@ -1,0 +1,38 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "cacheDir": ".turbo/cache",
+  "tasks": {
+    "build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "passThroughEnv": [
+        "PORT",
+        "HOST",
+        "MIMIX_*"
+      ]
+    },
+    "//#lint:repo": {
+      "cache": false
+    },
+    "//#typecheck:repo": {
+      "cache": false
+    },
+    "//#test:repo": {
+      "cache": false
+    },
+    "//#test:production": {
+      "dependsOn": [
+        "mimix-client#build"
+      ],
+      "cache": false
+    }
+  }
+}

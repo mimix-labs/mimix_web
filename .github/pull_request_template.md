@@ -12,12 +12,14 @@
 
 ## Pruebas y evidencia
 
-- [ ] `npm run ci:install`
-- [ ] `npm run lint`
-- [ ] `npm run typecheck`
-- [ ] `npm test`
-- [ ] `npm run build`
-- [ ] `npm run test:smoke`
+- [ ] `pnpm install --frozen-lockfile`
+- [ ] `pnpm lint`
+- [ ] `pnpm typecheck`
+- [ ] `pnpm test`
+- [ ] `pnpm build`
+- [ ] `pnpm test:smoke`
+- [ ] `pnpm check`
+- [ ] Build y smoke Docker cuando cambie despliegue
 
 ## Riesgo
 

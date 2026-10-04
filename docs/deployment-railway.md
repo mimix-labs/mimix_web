@@ -4,6 +4,22 @@ Mimix Web se despliega como un solo servicio. El `Dockerfile` compila el
 cliente Vite y copia el resultado dentro de la imagen del backend Express. De
 esta forma la web, la API y los streams SSE comparten el mismo dominio.
 
+El build usa pnpm 10.34.6 y el lockfile único con `--frozen-lockfile`. La imagen
+final conserva los enlaces de pnpm, incluye solo dependencias de producción del
+servidor y arranca Node directamente como usuario `node`. No necesita pnpm,
+Turbo ni acceso al registro npm al arrancar. El puerto y el healthcheck no cambian.
+
+Para comprobar la imagen antes de desplegar:
+
+```bash
+docker build -t mimix:local .
+docker run --rm -p 4000:4000 -e MIMIX_VISION_MODE=browser mimix:local
+# En otra terminal:
+curl --fail http://localhost:4000/api/health
+```
+
+Consulta [migración y rollback](pnpm-workspace.md#rollback) para volver a npm.
+
 ## Configuración del servicio
 
 1. Crear un proyecto en Railway desde el repositorio de GitHub
