@@ -6,7 +6,7 @@ Actualizado: 4 de octubre de 2026.
 
 Mimix Web contiene el mundo 3D, los retos de Matematicas y Ciencias, el
 puente local con el robot y la visualizacion de vision nativa de la Jetson. El
-backend Express corre en el puerto 4000 y el cliente Vite en el puerto 5173.
+backend Nest/Fastify con adaptador Express corre en el puerto 4000 y el cliente Vite en el puerto 5173.
 
 ## Entregas realizadas
 
@@ -61,13 +61,16 @@ usa como pantalla e interfaz remota.
 
 ## Dependencias y control de cambios
 
-- Fase 0: workspace pnpm 10.34.6 y Turborepo 2.11.7 sobre `client/` y `server/`.
-- Un único `pnpm-lock.yaml`; instalación con `pnpm install --frozen-lockfile`.
-- `pnpm dev` inicia ambas aplicaciones y `pnpm check` ejecuta lint, typecheck,
-  seis pruebas, build y smoke de producción. CI valida también Docker.
-- No se movieron fuentes ni se migró Express/Vite. La siguiente fase es el
-  prompt 04 (`refactor/api-nestjs-foundation`), solo tras el merge de este PR.
-- Migración, límites actuales y rollback en `docs/pnpm-workspace.md`.
+- Fase 0: workspace pnpm 10.34.6 y Turborepo 2.11.7.
+- Prompt 04: `apps/api` con NestJS/Fastify, TypeScript estricto, health nativo,
+  OpenAPI, configuración validada y módulos de dominio vacíos.
+- Las rutas de producto permanecen en un adaptador Express dentro del mismo
+  proceso. Tokens bridge/control centralizados; sin cambios de frontend.
+- `pnpm check` cubre contratos Express/Nest, lint/typecheck, build y smoke.
+  CI prueba ambas variantes de la imagen y apagado con SSE activo.
+- Rollback: `MIMIX_API_RUNTIME=express`; guía en `docs/runbooks/api-foundation.md`.
+- Siguiente fase: prompt 05 de identidad, únicamente después del merge de este
+  PR. No se introdujo Clerk, PostgreSQL, MQTT ni funciones futuras.
 
 ## Archivos de referencia
 

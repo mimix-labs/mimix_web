@@ -59,6 +59,10 @@ También puedes usar `pnpm server` y `pnpm client` en terminales separadas.
 `pnpm check` incluye además el build y el smoke de producción.
 Consulta [el workspace pnpm/Turbo](docs/pnpm-workspace.md) para migración y rollback.
 
+La API valida configuración al arrancar y publica OpenAPI en
+`/api/openapi.json`. `MIMIX_API_RUNTIME=express` permite rollback temporal
+tras reiniciar. Consulta el [runbook del backend](docs/runbooks/api-foundation.md).
+
 ## Modos de visión
 
 ### Laptop o Railway
@@ -86,7 +90,7 @@ pnpm build
 pnpm start
 ```
 
-Express sirve el contenido compilado de `client/dist` y la API desde el mismo origen. El puerto se toma de `PORT` y, por defecto, es `4000`.
+Nest/Fastify monta temporalmente Express para servir el contenido compilado de `client/dist` y la API desde el mismo origen. El puerto se toma de `PORT` y, por defecto, es `4000`.
 
 ## Despliegue en Railway
 
@@ -106,10 +110,11 @@ El healthcheck es `/api/health`. Railway inyecta `PORT`, por lo que no debe conf
 client/                    Aplicación Vite, mundo Three.js y retos
   src/                     Escena principal, entidades, sistemas y UI
   public/challenges/       Experiencias de Matemáticas y Ciencias
-server/                    API Express, SSE y puente de visión/robot
+apps/api/                  API Nest/Fastify, configuración, health y OpenAPI
+server/                    Adaptador Express temporal: SSE y puente de visión/robot
 docs/                      Arquitectura, integración y despliegue
 .railway/railway.ts        Infraestructura de Railway
-pnpm-workspace.yaml        Workspace actual: client y server
+pnpm-workspace.yaml        Workspace actual: client, server y apps/*
 pnpm-lock.yaml             Único lockfile del repositorio
 turbo.json                 Orquestación de tareas y caché del build
 Dockerfile                 Build de producción

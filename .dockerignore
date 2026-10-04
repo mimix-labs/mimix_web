@@ -9,3 +9,6 @@ graphify-out
 *.log
 .turbo
 **/.turbo
+**/.env
+**/.env.*
+!**/.env.example

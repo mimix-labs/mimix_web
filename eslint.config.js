@@ -1,5 +1,6 @@
 import js from '@eslint/js'
 import globals from 'globals'
+import tseslint from 'typescript-eslint'
 
 export default [
   {
@@ -11,6 +12,8 @@ export default [
     ],
   },
   js.configs.recommended,
+  ...tseslint.configs.recommended.map(config => ({ ...config, files: ['apps/api/**/*.ts', 'server/src/*.d.ts'] })),
+  { files: ['apps/api/**/*.{ts,js}'], languageOptions: { globals: globals.node } },
   {
     files: ['server/**/*.js', 'test/**/*.js', '*.js'],
     languageOptions: {
@@ -43,6 +46,7 @@ export default [
     },
   },
   {
+    files: ['**/*.js'],
     rules: {
       // Legacy scripts carry intentionally dormant helpers. This becomes an
       // error once the challenge packages are migrated and can be cleaned.

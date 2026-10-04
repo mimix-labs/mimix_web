@@ -16,22 +16,37 @@
       "passThroughEnv": [
         "PORT",
         "HOST",
-        "MIMIX_*"
+        "MIMIX_*",
+        "LOG_LEVEL",
+        "NODE_ENV"
       ]
     },
     "//#lint:repo": {
       "cache": false
     },
     "//#typecheck:repo": {
-      "cache": false
+      "cache": false,
+      "dependsOn": [
+        "@mimix/api#build"
+      ]
     },
     "//#test:repo": {
       "cache": false
     },
     "//#test:production": {
       "dependsOn": [
-        "mimix-client#build"
+        "mimix-client#build",
+        "@mimix/api#build"
       ],
+      "cache": false
+    },
+    "test": {
+      "dependsOn": [
+        "build"
+      ],
+      "cache": false
+    },
+    "typecheck": {
       "cache": false
     }
   }
