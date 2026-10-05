@@ -20,7 +20,7 @@
     "test:smoke": "turbo run test:production",
     "test:production": "node --test test/smoke/production.test.js",
     "check": "turbo run lint:repo typecheck:repo typecheck test:repo test test:production",
-    "test:browser": "turbo run test:browser --filter @mimix/challenge-runtime --filter mimix-client"
+    "test:browser": "turbo run test:browser --concurrency=1 --filter @mimix/challenge-runtime --filter mimix-client"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

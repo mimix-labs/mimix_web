@@ -63,6 +63,8 @@ omitieron motores ni se relajaron assertions.
 | Build | 8/8 tareas |
 | CLI de manifests con entrypoint construido | 2/2 |
 | Runtime aislado (3 motores) | 63/63 |
+| Regresiones de timeout, 3 repeticiones/motor, 2 CPU | 18/18 |
+| Mensajes hostiles, 3 repeticiones/motor, 2 CPU | 45/45 |
 | Retos oficiales (3 motores) | 51/51 |
 | Producción con paquetes / build legacy | 2/2 en cada modo |
 | PostgreSQL desechable | 9/9 |
@@ -73,6 +75,35 @@ Una ejecución concurrente inicial falló al guardar una traza porque producció
 la matriz usaban la misma salida Playwright. Se separó la salida de producción;
 la matriz oficial completa posterior pasó 51/51. No fue un fallo de assertions
 ni se añadió retry para ocultarlo.
+
+El primer CI falló en `mount` de dos pruebas de timeout del sandbox, antes del
+hook/operación objetivo. La comparación controlada con `taskset -c 0,1` reprodujo
+el fallo tanto en paralelo como en serie: 150 ms de reloj real durante la carga
+resultan frágiles con CPU limitada. Serializar por sí solo no lo resuelve.
+
+Las dos regresiones usan ahora el reloj de Playwright pausado durante la carga,
+sin modificar el runtime ni sus 150 ms. Primero confirman que empezó el hook o
+adaptador; a los 149 ms verifican que aún no expiró, y al avanzar 1 ms adicional
+exigen el mismo error, cancelación y estado final que antes. Los demás tests de
+carga/handshake mantienen reloj real. El comando raíz ejecuta las suites en serie
+para evitar competencia entre las escenas WebGL y el sandbox; no hay retries.
+
+La matriz bajo dos CPU también reveló una carrera de la prueba hostil: el rechazo
+correcto retiraba el iframe antes del retorno de `frame.evaluate`. El test instala
+el envío en el hijo y lo dispara desde el padre, que permanece vivo; conserva los
+cinco payloads, MessagePort real y asserts de error, cero efectos no autorizados
+y retirada del iframe. No captura ni ignora la excepción. Revisión independiente
+adicional: ambos ajustes conservan las condiciones probadas, sin hallazgos.
+
+Regresión reproducible en Linux, adaptando los índices a las CPU disponibles:
+
+```bash
+taskset -c 0,1 pnpm --filter @mimix/challenge-runtime test:browser --grep 'a hanging hook|operation timeout aborts' --repeat-each=3
+taskset -c 0,1 pnpm --filter @mimix/challenge-runtime test:browser --grep 'host rejects .* messages' --repeat-each=3
+taskset -c 0,1 pnpm test:browser
+taskset -c 0,1 pnpm test:browser
+```
+
 
 ## Comandos reproducibles
 
