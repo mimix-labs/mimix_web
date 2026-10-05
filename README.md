@@ -84,6 +84,13 @@ desbloqueos y finalización desde eventos de aprendizaje. Incluye prerequisitos,
 reintentos y una semilla técnica opt-in; no añade UI ni finalizaciones automáticas
 a los retos exploratorios. [Migración, permisos y rollback](docs/runbooks/campaign-progression.md).
 
+## Agent Core y personajes
+
+La [fundación del agente](docs/architecture/agent-core.md) añade contexto y turnos
+acotados, recomendaciones y herramientas de lectura autorizadas. Wall-E es un
+perfil reemplazable separado del núcleo. El puerto LLM es opcional; todavía no hay
+endpoint, proveedor externo ni voz activados. [Verificación y rollback](docs/runbooks/agent-core-verification.md).
+
 ## Modos de visión
 
 ### Laptop o Railway

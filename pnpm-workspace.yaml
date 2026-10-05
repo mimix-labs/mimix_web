@@ -3,6 +3,7 @@ packages:
   - server
   - apps/*
   - packages/*
+  - characters/*
 
 onlyBuiltDependencies:
   - esbuild

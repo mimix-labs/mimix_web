@@ -13,10 +13,16 @@ COPY packages/challenge-browser/package.json ./packages/challenge-browser/packag
 COPY packages/challenge-mathematics/package.json ./packages/challenge-mathematics/package.json
 COPY packages/challenge-science/package.json ./packages/challenge-science/package.json
 
+COPY packages/agent-contract/package.json ./packages/agent-contract/package.json
+COPY packages/character-contract/package.json ./packages/character-contract/package.json
+COPY packages/agent-core/package.json ./packages/agent-core/package.json
+COPY characters/wall-e/package.json ./characters/wall-e/package.json
+
 FROM base AS build
 RUN pnpm install --frozen-lockfile
 COPY turbo.json ./
 COPY packages/ ./packages/
+COPY characters/ ./characters/
 COPY client/ ./client/
 COPY server/src/ ./server/src/
 COPY apps/api/tsconfig.json ./apps/api/tsconfig.json

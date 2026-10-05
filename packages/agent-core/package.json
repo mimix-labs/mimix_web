@@ -1,0 +1,29 @@
+{
+  "name": "@mimix/agent-core",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@mimix/agent-contract": "workspace:*",
+    "@mimix/character-contract": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@mimix/character-wall-e": "workspace:*",
+    "@types/node": "^24.5.2"
+  }
+}
