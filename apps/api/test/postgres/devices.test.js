@@ -2,6 +2,9 @@ import assert from 'node:assert/strict'
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import test from 'node:test'
 import { fixture } from './support.js'
+import { DeviceTokens } from '../../dist/modules/devices/tokens.js'
+const signingKey = randomBytes(32).toString('base64url')
+const tokens = new DeviceTokens(signingKey)
 import * as devices from '../../dist/modules/devices/store.js'
 import { IdentityError } from '../../dist/modules/identity/identity.contract.js'
 
@@ -16,7 +19,7 @@ async function setup(t) {
   const store = new devices.DeviceStore(base.database, async value => {
     verification.identities.push(value)
     if (verification.state !== 'active') throw new IdentityError(verification.state === 'revoked' ? 401 : 503)
-  })
+  }, tokens)
   const actor = { userId: owner.id, identity }
   const request = { schemaVersion: 1, capabilities: ['presence:heartbeat', 'behavior:stop'] }
   async function pairing(capabilities = request.capabilities) {
@@ -37,7 +40,7 @@ test('pairing exchanges proof for a scoped device credential with fixed TTL and 
   assert.equal(p.session.expiresAt - p.session.createdAt, 900000)
   assert.equal(p.session.presence, null)
   assert.notEqual(p.session.deviceId, offered.deviceId)
-  assert.equal(p.token.length, 43)
+  assert.equal(p.token.length, 87)
   const wire = JSON.stringify({ invitation: p.invitation, session: p.session })
   assert.equal(wire.includes(actor.userId), false)
   assert.equal(wire.includes('login-one'), false)
@@ -69,7 +72,7 @@ test('five failed proof attempts lock pairing, while a fresh invitation recovers
 test('parallel exchanges across store instances consume the pairing atomically', async t => {
   const { store, database, pairing } = await setup(t)
   const p = await pairing()
-  const other = new devices.DeviceStore(database, async () => {})
+  const other = new devices.DeviceStore(database, async () => {}, new DeviceTokens(signingKey))
   const outcomes = await Promise.allSettled([store.exchange(p.exchange), other.exchange(p.exchange)])
   assert.equal(outcomes.filter(r => r.status === 'fulfilled').length, 1)
   const counts = await database.pool.query("select count(*)::int n from device_audit where event = 'paired'")
@@ -109,7 +112,7 @@ test('owner may recover from a new login by revoking; other users cannot inspect
   await assert.rejects(store.revoke(stranger.id, p.session.id), status(404))
   assert.equal((await store.revoke(actor.userId, p.session.id)).status, 'revoked')
   await assert.rejects(store.heartbeat(p.token, { schemaVersion: 1, sequence: 1 }), status(401))
-  const restarted = new devices.DeviceStore(database, async () => {})
+  const restarted = new devices.DeviceStore(database, async () => {}, new DeviceTokens(signingKey))
   await assert.rejects(restarted.self(p.token), status(401))
 })
 
@@ -193,7 +196,7 @@ test('sweep expires silent devices and pending invitations without incoming traf
   const p = await connect(), pending = await pairing()
   await database.pool.query('update device_sessions set presence_expires_at = 1 where id = $1', [p.session.id])
   await database.pool.query('update device_pairings set expires_at = 1 where id = $1', [pending.invitation.id])
-  const replica = new devices.DeviceStore(database, async () => {})
+  const replica = new devices.DeviceStore(database, async () => {}, new DeviceTokens(signingKey))
   await Promise.all([store.sweep(), replica.sweep()])
   const log = await database.pool.query("select event, count(*)::int n from device_audit where event in ('expired', 'pairing_expired') group by event order by event")
   assert.deepEqual(log.rows, [{ event: 'expired', n: 1 }, { event: 'pairing_expired', n: 1 }])
@@ -201,7 +204,7 @@ test('sweep expires silent devices and pending invitations without incoming traf
 
 test('revocation racing with a heartbeat cannot leave the device active', async t => {
   const { store, actor, database, connect } = await setup(t)
-  const p = await connect(), replica = new devices.DeviceStore(database, async () => {})
+  const p = await connect(), replica = new devices.DeviceStore(database, async () => {}, new DeviceTokens(signingKey))
   const outcomes = await Promise.allSettled([replica.heartbeat(p.token, { schemaVersion: 1, sequence: 1 }), store.revoke(actor.userId, p.session.id)])
   assert.equal(outcomes[1].status, 'fulfilled')
   await assert.rejects(replica.heartbeat(p.token, { schemaVersion: 1, sequence: 2 }), status(401))
@@ -212,7 +215,7 @@ test('deadline is sampled after remote identity verification and a late response
   const { database, store, actor, connect } = await setup(t)
   const p = await connect()
   await database.pool.query('update device_sessions set presence_expires_at = floor(extract(epoch from clock_timestamp()) * 1000)::bigint + 50 where id = $1', [p.session.id])
-  const slow = new devices.DeviceStore(database, () => new Promise(resolve => setTimeout(resolve, 100)))
+  const slow = new devices.DeviceStore(database, () => new Promise(resolve => setTimeout(resolve, 100)), tokens)
   await assert.rejects(slow.heartbeat(p.token, { schemaVersion: 1, sequence: 1 }), status(401))
   assert.equal((await store.get(actor.userId, p.session.id)).presence, null)
 })
@@ -243,3 +246,51 @@ test('audit cursor never skips an event whose transaction commits after a later 
   const committed = await database.pool.query('select id::int from device_audit where user_id = $1 order by id', [actor.userId])
   assert.deepEqual([...before.items, ...after.items].map(row => row.id), committed.rows.map(row => row.id))
 })
+
+test('untrusted token rotation is rejected before PostgreSQL access, without a positive-token cache', async t => {
+  const { store, database, connect } = await setup(t)
+  const p = await connect()
+  let queries = 0
+  const original = database.pool.query
+  database.pool.query = function (...args) { queries++; return original.apply(this, args) }
+  t.after(() => { database.pool.query = original })
+  for (let n = 0; n < 20; n++) {
+    const forged = `${randomBytes(32).toString('base64url')}.${randomBytes(32).toString('base64url')}`
+    assert.equal(await store.credentialSessionId(forged), undefined)
+    await assert.rejects(store.self(forged), status(401))
+  }
+  assert.equal(queries, 0)
+  const replica = new devices.DeviceStore(database, async () => {}, new DeviceTokens(signingKey))
+  assert.equal(await replica.credentialSessionId(p.token), p.session.id)
+  assert.ok(queries > 0)
+  await store.revoke((await database.pool.query('select user_id from device_sessions where id = $1', [p.session.id])).rows[0].user_id, p.session.id)
+  assert.equal(await replica.credentialSessionId(p.token), undefined)
+  await assert.rejects(replica.self(p.token), status(401))
+})
+
+for (const [terminal, reason] of [['locked', 'attempt_limit'], ['cancelled', 'owner_requested'], ['expired', 'pairing_ttl'], ['identity-expired', 'identity_revoked']]) {
+  test(`terminal ${terminal} pairing preserves its audit cause instead of reporting exchange replay`, async t => {
+    const { store, actor, database, pairing, verification } = await setup(t)
+    const p = await pairing()
+    if (terminal === 'locked') {
+      for (let n = 0; n < 5; n++) await assert.rejects(store.exchange({ ...p.exchange, verifier: 'x'.repeat(43) }), status(401))
+    } else if (terminal === 'cancelled') {
+      await store.cancelPairing(actor.userId, p.invitation.id)
+    } else if (terminal === 'expired') {
+      await database.pool.query('update device_pairings set expires_at = 1 where id = $1', [p.invitation.id])
+      await store.sweep()
+    } else {
+      verification.state = 'revoked'
+      await assert.rejects(store.exchange(p.exchange), status(401))
+      verification.state = 'active'
+    }
+    const before = await store.audit(actor.userId)
+    await assert.rejects(store.exchange(p.exchange), status(401))
+    const after = await store.audit(actor.userId, String(before.items.at(-1).id))
+    assert.equal(after.items.length, 1)
+    assert.equal(after.items[0].event, 'pairing_denied')
+    assert.equal(after.items[0].reason, reason)
+    const state = await database.pool.query('select state from device_pairings where id = $1', [p.invitation.id])
+    assert.equal(state.rows[0].state, terminal === 'identity-expired' ? 'expired' : terminal)
+  })
+}

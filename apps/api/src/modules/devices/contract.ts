@@ -10,4 +10,4 @@ export function parseDevice<T>(schema: z.ZodType<T>, value: unknown): T {
   return parsed.data
 }
 export const deviceId = z.uuid().transform(value => value.toLowerCase())
-export const deviceToken = z.string().regex(/^[A-Za-z0-9_-]{43}$/)
+export const deviceToken = z.string().regex(/^[A-Za-z0-9_-]{43}\.[A-Za-z0-9_-]{43}$/)

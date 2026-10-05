@@ -1,5 +1,6 @@
+import type { DeviceTokens } from './tokens.js'
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto'
-import { and, asc, eq, gt, lte, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, lte, or, sql } from 'drizzle-orm'
 import {
   devicePairingRequestSchema, deviceExchangeRequestSchema, deviceHeartbeatSchema,
   deviceAuthorizationSchema, deviceSessionSchema, supportedDeviceCapabilities, type DeviceSession,
@@ -7,7 +8,7 @@ import {
 import type { Database, Transaction } from '../../database/database.js'
 import { devicePairings, deviceSessions, deviceAudit } from '../../database/schema.js'
 import type { VerifiedIdentity } from '../identity/identity.contract.js'
-import { DeviceError, deviceId, deviceToken, parseDevice, type DeviceActor } from './contract.js'
+import { DeviceError, deviceId, parseDevice, type DeviceActor } from './contract.js'
 
 type Pairing = typeof devicePairings.$inferSelect
 type Session = typeof deviceSessions.$inferSelect
@@ -20,7 +21,7 @@ const PAIR_TTL = 300000, SESSION_TTL = 900000, PRESENCE_TTL = 30000
 export class DeviceStore {
   private timer?: ReturnType<typeof setInterval>
   private sweeping?: Promise<void>
-  constructor(private readonly database: Database, private readonly verifySession: (identity: VerifiedIdentity) => Promise<void>) {}
+  constructor(private readonly database: Database, private readonly verifySession: (identity: VerifiedIdentity) => Promise<void>, private readonly tokens: DeviceTokens) {}
   start(): void {
     if (this.timer) return
     this.timer = setInterval(() => {
@@ -110,8 +111,16 @@ export class DeviceStore {
       const [pair] = await tx.select().from(devicePairings).where(eq(devicePairings.id, input.pairingId)).for('update')
       let now = await this.now(tx)
       if (pair.state !== 'pending') {
-        if (equalHash(hash(input.code), pair.codeHash) && equalHash(hash(input.verifier), pair.challenge))
-          await this.auditEvent(tx, pair, 'pairing_denied', 'pairing_replay', now)
+        if (equalHash(hash(input.code), pair.codeHash) && equalHash(hash(input.verifier), pair.challenge)) {
+          let reason = pair.state === 'exchanged' ? 'pairing_replay' : pair.state === 'locked' ? 'attempt_limit' : 'owner_requested'
+          if (pair.state === 'expired') {
+            const [expiration] = await tx.select({ reason: deviceAudit.reason }).from(deviceAudit)
+              .where(and(eq(deviceAudit.userId, pair.userId), eq(deviceAudit.pairingId, pair.id), eq(deviceAudit.event, 'pairing_expired')))
+              .orderBy(desc(deviceAudit.id)).limit(1)
+            reason = expiration?.reason ?? 'pairing_expired'
+          }
+          await this.auditEvent(tx, pair, 'pairing_denied', reason, now)
+        }
         return new DeviceError(401)
       }
       if (pair.expiresAt <= now) {
@@ -142,7 +151,7 @@ export class DeviceStore {
       const [count] = await tx.select({ n: sql<number>`count(*)::int` }).from(deviceSessions)
         .where(and(eq(deviceSessions.userId, pair.userId), eq(deviceSessions.status, 'active'), gt(deviceSessions.expiresAt, now), gt(deviceSessions.presenceExpiresAt, now)))
       if (count.n >= 5) return new DeviceError(429, 'device session limit reached')
-      const token = randomBytes(32).toString('base64url')
+      const token = this.tokens.issue()
       const [session] = await tx.insert(deviceSessions).values({ id: randomUUID(), pairingId: pair.id, deviceId: randomUUID(),
         userId: pair.userId, identity: pair.identity, sessionHash: pair.sessionHash, tokenHash: hash(token), capabilities: pair.capabilities,
         status: 'active', createdAt: now, expiresAt: now + SESSION_TTL, presenceExpiresAt: now + PRESENCE_TTL }).returning()
@@ -152,7 +161,7 @@ export class DeviceStore {
     })
   }
   private async forToken<T>(token: string, action: (tx: Transaction, row: Session, now: number) => Promise<T | DeviceError>): Promise<T> {
-    if (!deviceToken.safeParse(token).success) throw new DeviceError(401)
+    if (!this.tokens.identity(token)) throw new DeviceError(401)
     const [hint] = await this.database.db.select({ userId: deviceSessions.userId }).from(deviceSessions).where(eq(deviceSessions.tokenHash, hash(token)))
     if (!hint) throw new DeviceError(401)
     return this.transaction(hint.userId, async tx => {
@@ -162,9 +171,10 @@ export class DeviceStore {
       return current instanceof DeviceError ? current : action(tx, current.row, current.now)
     })
   }
+  credentialIdentity(token: string): string | undefined { return this.tokens.identity(token) }
   /** Quota identity only. Operations recheck all authority under transaction locks. */
   async credentialSessionId(token: string): Promise<string | undefined> {
-    if (!deviceToken.safeParse(token).success) return undefined
+    if (!this.tokens.identity(token)) return undefined
     const [row] = await this.database.db.select({ id: deviceSessions.id }).from(deviceSessions).where(and(
       eq(deviceSessions.tokenHash, hash(token)), eq(deviceSessions.status, 'active'),
       gt(deviceSessions.expiresAt, sql`floor(extract(epoch from clock_timestamp()) * 1000)`),

@@ -5,7 +5,7 @@ import { ClerkIdentityProvider } from '../modules/identity/clerk.provider.js'
 import { FileIdentityRepository } from '../modules/identity/identity.repository.js'
 import { IdentityError, type IdentityProvider, type IdentityRepository, type User, type VerifiedIdentity } from '../modules/identity/identity.contract.js'
 
-export interface IdentityDependencies { provider?: IdentityProvider; repository?: IdentityRepository; deviceCredential?: (token: string) => Promise<string | undefined> }
+export interface IdentityDependencies { provider?: IdentityProvider; repository?: IdentityRepository; deviceAdmission?: (token: string) => string | undefined; deviceCredential?: (token: string) => Promise<string | undefined> }
 export interface PolicyRequest { method: string; url: string; headers: IncomingHttpHeaders; ip: string }
 export interface PolicyResult { status?: number; error?: string; headers: Record<string, string>; user?: User; identity?: VerifiedIdentity }
 type Access = 'public' | 'user' | 'operator' | 'bridge' | 'device'
@@ -125,14 +125,19 @@ export class HttpSecurityPolicy {
     if (access === 'public') return anonymous(route) ?? { headers }
     if (access === 'device') {
       const credential = request.headers.authorization ?? ''
-      if (!/^Device [A-Za-z0-9_-]{43}$/.test(credential)) return anonymous('invalid-device') ?? reject(401, 'invalid device credential')
-      if (!this.dependencies.deviceCredential) return reject(503, 'device service unavailable')
+      if (!/^Device [^\s,]{1,128}$/.test(credential)) return anonymous('invalid-device') ?? reject(401, 'invalid device credential')
+      if (!this.dependencies.deviceAdmission || !this.dependencies.deviceCredential) return reject(503, 'device service unavailable')
+      // Authenticate the server signature without I/O, then budget all expensive lookups.
+      // The shared key admits valid credentials on a cold replica without borrowing IP quota.
+      const identity = this.dependencies.deviceAdmission(credential.slice(7))
+      if (!identity) return anonymous('invalid-device') ?? reject(401, 'invalid device credential')
+      const limited = quota('device', identity, 'all', this.config.rateLimits.machine)
+      if (limited) return limited
       let sessionId
       try { sessionId = await this.dependencies.deviceCredential(credential.slice(7)) }
       catch { return reject(503, 'device service unavailable') }
-      if (!sessionId) return anonymous('invalid-device') ?? reject(401, 'invalid device credential')
-      // A server-verified token selects its own pool, independent of proxy IP or rejected clients.
-      return quota('device', sessionId, 'all', this.config.rateLimits.machine) ?? { headers }
+      if (!sessionId) return reject(401, 'invalid device credential')
+      return { headers }
     }
 
     const secret = access === 'bridge' ? this.config.bridgeToken : access === 'operator' ? this.config.controlToken : ''

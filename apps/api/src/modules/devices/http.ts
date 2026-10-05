@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type { User, VerifiedIdentity } from '../identity/identity.contract.js'
-import { DeviceError, parseDevice } from './contract.js'
+import { DeviceError, deviceToken, parseDevice } from './contract.js'
 import type { DeviceStore } from './store.js'
 export type DeviceAction = 'pair' | 'cancel' | 'exchange' | 'list' | 'get' | 'revoke' | 'authorize' | 'self' | 'heartbeat' | 'disconnect' | 'audit'
 export interface DeviceRequest { user?: User; identity?: VerifiedIdentity; headers: { authorization?: string } }
@@ -13,7 +13,7 @@ export class DeviceHttp {
       if (action === 'exchange') return { status: 201, body: await this.store.exchange(input) }
       if (action === 'self' || action === 'heartbeat' || action === 'disconnect') {
         const authorization = request.headers.authorization ?? ''
-        if (!/^Device [A-Za-z0-9_-]{43}$/.test(authorization)) throw new DeviceError(401)
+        if (!authorization.startsWith('Device ') || !deviceToken.safeParse(authorization.slice(7)).success) throw new DeviceError(401)
         const token = authorization.slice(7)
         return { status: 200, body: action === 'self' ? await this.store.self(token) : await this.store[action](token, input) }
       }

@@ -16,7 +16,8 @@ cerradas; activarlo requiere Clerk y PostgreSQL.
 4. El robot presenta código, verifier y capabilities anunciadas por el protocolo
    v1. El servidor valida la prueba, la sesión de usuario original y la intersección
    aprobada. Consume el código una sola vez y genera IDs de dispositivo y sesión.
-5. Solo esa respuesta contiene el token opaco del dispositivo (32 bytes aleatorios).
+5. Solo esa respuesta contiene el token opaco del dispositivo: nonce aleatorio de
+   32 bytes y firma HMAC-SHA256, ambos base64url canónicos separados por punto.
    Se usa como `Authorization: Device <token>` sobre HTTPS. Un primer heartbeat
    confirma presencia antes de autorizar una capability.
 
@@ -24,6 +25,13 @@ El challenge no demuestra identidad de hardware. Su canal confiable es un requis
 aceptar un challenge enviado por un tercero permitiría emparejar el robot de ese
 tercero. El verifier debe generarse con CSPRNG y nunca acompañar al challenge.
 Las capabilities anunciadas son declaración del dispositivo, no attestation.
+La firma usa `MIMIX_DEVICE_TOKEN_KEY`, clave privada de 32 bytes compartida por
+todas las réplicas y exclusiva de esta feature; no se entrega al robot ni se deriva
+de Clerk. La firma autentica el token para asignar cuota **antes** de consultar SQL.
+No concede autoridad por sí sola: PostgreSQL valida el hash y el estado actual en
+cada operación. No hay caché de autorización; una réplica recién iniciada puede
+admitir un token válido aunque esté agotada la cuota anónima del proxy.
+
 El backend genera `deviceId`; la etiqueta anunciada por el robot no elige propietario.
 Cada nuevo pairing crea una identidad de conexión nueva, no un registro de hardware.
 
@@ -44,7 +52,7 @@ privada del servidor y requiere controles de acceso y backup.
 | Login original | se verifica en cada canje, operación del dispositivo y autorización; timeout de 3 s |
 | Límites PostgreSQL | 10 pairings pendientes vigentes y 5 sesiones activas vigentes por usuario |
 | Cuotas HTTP | pairing: min(10, cuota de usuario)/min; intercambio: cuota anónima por IP |
-| Dispositivo válido | cuota machine/min conjunta por UUID verificado de sesión, separada de clientes inválidos |
+| Dispositivo válido | cuota machine/min conjunta por fingerprint del único token firmado de la sesión, previa a SQL y separada de clientes inválidos |
 
 Estados terminales: `revoked`, `expired`, `disconnected`. No se reactivan. El
 verificador de identidad caído produce 503 y no refresca presencia. Una revocación
@@ -80,7 +88,8 @@ persistida puede retrasarse si PostgreSQL no está disponible; al recuperarse el
 barrido registra el vencimiento sin resucitar la sesión.
 
 `device_audit` registra creación/cancelación/caducidad de pairing, prueba incorrecta,
-replay de código válido consumido, canje, heartbeat, replay de secuencia, desconexión,
+replay de código válido consumido, rechazo por causa terminal (intentos, cancelación,
+TTL o identidad revocada), canje, heartbeat, replay de secuencia, desconexión,
 revocación, expiración y decisiones de autorización. Trigger append-only impide
 UPDATE/DELETE/TRUNCATE. ID desconocido, token inválido y acceso ajeno no escriben
 historia de otro propietario; quedan como rechazos HTTP genéricos. Consultas y
@@ -89,6 +98,11 @@ revocaciones son solo del propietario. Listado y auditoría paginan 50 filas med
 El listado de sesiones ordena UUID y no es snapshot: nuevas sesiones pueden requerir
 reiniciar el recorrido. La auditoría ordena IDs crecientes; para seguir eventos
 posteriores al final, conservar el último ID observado y pasarlo como `after`.
+
+Tokens sintácticamente válidos con firma incorrecta no hacen consultas SQL. Tokens
+firmados antiguos conservan admisión a su cuota de lookup hasta rotar la clave,
+aunque SQL rechaza cualquier autoridad caducada o revocada. Cambiar de token
+aleatorio no permite acceder a esa cuota.
 
 Las cuotas HTTP son locales a cada proceso; los límites de pairing/sesiones y la
 revocación son compartidos en PostgreSQL. Para múltiples réplicas, aplicar además

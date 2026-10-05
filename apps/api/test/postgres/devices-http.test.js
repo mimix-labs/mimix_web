@@ -9,7 +9,7 @@ import { parseEnvironment } from '../../dist/config/environment.js'
 import { IdentityError } from '../../dist/modules/identity/identity.contract.js'
 
 async function start(t, runtime, url, enabled = true, extra = {}) {
-  const config = parseEnvironment({ MIMIX_DEVICE_SESSIONS_ENABLED: String(enabled), MIMIX_DATA_STORE: 'postgres', DATABASE_URL: url, MIMIX_AUTH_MODE: 'clerk', CLERK_SECRET_KEY: 'sk_test_fixture', CLERK_ISSUER: 'https://device.test', CLERK_AUTHORIZED_PARTIES: 'https://device.test', MIMIX_ALLOWED_ORIGINS: 'https://device.test', LOG_LEVEL: 'silent', ...extra })
+  const config = parseEnvironment({ MIMIX_DEVICE_TOKEN_KEY: 'AQ'.repeat(21) + 'A', MIMIX_DEVICE_SESSIONS_ENABLED: String(enabled), MIMIX_DATA_STORE: 'postgres', DATABASE_URL: url, MIMIX_AUTH_MODE: 'clerk', CLERK_SECRET_KEY: 'sk_test_fixture', CLERK_ISSUER: 'https://device.test', CLERK_AUTHORIZED_PARTIES: 'https://device.test', MIMIX_ALLOWED_ORIGINS: 'https://device.test', LOG_LEVEL: 'silent', ...extra })
   const revoked = new Set()
   const provider = {
     async verifyToken(token) {
@@ -74,11 +74,14 @@ for (const runtime of ['nest', 'express']) {
   test(`${runtime}: invalid clients behind the same proxy cannot exhaust a verified device quota`, async t => {
     const { url } = await fixture(t), { request, pair } = await start(t, runtime, url, true, { MIMIX_RATE_LIMIT_ANONYMOUS: '2', MIMIX_RATE_LIMIT_MACHINE: '2' })
     const p = await pair(), other = await pair(), authorization = `Device ${p.token}`
-    for (const invalid of ['', `Device ${'x'.repeat(43)}`, `Device ${'y'.repeat(43)}`]) await request('/api/devices/self', { authorization: invalid })
+    for (const invalid of ['', ...Array.from({ length: 20 }, () => `Device ${randomBytes(32).toString('base64url')}.${randomBytes(32).toString('base64url')}`)]) await request('/api/devices/self', { authorization: invalid })
     assert.equal((await request('/api/devices/heartbeat', { authorization, body: { schemaVersion: 1, sequence: 1 } })).status, 200)
     assert.equal((await request('/api/devices/self', { authorization })).status, 200)
     assert.equal((await request('/api/devices/self', { authorization })).status, 429)
     assert.equal((await request('/api/devices/heartbeat', { authorization: `Device ${other.token}`, body: { schemaVersion: 1, sequence: 1 } })).status, 200)
+    const replica = await start(t, runtime, url, true, { MIMIX_RATE_LIMIT_ANONYMOUS: '2', MIMIX_RATE_LIMIT_MACHINE: '2' })
+    for (let n = 0; n < 20; n++) await replica.request('/api/devices/self', { authorization: `Device ${randomBytes(32).toString('base64url')}.${randomBytes(32).toString('base64url')}` })
+    assert.equal((await replica.request('/api/devices/heartbeat', { authorization, body: { schemaVersion: 1, sequence: 2 } })).status, 200)
   })
   test(`${runtime}: devices disabled by default and pairing quota is bounded`, async t => {
     const { url } = await fixture(t), disabled = await start(t, runtime, url, false)

@@ -65,3 +65,10 @@ Independent review found proxy-IP quota starvation, audit sequence/commit orderi
 and missing pairing replay audit. Regression tests reproduced each; fixes isolate
 verified device quotas, serialize all lifecycle transactions per owner before row
 locks, and record valid-proof replays against terminal pairings.
+
+Additional review: a random-token flood still spent SQL before anonymous quota.
+Device tokens now have a domain-separated HMAC over their random 256-bit nonce,
+using a dedicated shared server key. Canonical signature verification and per-token
+quota happen before SQL; no positive-token cache or shared IP allowance is needed
+on cold replicas. Database checks still own authority/revocation. Only exchanged
+pairings record replay; other terminal states retain their audit cause.

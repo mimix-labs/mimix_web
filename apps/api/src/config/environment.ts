@@ -1,7 +1,9 @@
+import { isDeviceTokenKey } from '../modules/devices/tokens.js'
 import { parseVoiceEnvironment, type VoiceConfig } from '../modules/voice/config.js'
 import { isAbsolute } from 'node:path'
 
 export interface ApiConfig {
+  deviceTokenKey: string
   deviceSessionsEnabled: boolean
   voice: VoiceConfig
   dataStore: 'file' | 'postgres'
@@ -60,6 +62,8 @@ export function parseEnvironment(env: NodeJS.ProcessEnv): ApiConfig {
   if (!['true', 'false'].includes(deviceFlag)) fail('MIMIX_DEVICE_SESSIONS_ENABLED')
   const deviceSessionsEnabled = deviceFlag === 'true'
   if (deviceSessionsEnabled && (authMode !== 'clerk' || dataStore !== 'postgres')) fail('device sessions require Clerk and PostgreSQL')
+  const deviceTokenKey = env.MIMIX_DEVICE_TOKEN_KEY ?? ''
+  if (deviceSessionsEnabled && !isDeviceTokenKey(deviceTokenKey)) fail('MIMIX_DEVICE_TOKEN_KEY')
   const identityFile = env.MIMIX_IDENTITY_FILE ?? ''
   const clerk = { secretKey: env.CLERK_SECRET_KEY ?? '', jwtKey: env.CLERK_JWT_KEY, issuer: env.CLERK_ISSUER ?? '', authorizedParties: [] as string[] }
   if (authMode === 'clerk') {
@@ -87,7 +91,7 @@ export function parseEnvironment(env: NodeJS.ProcessEnv): ApiConfig {
   if (bridgeToken && bridgeToken === controlToken) fail('MIMIX_ROBOT_CONTROL_TOKEN must differ from bridge token')
   const logLevel = env.LOG_LEVEL ?? 'info'
   if (!['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'].includes(logLevel)) fail('LOG_LEVEL')
-  return { deviceSessionsEnabled, voice: parseVoiceEnvironment(env, authMode), dataStore: dataStore as ApiConfig['dataStore'], databaseUrl, authMode: authMode as ApiConfig['authMode'], allowedOrigins, rateLimits, identityFile, clerk, port, host, runtime: runtime as ApiConfig['runtime'], visionMode: visionMode as ApiConfig['visionMode'], videoUrl, bridgeToken, controlToken, logLevel: logLevel as ApiConfig['logLevel'] }
+  return { deviceTokenKey, deviceSessionsEnabled, voice: parseVoiceEnvironment(env, authMode), dataStore: dataStore as ApiConfig['dataStore'], databaseUrl, authMode: authMode as ApiConfig['authMode'], allowedOrigins, rateLimits, identityFile, clerk, port, host, runtime: runtime as ApiConfig['runtime'], visionMode: visionMode as ApiConfig['visionMode'], videoUrl, bridgeToken, controlToken, logLevel: logLevel as ApiConfig['logLevel'] }
 }
 
 export function legacyEnvironment(config: ApiConfig): NodeJS.ProcessEnv {

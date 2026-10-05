@@ -17,7 +17,11 @@ Clerk al robot ni entregar al navegador tokens bridge/control para este flujo.
    existentes de identidad/learning. El propietario de tablas/migrador debe ser
    distinto del rol runtime. Conceder estos permisos si no hay default privileges.
 4. Configurar `MIMIX_AUTH_MODE=clerk`, `MIMIX_DATA_STORE=postgres`,
-   `MIMIX_DEVICE_SESSIONS_ENABLED=true`, `DATABASE_URL` y Clerk/orígenes existentes.
+   `MIMIX_DEVICE_SESSIONS_ENABLED=true`, `DATABASE_URL`, Clerk/orígenes existentes y
+   `MIMIX_DEVICE_TOKEN_KEY`: 32 bytes generados con CSPRNG y codificados base64url
+   canónico sin padding (43 caracteres), guardados en el gestor de secretos. Usar la
+   misma clave en todas las réplicas; nunca incluirla en frontend, robot, Git o logs.
+   El arranque con feature activada rechaza una clave ausente o mal formada.
    Reiniciar todas las réplicas. Revisar `/api/openapi.json`: publica contratos y
    credenciales por ruta. `MIMIX_API_RUNTIME=express` conserva las mismas garantías.
 5. Verificar un ciclo completo con un usuario de prueba: pairing, heartbeat,
@@ -71,6 +75,24 @@ y comprobar `behavior:stop` con `POST /api/devices/sessions/:id/authorize` y cue
 `{"schemaVersion":1,"capability":"behavior:stop"}`. La misma sesión Clerk que aprobó
 el challenge debe autorizar. Esto no ejecuta un movimiento. Revocar con
 `DELETE /api/devices/sessions/:id`; el siguiente heartbeat debe devolver 401.
+
+## Clave de admisión y rotación
+
+El token devuelto ahora contiene `nonce.firma` (87 caracteres); el robot debe
+tratarlo como opaco. La firma permite rechazar tokens aleatorios antes de acceder
+a PostgreSQL, sin cargar sesiones válidas a la cuota compartida del proxy. La
+autoridad, expiración y revocación siguen verificándose en SQL en cada operación.
+Tokens de la implementación previa, sin firma, requieren nuevo pairing. No hay
+cambio de esquema ni re-firma automática de credenciales anteriores.
+
+Mantener la clave estable a través de reinicios. Para rotarla, apagar la feature
+en todas las réplicas, sustituir la clave por otra aleatoria y reactivarla de forma
+coordinada. La rotación invalida inmediatamente todos los tokens anteriores;
+revocar las sesiones anteriores o esperar 30 s de ausencia de heartbeat para
+liberar sus slots antes de repetir pairing. Evitar mezclar claves en un despliegue
+gradual: causaría rechazos intermitentes. No hay keyring ni período de gracia.
+Los tokens firmados históricos pueden gastar su cuota acotada de lookup hasta
+rotar la clave; nunca recuperan autoridad caducada o revocada.
 
 ## Recuperación y diagnóstico
 
@@ -144,3 +166,13 @@ amd64 y cinco smoke tests de contenedor/restore correctos. Revisión independien
 También pasaron 63 pruebas del runtime en Chromium/Firefox/WebKit, 51 del cliente
 y dos de rutas de producción. WebKit usó las librerías aisladas ya disponibles en
 el entorno local; no se instalaron dependencias en el sistema.
+
+Corrección posterior de revisión: firma de admisión previa a SQL, cuota aplicada
+antes del lookup y causas terminales de pairing preservadas en auditoría. Nuevas
+regresiones cubren rotación de tokens inválidos, ráfagas concurrentes, réplicas frías,
+firma manipulada, aliases base64, clave distinta y estados terminales.
+
+Validación de esta corrección: 6 pruebas focales de firma/admisión/configuración,
+49 pruebas PostgreSQL (29 de dispositivos), revisión independiente sin bloqueantes
+y `pnpm check` (47 tareas). Las pruebas Docker/navegador anteriores corresponden
+a la entrega inicial; en esta corrección se repitieron las suites API y PostgreSQL.
