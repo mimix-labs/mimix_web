@@ -38,7 +38,8 @@ Se mantienen los límites documentados: snapshot de grants por turno, cancelaci�
 cooperativa del adaptador, procedencia confiable de contexto/historial, texto LLM
 no ejecutable y paquetes aún no consumidos por la API de producción. Envelopes de
 tools sin identificadores válidos lanzan validación en lugar de inventar IDs.
-Docker y CI se registran en el PR al terminar.
+Build Docker y 5/5 pruebas de contenedor (Nest, Express, seguridad y persistencia
+con backup/restore PostgreSQL) pasaron. El estado de CI se registra en el PR.
 
 ## Handoff
 

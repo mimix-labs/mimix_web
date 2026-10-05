@@ -30,7 +30,7 @@ Recommendation, ToolCall, ToolResult, AgentTurn, CharacterProfile y LlmProvider.
 - [x] Escribir pruebas de validación estricta, límites y perfil sustituible.
 - [x] Ejecutar node:test contra exports vacíos; observar RED por APIs ausentes.
 - [x] Implementar contratos y perfil, compilar y verificar GREEN.
-- [ ] Commit de contratos y configuración.
+- [x] Commit de contratos y configuración.
 
 ### Task 2: recomendaciones, autorización y turnos
 
@@ -40,19 +40,23 @@ Interfaces: `recommendNext(context)`, `listTools(authorization)`,
 authorization, character)`; dependencia opcional LlmProvider en constructor.
 - [x] Pruebas de recomendación, denegación, turnos, reemplazo y proveedor.
 - [x] Observar RED; implementar y ejecutar suite completa hasta GREEN.
-- [ ] Commit del núcleo probado.
+- [x] Commit del núcleo probado.
 
 ### Task 3: documentación y entrega
 
 Archivos: arquitectura/runbook, README y Dockerfile (manifests de workspace).
 - [x] Documentar autoridad del host, límites, ejemplo, rollout y rollback.
 - [x] Instalación frozen, lint, typecheck, test, build y smoke.
-- [ ] Build/smoke de contenedor por cambio de manifest Docker.
+- [x] Build/smoke de contenedor por cambio de manifest Docker.
 - [x] Revisión independiente; hallazgos importantes con regresión RED→GREEN.
-- [ ] Commit, push, PR contra main, adjuntarlo y esperar CI. No fusionar.
+- [x] Commit, push, PR contra main y adjuntarlo.
+- Seguimiento de CI en el PR #12; no fusionar.
 
 ## Evidencia de ejecución
 
 Contratos 6/6 y núcleo 10/10 RED→GREEN. Suite global 99/99, smoke 1/1 y
 `pnpm check` verdes. Revisión independiente sin hallazgos accionables. Contratos y
 núcleo se entregan en un commit coherente con workspace/lockfile/Docker alineados.
+
+Docker build y smoke: 5/5 pruebas de contenedor pasan, incluida restauración
+PostgreSQL. PR: https://github.com/mimix-labs/mimix_web/pull/12.
