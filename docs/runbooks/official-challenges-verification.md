@@ -104,6 +104,17 @@ antes de montar el reto. No se modificaron assertions ni se añadieron retries p
 estos fallos del entorno. Las regresiones específicas de timeout y ataques sí
 pasan bajo dos CPU (18/18 y 45/45).
 
+El preflight de CI identificó Firefox 155 sin contexto WebGL, con
+`FEATURE_FAILURE_WEBGL_EXHAUSTED_DRIVERS`. El perfil de pruebas permite WebGL y,
+en Linux, usa EGL y Mesa por software (`MOZ_WEBGL_FORCE_EGL=1`,
+`LIBGL_ALWAYS_SOFTWARE=1`). El probe local confirma renderer `llvmpipe`.
+La selección de EGL y el efecto de `webgl.force-enabled` se contrastaron con el
+[código de Mozilla](https://raw.githubusercontent.com/mozilla-firefox/firefox/main/dom/canvas/WebGLContext.cpp).
+Esto afecta solo al navegador de pruebas: no cambia producto, sandbox, grants,
+CSP ni mensajes. Las vistas y geometría se siguen renderizando con WebGL real.
+Con ese perfil, Firefox pasa dos repeticiones completas: 34/34, y el preflight
+local pasa en los tres motores. Revisión independiente sin hallazgos pendientes.
+
 CI hace un preflight de WebGL con los mismos motores y argumentos, emite logs
 continuos y conserva trazas/capturas como artefacto. `--max-failures=1` interrumpe
 con estado fallido para diagnóstico; una ejecución verde debe pasar toda la matriz.
