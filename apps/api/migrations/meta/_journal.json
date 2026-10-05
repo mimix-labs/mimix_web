@@ -29,6 +29,13 @@
       "when": 1791223499579,
       "tag": "0003_campaign-progression",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791236352848,
+      "tag": "0004_device-sessions",
+      "breakpoints": true
     }
   ]
 }

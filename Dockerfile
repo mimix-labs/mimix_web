@@ -59,6 +59,9 @@ COPY --from=production-deps /app/packages/voice-contract/node_modules/ ./package
 COPY --from=build /app/packages/voice-contract/dist/ ./packages/voice-contract/dist/
 COPY --from=production-deps /app/packages/embodiment-contract/node_modules/ ./packages/embodiment-contract/node_modules/
 COPY --from=build /app/packages/embodiment-contract/dist/ ./packages/embodiment-contract/dist/
+COPY packages/robot-protocol/package.json ./packages/robot-protocol/package.json
+COPY --from=production-deps /app/packages/robot-protocol/node_modules/ ./packages/robot-protocol/node_modules/
+COPY --from=build /app/packages/robot-protocol/dist/ ./packages/robot-protocol/dist/
 COPY --chown=node:node apps/api/migrations/ ./apps/api/migrations/
 COPY --chown=node:node --from=build /app/client/dist/ ./client/dist/
 

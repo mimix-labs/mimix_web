@@ -3,13 +3,18 @@ import type { IncomingHttpHeaders } from 'node:http'
 import type { ApiConfig } from '../config/environment.js'
 import { ClerkIdentityProvider } from '../modules/identity/clerk.provider.js'
 import { FileIdentityRepository } from '../modules/identity/identity.repository.js'
-import { IdentityError, type IdentityProvider, type IdentityRepository, type User } from '../modules/identity/identity.contract.js'
+import { IdentityError, type IdentityProvider, type IdentityRepository, type User, type VerifiedIdentity } from '../modules/identity/identity.contract.js'
 
-export interface IdentityDependencies { provider?: IdentityProvider; repository?: IdentityRepository }
+export interface IdentityDependencies { provider?: IdentityProvider; repository?: IdentityRepository; deviceCredential?: (token: string) => Promise<string | undefined> }
 export interface PolicyRequest { method: string; url: string; headers: IncomingHttpHeaders; ip: string }
-export interface PolicyResult { status?: number; error?: string; headers: Record<string, string>; user?: User }
-type Access = 'public' | 'user' | 'operator' | 'bridge'
+export interface PolicyResult { status?: number; error?: string; headers: Record<string, string>; user?: User; identity?: VerifiedIdentity }
+type Access = 'public' | 'user' | 'operator' | 'bridge' | 'device'
 export const routeAccess: Record<string, Access> = {
+  'POST /api/devices/pairings': 'user', 'DELETE /api/devices/pairings/:id': 'user',
+  'POST /api/devices/exchange': 'public', 'GET /api/devices/sessions': 'user',
+  'GET /api/devices/sessions/:id': 'user', 'DELETE /api/devices/sessions/:id': 'user',
+  'POST /api/devices/sessions/:id/authorize': 'user', 'GET /api/devices/audit': 'user',
+  'GET /api/devices/self': 'device', 'POST /api/devices/heartbeat': 'device', 'POST /api/devices/disconnect': 'device',
   'GET /api/health': 'public', 'GET /api/openapi.json': 'public', 'GET /api/vision/config': 'public',
   'POST /api/learning/attempts': 'user', 'GET /api/learning/progress': 'user',
   'GET /api/learning/attempts/:id': 'user', 'POST /api/learning/attempts/:id/events': 'user',
@@ -25,7 +30,7 @@ export const routeAccess: Record<string, Access> = {
 }
 export function requestPath(url: string): string { return url.split('?')[0].toLowerCase().replace(/\/+$/, '') || '/' }
 export function policyPath(path: string): string {
-  return path.replace(/^\/api\/voice\/utterances\/[0-9a-f-]{36}$/, '/api/voice/utterances/:id').replace(/^\/api\/campaigns\/[a-z0-9._-]{1,80}\/versions\/[a-z0-9._-]{1,80}(?=\/|$)/, '/api/campaigns/:id/versions/:version')
+  return path.replace(/^\/api\/devices\/(pairings|sessions)\/[0-9a-f-]{36}(?=\/authorize$|$)/, '/api/devices/$1/:id').replace(/^\/api\/voice\/utterances\/[0-9a-f-]{36}$/, '/api/voice/utterances/:id').replace(/^\/api\/campaigns\/[a-z0-9._-]{1,80}\/versions\/[a-z0-9._-]{1,80}(?=\/|$)/, '/api/campaigns/:id/versions/:version')
     .replace(/^(\/api\/campaigns\/:id\/versions\/:version)\/nodes\/[a-z0-9._-]{1,80}\/attempts$/, '$1/nodes/:nodeId/attempts')
     .replace(/^\/api\/learning\/attempts\/[0-9a-f-]{36}(?=\/events$|$)/, '/api/learning/attempts/:id')
 }
@@ -36,6 +41,7 @@ export class HttpSecurityPolicy {
   private readonly repository?: IdentityRepository
   // Separate bounded pools: unauthenticated cardinality cannot fill an authenticated pool.
   private readonly buckets = {
+    device: new Map<string, { count: number; reset: number }>(),
     anonymous: new Map<string, { count: number; reset: number }>(),
     legacy: new Map<string, { count: number; reset: number }>(),
     user: new Map<string, { count: number; reset: number }>(),
@@ -63,7 +69,7 @@ export class HttpSecurityPolicy {
     bucket.count++
     return true
   }
-  constructor(private readonly config: ApiConfig, dependencies: IdentityDependencies = {}) {
+  constructor(private readonly config: ApiConfig, private readonly dependencies: IdentityDependencies = {}) {
     if (config.authMode === 'clerk') {
       this.provider = dependencies.provider ?? new ClerkIdentityProvider(config.clerk)
       this.repository = dependencies.repository ?? new FileIdentityRepository(config.identityFile)
@@ -75,6 +81,10 @@ export class HttpSecurityPolicy {
     // Express accepts absolute-form request targets; never classify those as static assets.
     if (!request.url.startsWith('/')) return reject(400, 'invalid request target')
     const path = policyPath(requestPath(request.url))
+    if (path.startsWith('/api/devices')) {
+      headers['cache-control'] = 'no-store'
+      if (!this.config.deviceSessionsEnabled) return reject(404, 'not found')
+    }
     if (path.startsWith('/api/voice/') && this.config.authMode !== 'clerk') return reject(404, 'not found')
     if ((path.startsWith('/api/learning') || path.startsWith('/api/campaigns')) && this.config.dataStore !== 'postgres') return reject(404, 'not found')
     // Static frontend is explicitly public. API never falls through to SPA assets.
@@ -113,6 +123,17 @@ export class HttpSecurityPolicy {
     if (path.startsWith('/api/voice/') || path === '/api/identity/me' || path.startsWith('/api/learning/') || path === '/api/campaigns' || path.startsWith('/api/campaigns/')) headers['cache-control'] = 'no-store'
     if (path === '/api/health') return { headers }
     if (access === 'public') return anonymous(route) ?? { headers }
+    if (access === 'device') {
+      const credential = request.headers.authorization ?? ''
+      if (!/^Device [A-Za-z0-9_-]{43}$/.test(credential)) return anonymous('invalid-device') ?? reject(401, 'invalid device credential')
+      if (!this.dependencies.deviceCredential) return reject(503, 'device service unavailable')
+      let sessionId
+      try { sessionId = await this.dependencies.deviceCredential(credential.slice(7)) }
+      catch { return reject(503, 'device service unavailable') }
+      if (!sessionId) return anonymous('invalid-device') ?? reject(401, 'invalid device credential')
+      // A server-verified token selects its own pool, independent of proxy IP or rejected clients.
+      return quota('device', sessionId, 'all', this.config.rateLimits.machine) ?? { headers }
+    }
 
     const secret = access === 'bridge' ? this.config.bridgeToken : access === 'operator' ? this.config.controlToken : ''
     const credential = access === 'bridge' ? request.headers['x-mimix-robot-token'] : request.headers['x-mimix-control-token']
@@ -135,11 +156,11 @@ export class HttpSecurityPolicy {
       // Only cryptographically verified identity may select an actor quota. Neither raw
       // token rotation nor untrusted claims/IP headers can select another user's bucket.
       const actor = JSON.stringify([identity.provider, identity.issuer, identity.subject])
-      const limited = quota('user', actor, route, this.config.rateLimits.user)
+      const limited = quota('user', actor, route, route === 'POST /api/devices/pairings' ? Math.min(10, this.config.rateLimits.user) : this.config.rateLimits.user)
       if (limited) return limited
       try {
         await this.provider.verifySession(identity)
-        return { headers, user: await this.repository.resolve(identity) }
+        return { headers, user: await this.repository.resolve(identity), identity }
       } catch (error) { return reject(error instanceof IdentityError ? error.status : 503, error instanceof IdentityError ? error.message : 'identity unavailable') }
     }
     return anonymous('invalid-credential') ?? reject(secret ? 401 : 503, secret ? 'invalid credential' : 'required credential is not configured')

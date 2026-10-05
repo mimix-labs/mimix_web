@@ -1,3 +1,5 @@
+import { addDevicePaths } from './modules/devices/openapi.js'
+import type { VerifiedIdentity } from './modules/identity/identity.contract.js'
 import type { VoiceService } from './modules/voice/service.js'
 import { addVoicePaths } from './modules/voice/openapi.js'
 import 'reflect-metadata'
@@ -31,7 +33,7 @@ export async function createApi(config: ApiConfig, dependencies: IdentityDepende
     },
     requestIdHeader: false,
   })
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule.register(config, services.learning, services.close, services.campaigns, dependencies.voice), adapter, {
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule.register(config, services.learning, services.close, services.campaigns, dependencies.voice, services.devices), adapter, {
     logger: config.logLevel === 'silent' ? false : new ConsoleLogger({ json: true, colors: false }),
     abortOnError: false,
   })
@@ -41,6 +43,7 @@ export async function createApi(config: ApiConfig, dependencies: IdentityDepende
     for (const [name, value] of Object.entries(result.headers)) reply.header(name, value)
     if (result.status) return reply.code(result.status).send(result.status === 204 ? undefined : { error: result.error })
     if (result.user) (request as typeof request & { user: User }).user = result.user
+    if (result.identity) (request as typeof request & { identity: VerifiedIdentity }).identity = result.identity
     // Legacy hijacks the raw response; transfer policy headers before handoff.
     for (const [name, value] of Object.entries(result.headers)) reply.raw.setHeader(name, value)
   })
@@ -71,6 +74,7 @@ export async function createApi(config: ApiConfig, dependencies: IdentityDepende
   addLearningPaths(document, config)
   addCampaignPaths(document, config)
   addVoicePaths(document, config)
+  addDevicePaths(document, config)
   SwaggerModule.setup('api/docs', app, document, { ui: false, jsonDocumentUrl: '/api/openapi.json' })
   await app.init()
   return app
