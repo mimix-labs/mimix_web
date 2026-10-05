@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'
 import { and, asc, eq, gt, sql } from 'drizzle-orm'
-import type { Database } from '../../database/database.js'
-import { attempts, attemptProgress, learningEvents } from '../../database/schema.js'
-import { createInput, eventInput, LearningError, parse, uuidInput } from './contract.js'
+import type { Database, Transaction } from '../../database/database.js'
+import { attempts, attemptProgress, learningEvents, campaignAttempts } from '../../database/schema.js'
+import { createInput, eventInput, LearningError, parse, uuidInput, type CreateInput } from './contract.js'
 import { project } from './projection.js'
 
 // Shared across writes; exclusive for reconstruction. Acquired before all row locks.
@@ -12,18 +12,22 @@ export class LearningStore {
   constructor(private readonly database: Database) {}
   async create(userId: string, value: unknown) {
     const input = parse(createInput, value)
-    return this.database.db.transaction(async tx => {
-      await tx.execute(writerLock)
-      const [inserted] = await tx.insert(attempts).values({ id: randomUUID(), userId, ...input }).onConflictDoNothing({ target: [attempts.userId, attempts.idempotencyKey] }).returning()
-      if (!inserted) {
-        const [existing] = await tx.select().from(attempts).where(and(eq(attempts.userId, userId), eq(attempts.idempotencyKey, input.idempotencyKey)))
-        if (!existing || existing.challengeId !== input.challengeId || existing.challengeVersion !== input.challengeVersion) throw new LearningError(409, 'idempotency conflict')
-        return { attempt: existing, duplicate: true }
-      }
-      const [event] = await tx.insert(learningEvents).values({ attemptId: inserted.id, eventId: randomUUID(), sequence: 1, type: 'attempt_started', payload: {} }).returning()
-      await tx.insert(attemptProgress).values(project(undefined, event))
-      return { attempt: inserted, duplicate: false }
-    })
+    return this.database.db.transaction(tx => this.createInTransaction(tx, userId, input))
+  }
+  async createInTransaction(tx: Transaction, userId: string, input: CreateInput, context?: { campaignId: string; campaignVersion: string; nodeId: string }) {
+    await tx.execute(writerLock)
+    const [inserted] = await tx.insert(attempts).values({ id: randomUUID(), userId, ...input }).onConflictDoNothing({ target: [attempts.userId, attempts.idempotencyKey] }).returning()
+    if (!inserted) {
+      const [existing] = await tx.select().from(attempts).where(and(eq(attempts.userId, userId), eq(attempts.idempotencyKey, input.idempotencyKey)))
+      if (!existing || existing.challengeId !== input.challengeId || existing.challengeVersion !== input.challengeVersion) throw new LearningError(409, 'idempotency conflict')
+      const [binding] = await tx.select().from(campaignAttempts).where(eq(campaignAttempts.attemptId, existing.id))
+      if (context ? !binding || binding.campaignId !== context.campaignId || binding.campaignVersion !== context.campaignVersion || binding.nodeId !== context.nodeId : binding) throw new LearningError(409, 'idempotency conflict')
+      return { attempt: existing, duplicate: true }
+    }
+    const [event] = await tx.insert(learningEvents).values({ attemptId: inserted.id, eventId: randomUUID(), sequence: 1, type: 'attempt_started', payload: {} }).returning()
+    await tx.insert(attemptProgress).values(project(undefined, event))
+    if (context) await tx.insert(campaignAttempts).values({ attemptId: inserted.id, ...context })
+    return { attempt: inserted, duplicate: false }
   }
   async append(userId: string, id: string, value: unknown) {
     const attemptId = parse(uuidInput, id), input = parse(eventInput, value)
