@@ -75,6 +75,8 @@ rollback: [runbook de aprendizaje](docs/runbooks/learning-event-store.md).
 
 Los nuevos contratos y el SDK neutral se documentan en [Challenge SDK v1](docs/architecture/challenge-sdk.md). Incluyen manifest, CLI y fixture de referencia; Matemáticas y Ciencias conservan su implementación actual.
 
+El [runtime aislado](docs/architecture/challenge-runtime.md) añade iframe sandbox, bridge con grants y un harness local con pruebas hostiles en Chromium, Firefox y WebKit. Todavía no monta los retos de producción.
+
 ## Modos de visión
 
 ### Laptop o Railway
@@ -125,6 +127,7 @@ client/                    Aplicación Vite, mundo Three.js y retos
 apps/api/                  API Nest/Fastify, configuración, health y OpenAPI
 packages/contracts/        Esquemas Zod compartidos de retos y aprendizaje
 packages/challenge-sdk/    API pública de retos, CLI y fixture mínimo
+packages/challenge-runtime/ Host aislado, bridge y harness de desarrollo
 server/                    Adaptador Express temporal: SSE y puente de visión/robot
 docs/                      Arquitectura, integración y despliegue
 .railway/railway.ts        Infraestructura de Railway

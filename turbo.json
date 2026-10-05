@@ -62,6 +62,18 @@
       "dependsOn": [
         "build"
       ]
+    },
+    "test:browser": {
+      "dependsOn": [
+        "build"
+      ],
+      "cache": false
+    },
+    "@mimix/challenge-runtime#typecheck": {
+      "dependsOn": [
+        "build"
+      ],
+      "cache": false
     }
   }
 }

@@ -8,3 +8,8 @@ graphify-out/
 .turbo/
 # Transitional identity snapshots contain account identifiers.
 .identity-data/
+
+# Browser runtime harness artifacts
+harness-dist/
+test-results/
+playwright-report/

@@ -75,6 +75,25 @@ jobs:
       - name: Container PostgreSQL persistence and backup restore
         run: node --test test/smoke/postgres-container.test.js
 
+  runtime-browser:
+    name: Challenge runtime browsers
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Chromium, Firefox and WebKit
+        run: pnpm --filter @mimix/challenge-runtime exec playwright install --with-deps chromium firefox webkit
+      - name: SDK fixture, isolation and hostile message harness
+        run: pnpm test:browser
+
   dependency-audit:
     name: Dependency audit (informational)
     runs-on: ubuntu-latest
