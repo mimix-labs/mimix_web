@@ -186,3 +186,13 @@ Kubernetes queda fuera del alcance inicial. Se evaluará solo cuando existan mú
 - [NestJS: MQTT](https://docs.nestjs.com/microservices/mqtt)
 - [NestJS: OpenAPI](https://docs.nestjs.com/openapi/introduction)
 - [Clerk: conexiones sociales](https://clerk.com/docs/guides/configure/auth-strategies/social-connections/overview)
+
+### Media control plane (prompt 16)
+
+`@mimix/media-contract` defines robot camera/microphone/speaker directions and the
+interchangeable `MediaProvider` port. The first adapter is LiveKit; the backend
+issues room-scoped credentials only after live DeviceSession authorization and
+persists retryable room cleanup in PostgreSQL. Media flows directly over WebRTC.
+The feature is disabled by default, and the existing MJPEG route remains an explicit
+operator-authorized LAN fallback. Robot/UI consumers and physical ARM64 validation
+remain separate integration work. See [media operations and revocation limits](../runbooks/media-livekit.md).

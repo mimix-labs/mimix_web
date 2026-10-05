@@ -3,10 +3,10 @@ import { robotCapabilitiesSchema, robotPresenceSchema, type RobotCapabilities } 
 
 export const deviceCapabilitySchema = z.enum([
   'presence:heartbeat', 'context:read', 'vision:publish', 'speech:play',
-  'camera:mjpeg', 'camera:webrtc', 'behavior:greet', 'behavior:celebrate', 'behavior:attend', 'behavior:stop',
+  'camera:mjpeg', 'camera:webrtc', 'microphone:publish', 'speaker:subscribe', 'behavior:greet', 'behavior:celebrate', 'behavior:attend', 'behavior:stop',
 ])
 export type DeviceCapability = z.infer<typeof deviceCapabilitySchema>
-export const deviceCapabilitiesSchema = z.array(deviceCapabilitySchema).min(1).max(10)
+export const deviceCapabilitiesSchema = z.array(deviceCapabilitySchema).min(1).max(12)
   .refine(values => new Set(values).size === values.length && values.includes('presence:heartbeat'), 'Unique capabilities including heartbeat are required')
 export const devicePairingRequestSchema = z.strictObject({
   schemaVersion: z.literal(1), challenge: z.string().regex(/^[a-f0-9]{64}$/), capabilities: deviceCapabilitiesSchema,
@@ -27,6 +27,7 @@ export type DeviceSession = z.infer<typeof deviceSessionSchema>
 export function supportedDeviceCapabilities(value: RobotCapabilities): DeviceCapability[] {
   const offered = robotCapabilitiesSchema.parse(value)
   return ['presence:heartbeat', 'context:read', ...(offered.handLandmarks ? ['vision:publish' as const] : []),
-    ...(offered.speech ? ['speech:play' as const] : []), ...offered.camera.map(type => `camera:${type}` as const),
+    ...(offered.speech ? ['speech:play' as const] : []),
+    ...(offered.audio?.microphone ? ['microphone:publish' as const] : []), ...(offered.audio?.speaker ? ['speaker:subscribe' as const] : []), ...offered.camera.map(type => `camera:${type}` as const),
     ...offered.behaviors.map(behavior => `behavior:${behavior}` as const)]
 }

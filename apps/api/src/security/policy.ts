@@ -10,6 +10,10 @@ export interface PolicyRequest { method: string; url: string; headers: IncomingH
 export interface PolicyResult { status?: number; error?: string; headers: Record<string, string>; user?: User; identity?: VerifiedIdentity }
 type Access = 'public' | 'user' | 'operator' | 'bridge' | 'device'
 export const routeAccess: Record<string, Access> = {
+  'POST /api/media/sessions': 'user', 'GET /api/media/sessions': 'user',
+  'GET /api/media/sessions/:id': 'user', 'DELETE /api/media/sessions/:id': 'user',
+  'POST /api/media/sessions/:id/user-token': 'user', 'POST /api/media/sessions/:id/device-token': 'device',
+  'POST /api/media/sessions/:id/disconnect': 'device',
   'POST /api/devices/pairings': 'user', 'DELETE /api/devices/pairings/:id': 'user',
   'POST /api/devices/exchange': 'public', 'GET /api/devices/sessions': 'user',
   'GET /api/devices/sessions/:id': 'user', 'DELETE /api/devices/sessions/:id': 'user',
@@ -30,7 +34,7 @@ export const routeAccess: Record<string, Access> = {
 }
 export function requestPath(url: string): string { return url.split('?')[0].toLowerCase().replace(/\/+$/, '') || '/' }
 export function policyPath(path: string): string {
-  return path.replace(/^\/api\/devices\/(pairings|sessions)\/[0-9a-f-]{36}(?=\/authorize$|$)/, '/api/devices/$1/:id').replace(/^\/api\/voice\/utterances\/[0-9a-f-]{36}$/, '/api/voice/utterances/:id').replace(/^\/api\/campaigns\/[a-z0-9._-]{1,80}\/versions\/[a-z0-9._-]{1,80}(?=\/|$)/, '/api/campaigns/:id/versions/:version')
+  return path.replace(/^\/api\/media\/sessions\/[0-9a-f-]{36}(?=\/(user-token|device-token|disconnect)$|$)/, '/api/media/sessions/:id').replace(/^\/api\/devices\/(pairings|sessions)\/[0-9a-f-]{36}(?=\/authorize$|$)/, '/api/devices/$1/:id').replace(/^\/api\/voice\/utterances\/[0-9a-f-]{36}$/, '/api/voice/utterances/:id').replace(/^\/api\/campaigns\/[a-z0-9._-]{1,80}\/versions\/[a-z0-9._-]{1,80}(?=\/|$)/, '/api/campaigns/:id/versions/:version')
     .replace(/^(\/api\/campaigns\/:id\/versions\/:version)\/nodes\/[a-z0-9._-]{1,80}\/attempts$/, '$1/nodes/:nodeId/attempts')
     .replace(/^\/api\/learning\/attempts\/[0-9a-f-]{36}(?=\/events$|$)/, '/api/learning/attempts/:id')
 }
@@ -81,6 +85,10 @@ export class HttpSecurityPolicy {
     // Express accepts absolute-form request targets; never classify those as static assets.
     if (!request.url.startsWith('/')) return reject(400, 'invalid request target')
     const path = policyPath(requestPath(request.url))
+    if (path.startsWith('/api/media')) {
+      headers['cache-control'] = 'no-store'
+      if (this.config.media.provider === 'disabled') return reject(404, 'not found')
+    }
     if (path.startsWith('/api/devices')) {
       headers['cache-control'] = 'no-store'
       if (!this.config.deviceSessionsEnabled) return reject(404, 'not found')

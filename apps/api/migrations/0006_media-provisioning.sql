@@ -1,0 +1,2 @@
+ALTER TABLE "media_sessions" DROP CONSTRAINT "media_session_state";--> statement-breakpoint
+ALTER TABLE "media_sessions" ADD CONSTRAINT "media_session_state" CHECK ("media_sessions"."state" IN ('provisioning','active','closing','closed'));

@@ -21,3 +21,12 @@ test('device heartbeat has a bounded sequence and no client timestamps or identi
 test('advertised capabilities constrain grants without treating the supplied label as device identity', () => {
   assert.deepEqual(protocol.supportedDeviceCapabilities(capabilities), ['presence:heartbeat', 'context:read', 'vision:publish', 'camera:mjpeg', 'behavior:stop'])
 })
+
+test('audio transports require explicit microphone/speaker announcements, never legacy speech alone', () => {
+  const legacy = { schemaVersion: 1, deviceId: 'robot', behaviors: [], camera: [], handLandmarks: false, speech: true }
+  assert.equal(protocol.supportedDeviceCapabilities(legacy).includes('microphone:publish'), false)
+  assert.equal(protocol.supportedDeviceCapabilities(legacy).includes('speaker:subscribe'), false)
+  const audio = { ...legacy, audio: { microphone: true, speaker: true } }
+  assert.ok(protocol.supportedDeviceCapabilities(audio).includes('microphone:publish'))
+  assert.ok(protocol.supportedDeviceCapabilities(audio).includes('speaker:subscribe'))
+})

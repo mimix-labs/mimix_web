@@ -1,3 +1,6 @@
+import { mediaRouter } from '../modules/media/express.js'
+import type { MediaProvider } from '@mimix/media-contract'
+import { addMediaPaths } from '../modules/media/openapi.js'
 import { devicesRouter } from '../modules/devices/express.js'
 import { addDevicePaths } from '../modules/devices/openapi.js'
 import { voiceRouter } from '../modules/voice/express.js'
@@ -15,21 +18,23 @@ import { learningRouter } from '../modules/learning/express.js'
 import { addLearningPaths } from '../modules/learning/openapi.js'
 import { addLegacyPaths } from '../openapi.js'
 
-export function createSecuredLegacy(config: ApiConfig, dependencies: IdentityDependencies & { voice?: VoiceService } = {}) {
+export function createSecuredLegacy(config: ApiConfig, dependencies: IdentityDependencies & { voice?: VoiceService; mediaProvider?: MediaProvider } = {}) {
   const services = dataServices(config, dependencies)
   const voice = dependencies.voice ?? createVoiceService(config.voice), voiceRoutes = voiceRouter(voice)
   const policy = new HttpSecurityPolicy(config, services.identity)
-  const devices = devicesRouter(services.devices)
+  const devices = devicesRouter(services.devices), media = mediaRouter(services.media)
   const learning = learningRouter(services.learning), campaigns = campaignRouter(services.campaigns)
   const document = addLearningPaths(addLegacyPaths({ openapi: '3.0.0', info: { title: 'Mimix API', version: '0.3.0' }, paths: {}, components: { securitySchemes: { bearer: { type: 'http', scheme: 'bearer' }, BridgeToken: { type: 'apiKey', in: 'header', name: 'X-Mimix-Robot-Token' }, ControlToken: { type: 'apiKey', in: 'header', name: 'X-Mimix-Control-Token' } } } }, config), config)
   addCampaignPaths(document, config)
   addVoicePaths(document, config)
   addDevicePaths(document, config)
+  addMediaPaths(document, config)
   const legacy = createLegacyApp({ env: legacyEnvironment(config), corsEnabled: false, beforeRoutes: (req, res, next) => {
     void policy.authorize({ method: req.method, url: req.url, headers: req.headers, ip: req.socket.remoteAddress ?? 'unknown' }).then(result => {
       for (const [name, value] of Object.entries(result.headers)) res.setHeader(name, value)
       if (result.status) { res.status(result.status); if (result.status === 204) res.end(); else res.json({ error: result.error }); return }
       const path = requestPath(req.url)
+      if (path.startsWith('/api/media/')) { Object.assign(req, { user: result.user, identity: result.identity }); media(req, res, next); return }
       if (path.startsWith('/api/devices/')) { Object.assign(req, { user: result.user, identity: result.identity }); devices(req, res, next); return }
       if (path.startsWith('/api/voice/')) { Object.assign(req, { user: result.user }); voiceRoutes(req, res, next); return }
       if (path === '/api/identity/me') { res.json(result.user); return }
