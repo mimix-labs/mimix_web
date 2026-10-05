@@ -7,6 +7,7 @@ export class VoiceService {
   private readonly active = new Map<string, Active>()
   private readonly buckets = new Map<string, Bucket>()
   private day = { expires: 0, characters: 0 }
+  private providerCalls = 0
   private closed = false
   private readonly limits: VoiceLimits
   constructor(private readonly provider: VoiceProvider | undefined, limits: VoiceLimits, private readonly now: () => number = Date.now) {
@@ -47,7 +48,7 @@ export class VoiceService {
     if (this.closed || clientSignal?.aborted) return fallback('CANCELLED')
     if (!this.provider) return fallback('DISABLED')
     const previous = this.active.get(user)
-    if (previous?.id === request.id || (!previous && this.active.size >= this.limits.maxConcurrent)) return fallback('BUSY')
+    if (previous?.id === request.id || this.providerCalls >= this.limits.maxConcurrent) return fallback('BUSY')
     if (!this.reserve(user, request.text.length)) return fallback('QUOTA_EXCEEDED')
     if (previous) this.abort(previous, 'INTERRUPTED')
     const active: Active = { id: request.id, controller: new AbortController(), reason: 'CANCELLED' }
@@ -60,8 +61,12 @@ export class VoiceService {
       rejectAbort = () => reject(new VoiceError(active.reason))
       active.controller.signal.addEventListener('abort', rejectAbort, { once: true })
     })
+    this.providerCalls++
+    const providerCall = Promise.resolve()
+      .then(() => this.provider!.synthesize(request.text, { signal: active.controller.signal }))
+      .finally(() => { this.providerCalls-- })
     try {
-      const audio = await Promise.race([this.provider.synthesize(request.text, { signal: active.controller.signal }), aborted])
+      const audio = await Promise.race([providerCall, aborted])
       if (active.controller.signal.aborted) return fallback(active.reason)
       if (audio?.contentType !== 'audio/mpeg' || !(audio.bytes instanceof Uint8Array) || audio.bytes.length < 3 || audio.bytes.length > MAX_AUDIO_BYTES) return fallback('INVALID_AUDIO')
       return { ...base, status: 'ready', audio: { contentType: 'audio/mpeg', base64: Buffer.from(audio.bytes).toString('base64') } }

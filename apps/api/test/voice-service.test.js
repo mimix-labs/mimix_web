@@ -87,12 +87,33 @@ test('quota reservations are atomic, failures are charged and windows expire det
 test('concurrency is bounded and quota-denied replacements do not interrupt accepted work', async () => {
   assert.equal(typeof module.VoiceService, 'function')
   const signals = []
-  const service = new module.VoiceService({ synthesize: (_text, { signal }) => { signals.push(signal); return new Promise(() => {}) } }, { ...limits, maxConcurrent: 1, requestsPerMinute: 1 })
+  const provider = { synthesize: (_text, { signal }) => { signals.push(signal); return new Promise(() => {}) } }
+  const service = new module.VoiceService(provider, { ...limits, maxConcurrent: 1 })
   const running = turn(service)
   await Promise.resolve()
   assert.equal((await turn(service, input, other)).reason, 'BUSY')
-  assert.equal((await turn(service, next)).reason, 'QUOTA_EXCEEDED')
   assert.equal(signals[0].aborted, false)
+  service.close(); await running
+
+  const quotaService = new module.VoiceService(provider, { ...limits, maxConcurrent: 2, requestsPerMinute: 1 })
+  const accepted = turn(quotaService)
+  await Promise.resolve()
+  assert.equal((await turn(quotaService, next)).reason, 'QUOTA_EXCEEDED')
+  assert.equal(signals[1].aborted, false)
+  quotaService.close(); await accepted
+})
+
+test('same-user replacements cannot exceed physical provider concurrency when abort is ignored', async () => {
+  assert.equal(typeof module.VoiceService, 'function')
+  let calls = 0
+  const service = new module.VoiceService({ synthesize: async () => { calls++; return new Promise(() => {}) } }, { ...limits, maxConcurrent: 1, requestsPerMinute: 20 })
+  const running = turn(service)
+  await Promise.resolve()
+  for (let index = 0; index < 7; index++) {
+    const request = { ...input, id: `44444444-4444-4444-8444-${String(index).padStart(12, '0')}` }
+    assert.equal((await turn(service, request)).reason, 'BUSY')
+  }
+  assert.equal(calls, 1)
   service.close(); await running
 })
 
