@@ -66,6 +66,8 @@ omitieron motores ni se relajaron assertions.
 | Regresiones de timeout, 3 repeticiones/motor, 2 CPU | 18/18 |
 | Mensajes hostiles, 3 repeticiones/motor, 2 CPU | 45/45 |
 | Retos oficiales (3 motores) | 51/51 |
+| Matriz completa serial, dos pasadas consecutivas | 114/114 en cada pasada |
+| Preflight WebGL local | 3/3 motores |
 | Producción con paquetes / build legacy | 2/2 en cada modo |
 | PostgreSQL desechable | 9/9 |
 | Build Docker y smoke Nest/Express/SQL | Correcto; 5/5 |
@@ -95,13 +97,24 @@ cinco payloads, MessagePort real y asserts de error, cero efectos no autorizados
 y retirada del iframe. No captura ni ignora la excepción. Revisión independiente
 adicional: ambos ajustes conservan las condiciones probadas, sin hallazgos.
 
+Las dos matrices completas consecutivas pasan con la afinidad normal del equipo.
+Las pasadas completas limitadas a dos CPU dieron 63/63 runtime y 50/51 cliente:
+trazas de Chromium muestran imports locales cancelados con `ERR_NETWORK_CHANGED`
+antes de montar el reto. No se modificaron assertions ni se añadieron retries para
+estos fallos del entorno. Las regresiones específicas de timeout y ataques sí
+pasan bajo dos CPU (18/18 y 45/45).
+
+CI hace un preflight de WebGL con los mismos motores y argumentos, emite logs
+continuos y conserva trazas/capturas como artefacto. `--max-failures=1` interrumpe
+con estado fallido para diagnóstico; una ejecución verde debe pasar toda la matriz.
+
 Regresión reproducible en Linux, adaptando los índices a las CPU disponibles:
 
 ```bash
 taskset -c 0,1 pnpm --filter @mimix/challenge-runtime test:browser --grep 'a hanging hook|operation timeout aborts' --repeat-each=3
 taskset -c 0,1 pnpm --filter @mimix/challenge-runtime test:browser --grep 'host rejects .* messages' --repeat-each=3
-taskset -c 0,1 pnpm test:browser
-taskset -c 0,1 pnpm test:browser
+pnpm test:browser
+pnpm test:browser
 ```
 
 
