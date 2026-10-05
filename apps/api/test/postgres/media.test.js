@@ -1,3 +1,5 @@
+import { fork } from 'node:child_process'
+import { once } from 'node:events'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { mediaFixture, status } from './media-support.js'
@@ -33,11 +35,11 @@ test('media denies other owners, new logins, devices and missing camera/audio gr
   assert.equal((await service.issueRobot(device.token, joined.session.id)).status, 'ready')
 })
 
-test('concurrent room creation has one winner and no untracked provider token', async t => {
+test('concurrent identical room requests recover one session without duplicate provisioning', async t => {
   const { service, actor, request, calls } = await mediaFixture(t)
   const results = await Promise.allSettled([service.create(actor, request()), service.create(actor, request())])
-  assert.equal(results.filter(r => r.status === 'fulfilled').length, 1)
-  assert.equal(results.find(r => r.status === 'rejected').reason.status, 409)
+  assert.equal(results.filter(r => r.status === 'fulfilled').length, 2)
+  assert.equal(results[0].value.session.id, results[1].value.session.id)
   assert.equal(calls.filter(c => c.action === 'create').length, 1)
 })
 
@@ -142,3 +144,69 @@ test('provisioning intent is committed before provider side effects for crash re
   }
   assert.equal((await service.create(actor, request())).status, 'ready')
 })
+
+test('identity outage after intent commit is recoverable after restart without widening grants', async t => {
+  const { service, database, devices, provider, config, actor, stranger, device, request, verification, calls } = await mediaFixture(t)
+  verification.failAt = verification.checks + 2
+  await assert.rejects(service.create(actor, request(['robot_camera'])), status(503))
+  const [pending] = (await database.pool.query('select * from media_sessions')).rows
+  assert.equal(calls.length, 0)
+  const restarted = new mediaModule.MediaService(database, devices, provider, config)
+  const view = await restarted.get(actor.userId, pending.id)
+  assert.equal(view.state, 'provisioning'); assert.equal(view.leaseExpiresAt, 0)
+  await assert.rejects(restarted.issueRobot(device.token, pending.id), status(401))
+  await assert.rejects(restarted.create({ ...actor, userId: stranger.id }, request(['robot_camera'])), status(404))
+  await assert.rejects(restarted.create({ ...actor, identity: { ...actor.identity, sessionId: 'new-login' } }, request(['robot_camera'])), status(403))
+  await assert.rejects(restarted.create(actor, request(['robot_camera', 'robot_speaker'])), status(409))
+  const recovered = await restarted.create(actor, request(['robot_camera']))
+  assert.equal(recovered.status, 'ready'); assert.equal(recovered.session.id, pending.id)
+  assert.deepEqual(recovered.connection.permissions, { publish: [], subscribe: true })
+  const replay = await restarted.create(actor, request(['robot_camera']))
+  assert.equal(replay.session.id, pending.id); assert.equal(replay.connection.room, recovered.connection.room)
+  assert.equal(calls.filter(c => c.action === 'create').length, 1)
+  assert.equal((await database.pool.query('select count(*)::int n from media_sessions')).rows[0].n, 1)
+})
+
+test('crash after remote room creation rolls back activation and retry uses the original room', async t => {
+  const { url, database, devices, provider, config, actor, request, calls } = await mediaFixture(t)
+  const child = fork(new URL('./media-crash-child.js', import.meta.url), { stdio: ['ignore', 'ignore', 'pipe', 'ipc'] })
+  t.after(() => { if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL') })
+  const reached = once(child, 'message', { signal: AbortSignal.timeout(10000) })
+  child.send({ url, actor, request: request(), config })
+  const [effect] = await reached
+  assert.ok(effect.room, effect.error)
+  const stopped = once(child, 'exit')
+  child.kill('SIGKILL'); await stopped
+  const [pending] = (await database.pool.query('select * from media_sessions')).rows
+  assert.equal(pending.state, 'provisioning')
+  const rooms = new Set([effect.room])
+  provider.createRoom = async room => { rooms.add(room) }
+  const restarted = new mediaModule.MediaService(database, devices, provider, config)
+  const recovered = await restarted.create(actor, request())
+  assert.equal(recovered.status, 'ready'); assert.equal(recovered.session.id, pending.id)
+  assert.deepEqual([...rooms], [`mimix-media-${pending.id}`])
+  assert.equal((await restarted.get(actor.userId, pending.id)).state, 'active')
+  await restarted.close(actor.userId, pending.id)
+  assert.equal(calls.filter(c => c.action === 'close').length, 1)
+})
+
+for (const end of ['revoke', 'close', 'disconnect', 'presence', 'media-expiry']) {
+  test(`pending provisioning cannot revive after ${end}`, async t => {
+    const { service, database, devices, provider, config, actor, device, request, verification, calls } = await mediaFixture(t)
+    verification.failAt = verification.checks + 2
+    await assert.rejects(service.create(actor, request()), status(503))
+    const [pending] = (await database.pool.query('select * from media_sessions')).rows
+    assert.equal(pending.state, 'provisioning')
+    if (end === 'revoke') await devices.revoke(actor.userId, device.session.id)
+    if (end === 'close') await service.close(actor.userId, pending.id)
+    if (end === 'disconnect') await service.disconnect(device.token, pending.id)
+    if (end === 'presence') await database.pool.query('update device_sessions set presence_expires_at=1 where id=$1', [device.session.id])
+    if (end === 'media-expiry') await database.pool.query('update media_sessions set expires_at=1 where id=$1', [pending.id])
+    const restarted = new mediaModule.MediaService(database, devices, provider, config)
+    await restarted.sweep()
+    assert.equal((await restarted.get(actor.userId, pending.id)).state, 'closed')
+    await assert.rejects(restarted.issueUser(actor, pending.id))
+    await assert.rejects(restarted.issueRobot(device.token, pending.id))
+    assert.equal(calls.filter(c => c.action === 'create' || c.action === 'token').length, 0)
+  })
+}

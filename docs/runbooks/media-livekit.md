@@ -13,9 +13,10 @@ connection carries its own signaling, never a Mimix generic WebSocket video stre
 LiveKit credentials belong only in the backend. The robot receives a Device token
 and its own room JWT, never a Clerk JWT or the provider API secret.
 
-Apply `0005_media-sessions.sql` through `pnpm --filter @mimix/api db:migrate` before
+Apply `0005_media-sessions.sql` and `0006_media-provisioning.sql` through `pnpm --filter @mimix/api db:migrate` before
 enabling. This adds `media_sessions`, foreign keys and indexes, including one open
-room per DeviceSession. Existing data is unchanged. The runtime database role needs
+room per DeviceSession. Migration 0006 expands the state constraint; it preserves
+existing rows. The runtime database role needs
 SELECT/INSERT/UPDATE on `media_sessions` and the existing DeviceSession permissions.
 Use a separate migration role, as in the PostgreSQL and device runbooks.
 
@@ -69,7 +70,10 @@ All endpoints are no-store and use the shared origin and quota policy:
 | POST `/api/media/sessions/:id/device-token` | paired Device | `{schemaVersion:1}` |
 | POST `/api/media/sessions/:id/disconnect` | paired Device | `{schemaVersion:1}` |
 
-Create returns 201 with `{status:"ready", session, connection}`. Token requests
+Create is idempotent for the same live DeviceSession and exact track set (order
+is irrelevant). It reuses the session/room and revalidates identity/capabilities
+before issuing credentials. A different track set or a closing session returns
+409. Create and its successful retries return 201 with `{status:"ready", session, connection}`. Token requests
 return that shape with 200. `connection` includes URL, generated room/identity, JWT,
 expiry, directional permissions and `revocation` (`provider-managed` or
 `best-effort`). Provider failure returns 200 `{status:"degraded", session,
@@ -83,8 +87,17 @@ Media lifetime is at most five minutes, bounded by DeviceSession absolute expiry
 Admission JWTs last at most 30 seconds and never beyond current presence/device/media
 expiry. Issuance rechecks PostgreSQL, original Clerk session and approved device
 grants while holding the same owner/device locks as revoke. A durable room intent
-commits before any provider side effect, so a crash during provision leaves work
-that can be cleaned. A provider delay past the device lease returns no credential.
+commits as `provisioning` before any provider side effect, with lease zero and
+no device-token admission. It becomes `active` only in the transaction that
+successfully creates the room and issues the first credential. After an identity
+503 or process crash, retry the original POST with the same device and track set:
+it resumes the persisted intent, including after API restart, without extending
+its lifetime. Provider create must be idempotent for the deterministic room name,
+so a crash after remote creation but before activation reuses that room. Retrying
+an already active session also returns the same ID/permissions. The worker cleans
+revoked, closed or expired provisioning rows; it does not provision valid pending
+rooms in the background. No prior request credential is persisted or replayed.
+A provider delay past the device lease returns no credential.
 
 Clients must use `mediaOutputPolicy`, arm a deadline watchdog, and stop capture and
 playback on connecting/disconnected/degraded state or `leaseExpiresAt`. Poll owned
@@ -178,9 +191,10 @@ Run on the actual Jetson before promotion:
 ## Rollback
 
 First stop new media traffic, close all active rooms through owner APIs and verify
-no `active`/`closing` rows remain and no provider participants/rooms remain. Keep a
+no `provisioning`/`active`/`closing` rows remain and no provider participants/rooms remain. Keep a
 worker running while closing rows retry. If the provider is down, disable its
 credentials/ingress and terminate rooms operationally before removing the worker.
+Older application images do not understand `provisioning`; drain those rows too.
 Then set `MIMIX_MEDIA_PROVIDER=disabled` and roll back the application image. Keep
 the additive table/migration in place; do not drop DeviceSession history. Turning
 the flag off alone does not remotely terminate existing WebRTC rooms. Take a full
@@ -192,3 +206,17 @@ Production image `mimix:media-phase16` built and all five container smoke tests 
 the 101-room regression fails without the cursor fix and passes with it. The final
 review found no remaining high/medium defects. Cloud tenant and physical Jetson
 verification remain pending as described above.
+
+PR #17 recovery correction: regression tests reproduce a second identity-check
+503 and an actual SIGKILL after the remote-create boundary. Identical/concurrent
+retries retain the persisted ID and track scope; owner/login changes and track
+widening are denied, and pending sessions remain subject to revoke, disconnect,
+close, presence loss and absolute expiry. LiveKit repeated create preserves the
+same room SID in the real transport smoke.
+
+Recovery validation: `pnpm check` passed all 50 tasks; all 74 PostgreSQL tests
+passed (25 media lifecycle/HTTP). The identity-outage and SIGKILL regressions fail
+against the preceding service implementation and pass with provisioning recovery.
+Drizzle reports no drift, and an independent review found no high/medium defects.
+The recovery image also built successfully and passed all five container smoke
+tests, including migration 0006 and PostgreSQL backup/restore.

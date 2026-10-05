@@ -8,7 +8,7 @@ export const mediaTokenRequestSchema = z.strictObject({ schemaVersion: z.literal
 export const mediaReasonSchema = z.enum(['NONE', 'PROVIDER_UNAVAILABLE', 'DEVICE_ENDED', 'SESSION_EXPIRED', 'USER_CLOSED', 'DISCONNECTED'])
 export const mediaSessionSchema = z.strictObject({
   schemaVersion: z.literal(1), id, deviceSessionId: id, tracks: mediaTracksSchema,
-  state: z.enum(['active', 'closing', 'closed']), reason: mediaReasonSchema,
+  state: z.enum(['provisioning', 'active', 'closing', 'closed']), reason: mediaReasonSchema,
   createdAt: z.number().int().nonnegative(), expiresAt: z.number().int().nonnegative(), leaseExpiresAt: z.number().int().nonnegative(),
 })
 export const mjpegFallbackSchema = z.strictObject({ transport: z.literal('mjpeg'), scope: z.literal('lan'), streamPath: z.literal('/api/vision/video'), authentication: z.literal('operator'), audio: z.literal(false) })
@@ -35,6 +35,7 @@ export function mediaOutputPolicy(tracks: MediaTrack[], state: 'connecting' | 'c
 export interface MediaJoin { room: string; identity: string; permissions: MediaPermissions; expiresAt: number }
 /** Server-only adapter boundary. Client requests may never supply room/identity/grants. */
 export interface MediaProvider {
+  /** Must be idempotent for the same room, including after a lost response. */
   createRoom(room: string): Promise<void>
   issueToken(join: MediaJoin): Promise<{ token: string; expiresAt: number }>
   closeRoom(room: string, identities: string[]): Promise<void>

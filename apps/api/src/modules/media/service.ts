@@ -51,10 +51,14 @@ export class MediaService {
   async create(actor: DeviceActor, input: unknown) {
     const request = parseMedia(mediaRequestSchema, input)
     const pending = await this.devices.withUserSession(actor, request.deviceSessionId, requiredDeviceCapabilities(request.tracks), async (tx, authority) => {
-      const [existing] = await tx.select({ id: mediaSessions.id }).from(mediaSessions).where(and(eq(mediaSessions.deviceSessionId, authority.sessionId), ne(mediaSessions.state, 'closed')))
-      if (existing) throw new MediaError(409, 'media session already exists')
+      const [existing] = await tx.select().from(mediaSessions).where(and(eq(mediaSessions.deviceSessionId, authority.sessionId), ne(mediaSessions.state, 'closed')))
+      if (existing) {
+        const sameTracks = existing.tracks.length === request.tracks.length && request.tracks.every(track => existing.tracks.includes(track))
+        if ((existing.state === 'provisioning' || existing.state === 'active') && existing.expiresAt > authority.now && sameTracks) return existing
+        throw new MediaError(409, 'media session already exists')
+      }
       const [row] = await tx.insert(mediaSessions).values({ id: randomUUID(), userId: authority.userId, deviceSessionId: authority.sessionId,
-        tracks: request.tracks, state: 'active', reason: 'NONE', createdAt: authority.now, expiresAt: Math.min(authority.now + 300000, authority.expiresAt) }).returning()
+        tracks: request.tracks, state: 'provisioning', reason: 'NONE', createdAt: authority.now, expiresAt: Math.min(authority.now + 300000, authority.expiresAt) }).returning()
       return row
     })
     // Commit the cleanup intent before any remote side effect, including process death.
@@ -64,10 +68,16 @@ export class MediaService {
     })
   }
   private async join(tx: Transaction, row: Row, authority: DeviceAuthority, participant: 'user' | 'robot', create = false) {
-    if (row.state !== 'active' || row.expiresAt <= authority.now) throw new MediaError(401)
+    if ((row.state !== 'active' && !(create && row.state === 'provisioning')) || row.expiresAt <= authority.now) throw new MediaError(401)
     const permissions = participantPermissions(row.tracks, participant), identity = `${participant}:${row.id}`, room = roomName(row.id)
     try {
-      if (create) await this.provider.createRoom(room)
+      if (row.state === 'provisioning') {
+        // Deterministic room name + idempotent provider create recover a crash after
+        // the remote effect but before this transaction commits. No lease until ready.
+        await this.provider.createRoom(room)
+        const [active] = await tx.update(mediaSessions).set({ state: 'active' }).where(eq(mediaSessions.id, row.id)).returning()
+        row = active
+      }
       const credentials = await this.provider.issueToken({ room, identity, permissions, expiresAt: Math.min(authority.now + 30000, authority.presenceExpiresAt, authority.expiresAt, row.expiresAt) })
       if (credentials.expiresAt <= await this.now(tx) || credentials.expiresAt > Math.min(authority.presenceExpiresAt, row.expiresAt)) throw new Error()
       return { status: 'ready' as const, session: this.view(row, authority.presenceExpiresAt), connection: { provider: 'livekit' as const,
@@ -102,7 +112,7 @@ export class MediaService {
     const [device] = await tx.select().from(deviceSessions).where(eq(deviceSessions.id, row.deviceSessionId))
     const now = await this.now(tx)
     const ended = device.status !== 'active' || device.expiresAt <= now || device.presenceExpiresAt <= now
-    if (row.state === 'active' && (ended || row.expiresAt <= now)) {
+    if ((row.state === 'active' || row.state === 'provisioning') && (ended || row.expiresAt <= now)) {
       const [updated] = await tx.update(mediaSessions).set({ state: 'closing', reason: ended ? 'DEVICE_ENDED' : 'SESSION_EXPIRED' }).where(eq(mediaSessions.id, row.id)).returning()
       row = updated
     }
@@ -128,7 +138,7 @@ export class MediaService {
     const hint = await this.load(id, userId)
     const row = await this.transaction(userId, async tx => {
       const [current] = await tx.select().from(mediaSessions).where(eq(mediaSessions.id, hint.id)).for('update')
-      if (current.state !== 'active') return current
+      if (current.state !== 'active' && current.state !== 'provisioning') return current
       const [closing] = await tx.update(mediaSessions).set({ state: 'closing', reason: 'USER_CLOSED' }).where(eq(mediaSessions.id, current.id)).returning()
       return closing
     })
@@ -139,7 +149,7 @@ export class MediaService {
     const hint = await this.load(id)
     const closing = await this.devices.withDeviceSession(token, hint.deviceSessionId, [], async tx => {
       const [row] = await tx.select().from(mediaSessions).where(eq(mediaSessions.id, hint.id)).for('update')
-      if (row.state !== 'active') return row
+      if (row.state !== 'active' && row.state !== 'provisioning') return row
       const [updated] = await tx.update(mediaSessions).set({ state: 'closing', reason: 'DISCONNECTED' }).where(eq(mediaSessions.id, row.id)).returning()
       return updated
     })
@@ -156,7 +166,7 @@ export class MediaService {
   async sweep(): Promise<void> {
     const now = sql`floor(extract(epoch from clock_timestamp()) * 1000)`
     const candidates = await this.database.db.select({ row: mediaSessions }).from(mediaSessions).innerJoin(deviceSessions, eq(mediaSessions.deviceSessionId, deviceSessions.id))
-      .where(and(this.cleanupCursor ? gt(mediaSessions.id, this.cleanupCursor) : undefined, or(eq(mediaSessions.state, 'closing'), and(eq(mediaSessions.state, 'active'), or(lte(mediaSessions.expiresAt, now), ne(deviceSessions.status, 'active'), lte(deviceSessions.expiresAt, now), lte(deviceSessions.presenceExpiresAt, now))))))
+      .where(and(this.cleanupCursor ? gt(mediaSessions.id, this.cleanupCursor) : undefined, or(eq(mediaSessions.state, 'closing'), and(or(eq(mediaSessions.state, 'active'), eq(mediaSessions.state, 'provisioning')), or(lte(mediaSessions.expiresAt, now), ne(deviceSessions.status, 'active'), lte(deviceSessions.expiresAt, now), lte(deviceSessions.presenceExpiresAt, now))))))
       .orderBy(asc(mediaSessions.id)).limit(100)
     this.cleanupCursor = candidates.length === 100 ? candidates.at(-1)!.row.id : undefined
     // Bounded concurrency; one unavailable room cannot monopolize the worker.

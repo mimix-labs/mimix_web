@@ -8,6 +8,7 @@ import test from 'node:test'
 import { createServer } from 'vite'
 import { chromium } from '@playwright/test'
 import { LiveKitMediaProvider } from '../../dist/modules/media/livekit.js'
+import { RoomServiceClient } from 'livekit-server-sdk'
 import { participantPermissions } from '@mimix/media-contract'
 async function port() { const server = tcpServer().listen(0, '127.0.0.1'); await once(server, 'listening'); const value = server.address().port; await new Promise(resolve => server.close(resolve)); return value }
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
@@ -20,6 +21,12 @@ test('real LiveKit WebRTC transports robot camera/microphone and user speaker au
   const provider = new LiveKitMediaProvider({ provider: 'livekit', url: `ws://127.0.0.1:${http}`, apiKey: key, apiSecret: secret, mode: 'self-hosted', lan: true, timeoutMs: 3000 })
   const room = `test-${randomUUID()}`
   for (let n = 0; ; n++) { try { await provider.createRoom(room); break } catch (error) { if (n === 30) throw error; await delay(100) } }
+  const rooms = new RoomServiceClient(`http://127.0.0.1:${http}`, key, secret)
+  const [original] = await rooms.listRooms([room])
+  await provider.createRoom(room)
+  const [retried] = await rooms.listRooms([room])
+  assert.equal(retried.sid, original.sid, 'provision retry must preserve the existing room')
+  assert.equal(retried.maxParticipants, 2)
   const vite = await createServer({ configFile: false, root: process.cwd(), server: { host: '127.0.0.1', port: 0 }, logLevel: 'error' }); await vite.listen(); t.after(() => vite.close())
   const browser = await chromium.launch({ headless: true, channel: 'chromium', args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'] }); t.after(() => browser.close())
   const robot = await browser.newPage(), user = await browser.newPage()

@@ -7,7 +7,7 @@ export function addMediaPaths(document: OpenAPIObject, config: Pick<ApiConfig, '
   if (config.media.provider === 'disabled') return document
   const schema = (value: z.ZodType) => z.toJSONSchema(value, { io: 'input', target: 'openapi-3.0', unrepresentable: 'any' }) as SchemaObject
   const routes: Array<[string, 'get' | 'post' | 'delete', string, z.ZodType | undefined]> = [
-    ['sessions', 'post', 'Create one owned room with explicitly approved camera, microphone and speaker tracks', mediaRequestSchema],
+    ['sessions', 'post', 'Create or recover the same owned room for an identical device and track set', mediaRequestSchema],
     ['sessions', 'get', 'List owned media sessions', undefined],
     ['sessions/{id}', 'get', 'Read live lease and terminal state', undefined],
     ['sessions/{id}', 'delete', 'Close an owned room, including from a new owner login', undefined],
@@ -18,8 +18,8 @@ export function addMediaPaths(document: OpenAPIObject, config: Pick<ApiConfig, '
   for (const [path, method, summary, input] of routes) {
     const operation: OperationObject = { tags: ['media'], summary,
       security: [{ [path.endsWith('/device-token') || path.endsWith('/disconnect') ? 'DeviceToken' : 'bearer']: [] }],
-      description: 'Opt-in with Clerk, PostgreSQL and DeviceSessions. No-store. Tokens authorize only server-selected room, identity and track sources. Ready responses include session and connection credentials; provider failures return status=degraded without credentials. Clients must stop capture/playback at leaseExpiresAt or disconnect. Token expiry only limits admission; active-room cleanup is separate. Self-hosted LiveKit revocation is best-effort.',
-      responses: { '200': { description: 'Session, page, ready credentials, or degraded provider status' }, '201': { description: 'New ready media session' }, '202': { description: 'Closing; remote cleanup pending' }, '400': { description: 'Invalid input' }, '401': { description: 'Expired or invalid credential/lease' }, '403': { description: 'Origin, login or capability denied' }, '404': { description: 'Not found' }, '409': { description: 'Device already has an open media session' }, '429': { description: 'Rate limited' }, '503': { description: 'Identity or storage unavailable' } },
+      description: 'Opt-in with Clerk, PostgreSQL and DeviceSessions. No-store. Tokens authorize only server-selected room, identity and track sources. Provisioning has no lease; retry the same create after identity outage or restart. Identical retries preserve room, scope and lifetime. Ready responses include session and connection credentials; provider failures return status=degraded without credentials. Clients must stop capture/playback at leaseExpiresAt or disconnect. Token expiry only limits admission; active-room cleanup is separate. Self-hosted LiveKit revocation is best-effort.',
+      responses: { '200': { description: 'Session, page, ready credentials, or degraded provider status' }, '201': { description: 'New ready media session' }, '202': { description: 'Closing; remote cleanup pending' }, '400': { description: 'Invalid input' }, '401': { description: 'Expired or invalid credential/lease' }, '403': { description: 'Origin, login or capability denied' }, '404': { description: 'Not found' }, '409': { description: 'Conflicting track set, closing or expired media session' }, '429': { description: 'Rate limited' }, '503': { description: 'Identity or storage unavailable' } },
     }
     if (input) operation.requestBody = { required: true, content: { 'application/json': { schema: schema(input) } } }
     if (path.includes('{id}')) operation.parameters = [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }]

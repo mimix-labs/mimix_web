@@ -8,8 +8,8 @@ export async function mediaFixture(t, capabilities = ['presence:heartbeat', 'cam
   const base = await fixture(t)
   const identity = { provider: 'clerk', issuer: 'https://media.test', subject: 'alice', sessionId: 'original' }
   const owner = await base.identities.resolve(identity), stranger = await base.identities.resolve({ ...identity, subject: 'bob' })
-  const actor = { userId: owner.id, identity }, verification = { revoked: false }
-  const devices = new DeviceStore(base.database, async () => { if (verification.revoked) throw new IdentityError(401) }, new DeviceTokens(randomBytes(32).toString('base64url')))
+  const actor = { userId: owner.id, identity }, verification = { revoked: false, checks: 0, failAt: 0 }
+  const devices = new DeviceStore(base.database, async () => { if (++verification.checks === verification.failAt) throw new IdentityError(503); if (verification.revoked) throw new IdentityError(401) }, new DeviceTokens(randomBytes(32).toString('base64url')))
   async function connect() {
     const verifier = randomBytes(32).toString('base64url')
     const pair = await devices.createPairing(actor, { schemaVersion: 1, capabilities, challenge: createHash('sha256').update(verifier).digest('hex') })

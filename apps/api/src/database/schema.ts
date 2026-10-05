@@ -74,4 +74,4 @@ export const mediaSessions = pgTable('media_sessions', {
   expiresAt: bigint('expires_at', { mode: 'number' }).notNull(),
 }, t => [index('media_session_owner').on(t.userId, t.id), index('media_session_cleanup').on(t.state, t.expiresAt),
   uniqueIndex('media_device_open').on(t.deviceSessionId).where(sql`${t.state} <> 'closed'`),
-  check('media_session_state', sql`${t.state} IN ('active','closing','closed')`)])
+  check('media_session_state', sql`${t.state} IN ('provisioning','active','closing','closed')`)])
