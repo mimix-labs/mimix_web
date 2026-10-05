@@ -6,6 +6,7 @@ import { IdentityModule } from './modules/identity/identity.module.js'
 import { ChallengesModule } from './modules/challenges/challenges.module.js'
 import type { LearningStore } from './modules/learning/store.js'
 import { LearningModule } from './modules/learning/learning.module.js'
+import type { CampaignStore } from './modules/campaigns/store.js'
 import { CampaignsModule } from './modules/campaigns/campaigns.module.js'
 import { AgentModule } from './modules/agent/agent.module.js'
 import { ConversationsModule } from './modules/conversations/conversations.module.js'
@@ -15,11 +16,11 @@ import { MediaModule } from './modules/media/media.module.js'
 import { SyncModule } from './modules/sync/sync.module.js'
 
 @Module({
-  imports: [IdentityModule, ChallengesModule, CampaignsModule, AgentModule, ConversationsModule, EmbodimentsModule, DevicesModule, MediaModule, SyncModule],
+  imports: [IdentityModule, ChallengesModule, AgentModule, ConversationsModule, EmbodimentsModule, DevicesModule, MediaModule, SyncModule],
   controllers: [HealthController],
 })
 export class AppModule {
-  static register(config: ApiConfig, learning?: LearningStore, close?: () => Promise<void> | undefined): DynamicModule {
-    return { module: AppModule, imports: [LearningModule.register(learning)], providers: [{ provide: 'DATABASE_LIFECYCLE', useValue: { onApplicationShutdown: close } }, { provide: API_CONFIG, useValue: config }, LegacyService] }
+  static register(config: ApiConfig, learning?: LearningStore, close?: () => Promise<void> | undefined, campaigns?: CampaignStore): DynamicModule {
+    return { module: AppModule, imports: [LearningModule.register(learning), CampaignsModule.register(campaigns)], providers: [{ provide: 'DATABASE_LIFECYCLE', useValue: { onApplicationShutdown: close } }, { provide: API_CONFIG, useValue: config }, LegacyService] }
   }
 }
