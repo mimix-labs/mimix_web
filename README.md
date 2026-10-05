@@ -91,6 +91,13 @@ acotados, recomendaciones y herramientas de lectura autorizadas. Wall-E es un
 perfil reemplazable separado del núcleo. El puerto LLM es opcional; todavía no hay
 endpoint, proveedor externo ni voz activados. [Verificación y rollback](docs/runbooks/agent-core-verification.md).
 
+## Voz opcional
+
+El [VoiceProvider](docs/architecture/voice-provider.md) ofrece síntesis detrás del
+servidor con subtítulos y fallback sin audio. ElevenLabs está desactivado por defecto
+y requiere Clerk, configuración privada y política de retención explícita. No añade
+UI ni conversación offline. [Activación, costos y rollback](docs/runbooks/voice-provider.md).
+
 ## Modos de visión
 
 ### Laptop o Railway
