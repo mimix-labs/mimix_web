@@ -98,6 +98,13 @@ servidor con subtítulos y fallback sin audio. ElevenLabs está desactivado por 
 y requiere Clerk, configuración privada y política de retención explícita. No añade
 UI ni conversación offline. [Activación, costos y rollback](docs/runbooks/voice-provider.md).
 
+## Coordinación de embodiment
+
+El [coordinador](docs/architecture/embodiment-coordinator.md) añade lease temporal
+único, permisos web revocables y un stub físico. La API de voz conserva subtítulos
+y evita síntesis web cuando el robot posee el lease. No conecta hardware ni modifica
+la UI. [Límites, validación y rollback](docs/runbooks/embodiment-coordinator.md).
+
 ## Modos de visión
 
 ### Laptop o Railway
