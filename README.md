@@ -194,3 +194,10 @@ Dockerfile                 Build de producción
 - `MIMIX_ROBOT_BRIDGE_TOKEN`: protege los endpoints de comandos del robot.
 
 No publiques archivos `.env` ni tokens reales en el repositorio.
+
+## Media WebRTC (opt-in)
+
+El backend ofrece `@mimix/media-contract` y un adaptador LiveKit con tokens de sala
+acotados por DeviceSession, cámara/micrófono/altavoz explícitos y fallback MJPEG LAN.
+Configuración, límites de revocación, pruebas y gate Jetson: [runbook MediaProvider](docs/runbooks/media-livekit.md).
+Desactivado por defecto; no incorpora todavía un consumidor de medios en la UI o el robot.
