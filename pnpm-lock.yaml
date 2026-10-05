@@ -111,6 +111,18 @@ importers:
 
   client:
     dependencies:
+      '@mimix/challenge-browser':
+        specifier: workspace:*
+        version: link:../packages/challenge-browser
+      '@mimix/challenge-mathematics':
+        specifier: workspace:*
+        version: link:../packages/challenge-mathematics
+      '@mimix/challenge-science':
+        specifier: workspace:*
+        version: link:../packages/challenge-science
+      '@mimix/challenge-sdk':
+        specifier: workspace:*
+        version: link:../packages/challenge-sdk
       gsap:
         specifier: ^3.12.5
         version: 3.15.0
@@ -118,6 +130,9 @@ importers:
         specifier: ^0.167.0
         version: 0.167.1
     devDependencies:
+      '@playwright/test':
+        specifier: 1.63.0
+        version: 1.63.0
       '@tailwindcss/vite':
         specifier: ^4.0.0
         version: 4.3.1(vite@5.4.21(@types/node@24.13.6)(lightningcss@1.32.0))
@@ -127,6 +142,35 @@ importers:
       vite:
         specifier: ^5.4.0
         version: 5.4.21(@types/node@24.13.6)(lightningcss@1.32.0)
+
+  packages/challenge-browser:
+    dependencies:
+      '@mimix/challenge-sdk':
+        specifier: workspace:*
+        version: link:../challenge-sdk
+      three:
+        specifier: 0.128.0
+        version: 0.128.0
+    devDependencies:
+      esbuild:
+        specifier: 0.28.2
+        version: 0.28.2
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/challenge-mathematics:
+    dependencies:
+      '@mimix/challenge-browser':
+        specifier: workspace:*
+        version: link:../challenge-browser
+      '@mimix/challenge-sdk':
+        specifier: workspace:*
+        version: link:../challenge-sdk
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
   packages/challenge-runtime:
     dependencies:
@@ -149,6 +193,19 @@ importers:
       esbuild:
         specifier: 0.28.2
         version: 0.28.2
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/challenge-science:
+    dependencies:
+      '@mimix/challenge-browser':
+        specifier: workspace:*
+        version: link:../challenge-browser
+      '@mimix/challenge-sdk':
+        specifier: workspace:*
+        version: link:../challenge-sdk
+    devDependencies:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -2634,6 +2691,9 @@ packages:
     resolution: {integrity: sha512-e2zZ96wSChazBsbENf/Pcm/4swHt2cEKQ92rhUjkL9GCKiTDJIaTBenjE/m9DXi0QBmTMDkFDdOomUy20A1tDQ==}
     engines: {node: '>=20'}
 
+  three@0.128.0:
+    resolution: {integrity: sha512-i0ap/E+OaSfzw7bD1TtYnPo3VEplkl70WX5fZqZnfZsE3k3aSFudqrrC9ldFZfYFkn1zwDmBcdGfiIm/hnbyZA==}
+
   three@0.167.1:
     resolution: {integrity: sha512-gYTLJA/UQip6J/tJvl91YYqlZF47+D/kxiWrbTon35ZHlXEN0VOo+Qke2walF1/x92v55H6enomymg4Dak52kw==}
 
@@ -4874,6 +4934,8 @@ snapshots:
   thread-stream@4.2.0:
     dependencies:
       real-require: 1.0.0
+
+  three@0.128.0: {}
 
   three@0.167.1: {}
 

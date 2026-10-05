@@ -16,7 +16,8 @@ export default [
   },
   js.configs.recommended,
   ...tseslint.configs.recommended.map(config => ({ ...config, files: ['apps/api/**/*.ts', 'server/src/*.d.ts', 'packages/**/*.ts'] })),
-  { files: ['apps/api/**/*.{ts,js}', 'packages/**/*.{ts,js}'], languageOptions: { globals: globals.node } },
+  { files: ['apps/api/**/*.{ts,js}', 'packages/**/*.{ts,js}', 'client/test/**/*.js'], languageOptions: { globals: globals.node } },
+  { files: ['packages/challenge-{browser,mathematics,science}/src/*.js'], languageOptions: { globals: globals.browser } },
   {
     files: ['server/**/*.js', 'test/**/*.js', '*.js'],
     languageOptions: {

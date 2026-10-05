@@ -8,6 +8,9 @@
       ],
       "outputs": [
         "dist/**"
+      ],
+      "env": [
+        "VITE_MIMIX_CHALLENGES_MODE"
       ]
     },
     "dev": {
@@ -32,11 +35,17 @@
     "//#typecheck:repo": {
       "cache": false,
       "dependsOn": [
-        "@mimix/api#build"
+        "@mimix/api#build",
+        "@mimix/challenge-mathematics#build",
+        "@mimix/challenge-science#build"
       ]
     },
     "//#test:repo": {
-      "cache": false
+      "cache": false,
+      "dependsOn": [
+        "@mimix/challenge-mathematics#build",
+        "@mimix/challenge-science#build"
+      ]
     },
     "//#test:production": {
       "dependsOn": [

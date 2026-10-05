@@ -1,0 +1,33 @@
+{
+  "name": "@mimix/challenge-science",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./surface.html": "./src/surface.html",
+    "./styles.css": "./src/styles.css",
+    "./manifest.json": "./dist/manifest.json"
+  },
+  "files": [
+    "dist",
+    "src/*.css",
+    "src/surface.html",
+    "src/manifest.json",
+    "fixtures"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@mimix/challenge-sdk": "workspace:*",
+    "@mimix/challenge-browser": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

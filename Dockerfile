@@ -9,6 +9,9 @@ COPY apps/api/package.json ./apps/api/package.json
 COPY packages/contracts/package.json ./packages/contracts/package.json
 COPY packages/challenge-sdk/package.json ./packages/challenge-sdk/package.json
 COPY packages/challenge-runtime/package.json ./packages/challenge-runtime/package.json
+COPY packages/challenge-browser/package.json ./packages/challenge-browser/package.json
+COPY packages/challenge-mathematics/package.json ./packages/challenge-mathematics/package.json
+COPY packages/challenge-science/package.json ./packages/challenge-science/package.json
 
 FROM base AS build
 RUN pnpm install --frozen-lockfile
@@ -18,6 +21,7 @@ COPY client/ ./client/
 COPY server/src/ ./server/src/
 COPY apps/api/tsconfig.json ./apps/api/tsconfig.json
 COPY apps/api/src/ ./apps/api/src/
+ARG VITE_MIMIX_CHALLENGES_MODE=package
 RUN pnpm build
 
 FROM base AS production-deps

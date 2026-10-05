@@ -6,6 +6,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsInlineLimit: 0,
+    rollupOptions: { input: { world: 'index.html', mathematics: 'challenges/mathematics/index.html', science: 'challenges/science/index.html' } },
   },
   server: {
     // Runabit usa el puerto 3000 para sus retos interactivos.

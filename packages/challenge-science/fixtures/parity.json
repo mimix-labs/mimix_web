@@ -1,0 +1,14 @@
+{
+  "challenge": "science",
+  "version": "1.0.0",
+  "selections": [
+    "H",
+    "Mg",
+    "Og"
+  ],
+  "pinchThreshold": 0.045,
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  }
+}

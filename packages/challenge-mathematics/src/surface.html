@@ -1,0 +1,43 @@
+<video id="webcam" autoplay playsinline></video>
+  <img id="robot-camera" alt="Video en tiempo real de la Jetson" hidden>
+  <canvas id="canvas"></canvas>
+  <div id="three-canvas"></div>
+
+  <div id="sidebar-menu">
+    <h3>Formas</h3>
+    <div class="shape-option">
+      <canvas id="preview-cube" width="90" height="90"></canvas>
+      <span>Cubo</span>
+    </div>
+    <div class="shape-option">
+      <canvas id="preview-octahedron" width="90" height="90"></canvas>
+      <span>Octaedro</span>
+    </div>
+    <div class="shape-option">
+      <canvas id="preview-prism" width="90" height="90"></canvas>
+      <span>Prisma</span>
+    </div>
+    <div class="shape-option">
+      <canvas id="preview-pyramid" width="90" height="90"></canvas>
+      <span>Pirámide</span>
+    </div>
+  </div>
+
+  <!-- Robot flotante - SIN cuadro contenedor, solo el robot 3D -->
+  <div id="robot-container"></div>
+  <div id="robot-dialogue" role="status" aria-live="polite">
+    <span>Wall-E</span>
+    <p id="robot-dialogue-text"></p>
+  </div>
+
+
+
+
+
+
+
+
+  <!-- GLTFLoader usa la instancia de Three.js ya cargada arriba. -->
+
+
+  <!-- Nuevos módulos del robot -->

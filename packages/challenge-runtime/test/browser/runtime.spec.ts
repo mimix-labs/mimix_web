@@ -1,9 +1,15 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 import type {} from '../../harness/main.js'
 const ordinary = `var MimixChallenge = { createChallenge(context) { globalThis.ctx = context; return {
   async initialize() {}, async start() {}, async pause() {}, async resume() {}, async dispose() {}
 } } }`
 test.beforeEach(async ({ page }) => { await page.goto('/'); await page.waitForFunction(() => !!window.harness) })
+// No challenge timers exist yet. Loading keeps real message/iframe work, while
+// the 150 ms deadline starts advancing only after the operation under test begins.
+async function pauseTimeoutClock(page: Page) {
+  await page.clock.install({time: 0})
+  await page.clock.pauseAt(10000)
+}
 test('SDK fixture runs in sandbox, lifecycle is ordered and disposal is idempotent', async ({ page }) => {
   const result = await page.evaluate(async () => {
     try { await window.harness.mount(); return 'ready' } catch (error) { return String(error) }
@@ -27,8 +33,14 @@ test('optional grants are denied, revoked per call and required grants fail clos
   expect(await page.evaluate(async () => { try { await window.harness.mount(undefined, { approved: [] }) } catch(error) { return (error as {code:string}).code } })).toBe('CAPABILITY_DENIED')
 })
 test('a hanging hook times out and removes the frame', async ({ page }) => {
-  await page.evaluate(async bundle => { await window.harness.mount(bundle, { timeoutMs: 150 }) }, ordinary.replace('async start() {}', 'async start() { await new Promise(() => {}) }'))
-  expect(await page.evaluate(async () => { try { await window.harness.handle.start() } catch(error) { return (error as {code:string}).code } })).toBe('HOST_UNAVAILABLE')
+  await pauseTimeoutClock(page)
+  await page.evaluate(async bundle => { await window.harness.mount(bundle, { timeoutMs: 150 }) }, ordinary.replace('async start() {}', 'async start() { globalThis.hookStarted = true; await new Promise(() => {}) }'))
+  const result = page.evaluate(async () => { try { await window.harness.handle.start() } catch(error) { return (error as {code:string}).code } })
+  await expect.poll(() => page.frames()[1].evaluate(() => (globalThis as unknown as {hookStarted:boolean}).hookStarted)).toBe(true)
+  await page.clock.runFor(149)
+  expect(await page.evaluate(() => window.harness.handle.state)).toBe('starting')
+  await page.clock.runFor(1)
+  expect(await result).toBe('HOST_UNAVAILABLE')
   await expect(page.locator('iframe')).toHaveCount(0)
   expect(await page.evaluate(() => window.harness.handle.state)).toBe('error')
 })
@@ -46,16 +58,22 @@ const hostile = ordinary + `;window.addEventListener('message', event => { if (e
 for (const attack of ['version','schema','session','oversize','replay'] as const) {
   test(`host rejects ${attack} messages without unauthorized effects`, async ({ page }) => {
     await page.evaluate(async bundle => { await window.harness.mount(bundle); await window.harness.handle.start() }, hostile)
+    // Install in the child, then trigger from the surviving parent. Rejection can
+    // remove the iframe before a child evaluate response reaches Playwright.
     await page.frames()[1].evaluate(kind => {
-      const target = globalThis as unknown as { attackPort: MessagePort; __mimixConfig: { session: string } }
-      const message: Record<string, unknown> = { v: 1, session: target.__mimixConfig.session, kind: 'call', id: 1, method: 'progress.record', input: { type:'hint_requested',payload:{} } }
-      if (kind === 'version') message.v = 2
-      if (kind === 'schema') message.input = { type: 'answer_submitted', payload: { correct: true, userId: 'forged' } }
-      if (kind === 'session') message.session = 'a'.repeat(32)
-      if (kind === 'oversize') message.extra = 'x'.repeat(17000)
-      target.attackPort.postMessage(JSON.stringify(message))
-      if (kind === 'replay') target.attackPort.postMessage(JSON.stringify(message))
+      window.addEventListener('message', event => {
+        if (event.data !== 'run-hostile-fixture') return
+        const target = globalThis as unknown as { attackPort: MessagePort; __mimixConfig: { session: string } }
+        const message: Record<string, unknown> = { v: 1, session: target.__mimixConfig.session, kind: 'call', id: 1, method: 'progress.record', input: { type:'hint_requested',payload:{} } }
+        if (kind === 'version') message.v = 2
+        if (kind === 'schema') message.input = { type: 'answer_submitted', payload: { correct: true, userId: 'forged' } }
+        if (kind === 'session') message.session = 'a'.repeat(32)
+        if (kind === 'oversize') message.extra = 'x'.repeat(17000)
+        target.attackPort.postMessage(JSON.stringify(message))
+        if (kind === 'replay') target.attackPort.postMessage(JSON.stringify(message))
+      })
     }, attack)
+    await page.evaluate(() => document.querySelector('iframe')!.contentWindow!.postMessage('run-hostile-fixture', '*'))
     await expect.poll(() => page.evaluate(() => window.harness.handle.state)).toBe('error')
     expect(await page.evaluate(() => window.harness.calls.length)).toBe(attack === 'replay' ? 1 : 0)
     await expect(page.locator('iframe')).toHaveCount(0)
@@ -126,10 +144,16 @@ test('revoking an optional grant aborts work and later calls remain denied', asy
   expect(await page.frames()[1].evaluate(() => (globalThis as unknown as {ctx:import('@mimix/challenge-sdk').ChallengeContext}).ctx.capabilities.includes('agent'))).toBe(false)
 })
 test('operation timeout aborts the adapter while a caught rejection leaves the instance usable', async ({ page }) => {
+  await pauseTimeoutClock(page)
   await page.evaluate(async bundle => { await window.harness.mount(bundle,{slow:true,timeoutMs:150}); await window.harness.handle.start() }, ordinary)
-  expect(await page.frames()[1].evaluate(async () => {
+  const result = page.frames()[1].evaluate(async () => {
     try { await (globalThis as unknown as {ctx:import('@mimix/challenge-sdk').ChallengeContext}).ctx.mimix.agent.speak({text:'private'}) } catch(error) { return (error as {code:string}).code }
-  })).toBe('HOST_UNAVAILABLE')
+  })
+  await expect.poll(() => page.evaluate(() => window.harness.calls.length)).toBe(1)
+  await page.clock.runFor(149)
+  expect(await page.evaluate(() => window.harness.calls[0].aborted)).toBe(false)
+  await page.clock.runFor(1)
+  expect(await result).toBe('HOST_UNAVAILABLE')
   expect(await page.evaluate(() => window.harness.calls[0].aborted)).toBe(true)
   expect(await page.evaluate(() => window.harness.handle.state)).toBe('running')
 })

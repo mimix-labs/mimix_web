@@ -1,0 +1,15 @@
+{
+  "challenge": "mathematics",
+  "version": "1.0.0",
+  "selections": [
+    "cubo",
+    "octaedro",
+    "prisma",
+    "piramide"
+  ],
+  "pinchThreshold": 0.045,
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  }
+}
