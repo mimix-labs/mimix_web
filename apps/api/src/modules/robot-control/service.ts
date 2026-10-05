@@ -10,8 +10,10 @@ import type { EmbodimentSessions } from '../embodiments/sessions.js'
 import { ControlLeader } from './leader.js'
 type Session = typeof sessions.$inferSelect
 type Command = typeof commands.$inferSelect
+type CloseReason = string | ((tx: Transaction, row: Session) => Promise<string | undefined>)
 const pending = ['prepared', 'published']
 export class RobotControlService {
+  private readonly lifecycleTails = new Map<string, Promise<void>>()
   private readonly leader: ControlLeader
   private readonly presence = new Map<string, { value: RobotGatewayPresence; received: number }>()
   private events: Promise<void> = Promise.resolve()
@@ -76,11 +78,27 @@ export class RobotControlService {
       || !this.embodiments.forUser(row.userId)?.permit('robot', row.leaseId)?.isCurrent()) throw new DeviceError(409, 'control lease unavailable')
     this.gateway(row.deviceSessionId, row.deviceId, row.connectionId)
   }
+  /** The DB leader guarantees one control service. Hold this per-owner gate across
+   * both close commits and stop delivery so a new lease cannot overtake old output.
+   * Tails always resolve, including failures, and idle owners consume no entries. */
+  private async lifecycle<T>(userId: string, operation: () => Promise<T>): Promise<T> {
+    const previous = this.lifecycleTails.get(userId) ?? Promise.resolve()
+    let release!: () => void
+    const tail = new Promise<void>(resolve => { release = resolve })
+    this.lifecycleTails.set(userId, tail)
+    await previous
+    try { return await operation() }
+    finally { if (this.lifecycleTails.get(userId) === tail) this.lifecycleTails.delete(userId); release() }
+  }
   async acquire(actor: DeviceActor, value: unknown) {
-    const input = parseDevice(robotLeaseRequestSchema, value); await this.available()
+    const input = parseDevice(robotLeaseRequestSchema, value)
+    return this.lifecycle(actor.userId, () => this.acquireLease(actor, input.deviceSessionId))
+  }
+  private async acquireLease(actor: DeviceActor, sessionId: string) {
+    await this.available()
     let acquired: { leaseId: string } | undefined
     try {
-      return await this.devices.withUserSession(actor, input.deviceSessionId, ['behavior:stop'], async (tx, authority) => {
+      return await this.devices.withUserSession(actor, sessionId, ['behavior:stop'], async (tx, authority) => {
         const gateway = this.gateway(authority.sessionId, authority.deviceId)
         const [existing] = await tx.select().from(sessions).where(and(eq(sessions.userId, actor.userId), eq(sessions.state, 'active')))
         if (existing) throw new DeviceError(409, 'control lease already exists')
@@ -168,7 +186,10 @@ export class RobotControlService {
     for (const command of uncertain) await this.record(tx, row, 'unknown', reason, command.id)
     await this.record(tx, row, 'closed', reason)
   }
-  private async closeControl(userId: string, id: string, reason: string | ((tx: Transaction, row: Session) => Promise<string | undefined>)): Promise<void> {
+  private closeControl(userId: string, id: string, reason: CloseReason): Promise<void> {
+    return this.lifecycle(userId, () => this.finishClose(userId, id, reason))
+  }
+  private async finishClose(userId: string, id: string, reason: CloseReason): Promise<void> {
     let stopped: Command | undefined, row: Session | undefined, closedLease: string | undefined
     await this.transaction(userId, async tx => {
       row = await this.row(tx, userId, id)

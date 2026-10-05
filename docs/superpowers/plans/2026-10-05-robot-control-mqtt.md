@@ -121,3 +121,26 @@ Files: docs/architecture + runbook, README, server/.env.example, CI MQTT smoke.
   PostgreSQL migration/persistence/backup restoration. Temporary phase PostgreSQL
   and broker fixtures were removed. Delivery is one coherent Conventional Commit
   on feat/robot-control-mqtt followed by a PR; no merge or prompt18 execution.
+
+## PR18 follow-up
+
+- Remote run37389514352, Quality gates job112030978332 failed in the PostgreSQL
+  restart test: next leader admission returned `robot control leader unavailable`.
+  `PoolClient.release(true)` completed before PostgreSQL processed TCP closure.
+  Added delayed-close regression (RED), then explicit acknowledged advisory unlock
+  before destroying the connection. This corrects orderly shutdown, not a CI retry.
+- External P2 review identified a new acquire/dispatch overtaking the previous
+  lease's stop between close transactions. Two regressions (same gateway connection
+  and fresh reconnect nonce) failed before the fix. A per-owner lifecycle gate now
+  serializes acquisition against the full close/revoke/stop operation. Existing DB
+  leader enforces the single-process premise; authorization is sampled after waiting.
+- Focused control regressions including both fixes: 12/12 passed.
+- Focused independent review confirmed acquisition/stop gating and found a
+  concurrent-close variant: a second close could return before the first unlock.
+  Added a paused-unlock RED regression; all close callers now share the same
+  pending completion promise.
+- Independent re-review confirmed the shared close promise resolves the remaining
+  finding; 13/13 focused control tests passed. Final full PostgreSQL suite after
+  the follow-up: 89/89 passed.
+- Final follow-up workspace gate: `pnpm check` 53/53 tasks passed. No migration,
+  dependency or protocol wire change is needed for these lifecycle corrections.

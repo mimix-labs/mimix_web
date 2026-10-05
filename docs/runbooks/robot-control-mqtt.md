@@ -62,7 +62,9 @@ The backend username is fixed. TLS certificate verification cannot be disabled.
 tests. Never put these variables in `VITE_*` or browser bundles.
 
 Run exactly **one MQTT-enabled API process per database**. A dedicated PostgreSQL
-advisory lock `(105,1)` rejects a second process at startup. Lock connection loss
+advisory lock `(105,1)` rejects a second process at startup. Orderly shutdown
+awaits PostgreSQL acknowledgement of lock release before returning; TCP connection
+closure alone does not establish that the next process can acquire it. Lock connection loss
 closes transport and the shared voice coordinator. All replicas serving the same
 users must use this mode and database; do not run a separate legacy-mode API or
 voice process alongside it. General multi-replica embodiment control is deferred.
@@ -102,6 +104,11 @@ owner lock immediately before delivery. Revocation and publication are serialize
 Persisted sequence, intent UUID, DeviceSession, connection nonce and lease ID
 correlate ACK. Duplicate ACKs cannot change terminal outcomes. Crash recovery marks
 uncertain commands unknown and closes old leases; it never replays them.
+
+Acquisition and the complete close/stop operation are serialized per owner in the
+single control process. A new lease cannot overtake a previously persisted stop
+between its preparation and delivery transactions, even if the gateway reconnects.
+Queued acquisitions recheck authority when admitted. Other owners remain independent.
 
 Gateway presence is emitted every second; the backend requires an observation
 within three seconds. Broker loss, missing presence, device expiry/revocation,

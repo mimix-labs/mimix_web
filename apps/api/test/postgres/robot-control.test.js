@@ -158,3 +158,87 @@ test('sweep rechecks a concurrently renewed lease under the owner lock', async t
   assert.equal(triggered, true); assert.ok(renewed.expiresAt > Date.now())
   assert.equal((await f.service.session(f.actor.userId, lease.id)).state, 'active')
 })
+
+for (const reconnect of [false, true]) test(`reacquisition waits for the previous stop delivery (gateway reconnect=${reconnect})`, async t => {
+  const { GatewayGuard } = await import('@mimix/robot-protocol')
+  const f = await controlFixture(t)
+  clearInterval(f.service.timer)
+  const signals = [], stops = []
+  const output = { perform(intent, signal) { signals.push({ intent, signal }) }, stop(reason) { stops.push(reason) } }
+  let gateway = new GatewayGuard({ sessionId: f.connected.session.id, deviceId: f.connected.session.deviceId, connectionId: f.connectionId, behaviors: ['greet', 'stop'], output })
+  t.after(() => gateway.disconnect())
+  f.transport.publish = async envelope => { f.published.push(envelope); gateway.receive(envelope) }
+  const oldLease = await acquire(f)
+  await f.service.dispatch(f.actor, request(oldLease))
+  const transaction = f.service.transaction.bind(f.service)
+  let calls = 0, entered, finish
+  const beforeStop = new Promise(resolve => { entered = resolve }), resumeStop = new Promise(resolve => { finish = resolve })
+  // Pause the second close transaction after its durable intent, before publication.
+  f.service.transaction = async (...args) => {
+    if (++calls === 2) { entered(); await resumeStop }
+    return transaction(...args)
+  }
+  const closing = f.service.release(f.actor.userId, oldLease.id)
+  await beforeStop
+  if (reconnect) {
+    gateway.disconnect()
+    const connectionId = randomUUID()
+    gateway = new GatewayGuard({ sessionId: f.connected.session.id, deviceId: f.connected.session.deviceId, connectionId, behaviors: ['greet', 'stop'], output })
+    await f.emit({ kind: 'presence', value: { schemaVersion: 1, sessionId: f.connected.session.id, deviceId: f.connected.session.deviceId, connectionId, sequence: 1, state: 'online', issuedAt: Date.now() } })
+  }
+  let acquired = false
+  const next = acquire(f).then(async lease => { acquired = true; await f.service.dispatch(f.actor, request(lease)); return lease })
+  try {
+    await new Promise(resolve => setTimeout(resolve, 50))
+    const overtookStop = acquired
+    finish(); await closing
+    const nextLease = await next
+    const current = signals.find(value => value.intent.leaseId === nextLease.leaseId)
+    assert.ok(current, 'new intention reached the semantic driver')
+    assert.equal(current.signal.aborted, false, 'old stop must not abort the new lease')
+    assert.equal(overtookStop, false, 'a new lease must not overtake the pending old stop')
+    assert.equal((await f.service.session(f.actor.userId, nextLease.id)).state, 'active')
+  } finally { finish(); await closing; await next; f.service.transaction = transaction }
+})
+
+test('leader close releases the server lock before a delayed TCP close', async t => {
+  const { ControlLeader } = await import('../../dist/modules/robot-control/leader.js')
+  let first, second
+  t.after(async () => { await first?.close(); await second?.close() })
+  const f = await fixture(t)
+  first = new ControlLeader(f.database, () => {}); second = new ControlLeader(f.database, () => {})
+  await first.start()
+  const client = first.client, release = client.release.bind(client)
+  let finished
+  const networkClosed = new Promise(resolve => { finished = resolve })
+  // TCP FIN processing can lag behind PoolClient.release(true), as on the CI runner.
+  client.release = (...args) => { setTimeout(() => { release(...args); finished() }, 200) }
+  try {
+    await first.close()
+    await assert.doesNotReject(second.start(), 'orderly close must release PostgreSQL authority before returning')
+  } finally { await networkClosed; await second.close() }
+})
+
+test('concurrent leader closes share the pending PostgreSQL unlock acknowledgement', async t => {
+  const { ControlLeader } = await import('../../dist/modules/robot-control/leader.js')
+  let leader
+  t.after(() => leader?.close())
+  const f = await fixture(t)
+  leader = new ControlLeader(f.database, () => {})
+  await leader.start()
+  const client = leader.client, query = client.query.bind(client)
+  let entered, finish
+  const unlocking = new Promise(resolve => { entered = resolve }), resume = new Promise(resolve => { finish = resolve })
+  client.query = async (...args) => {
+    if (String(args[0]).includes('pg_advisory_unlock')) { entered(); await resume }
+    return query(...args)
+  }
+  const first = leader.close()
+  await unlocking
+  let secondCompleted = false
+  const second = leader.close().then(() => { secondCompleted = true })
+  try {
+    await new Promise(resolve => setImmediate(resolve))
+    assert.equal(secondCompleted, false, 'a concurrent shutdown must also await server unlock')
+  } finally { finish(); await Promise.all([first, second]) }
+})

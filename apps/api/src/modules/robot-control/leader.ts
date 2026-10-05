@@ -6,6 +6,7 @@ export class ControlLeader {
   private client?: PoolClient
   private timer?: ReturnType<typeof setInterval>
   private checking = false
+  private closing?: Promise<void>
   active = false
   constructor(private readonly database: Database, private readonly lost: () => void) {}
   async start(): Promise<void> {
@@ -33,10 +34,19 @@ export class ControlLeader {
     this.active = false; clearInterval(this.timer); this.lost()
     const client = this.client; this.client = undefined; client?.release(true)
   }
-  async close(): Promise<void> {
+  close(): Promise<void> { return this.closing ??= this.release() }
+  private async release(): Promise<void> {
     this.active = false; clearInterval(this.timer)
     const client = this.client; this.client = undefined
-    // Destroy instead of returning a connection carrying a session-level lock.
-    client?.release(true)
+    if (!client) return
+    let timer: ReturnType<typeof setTimeout> | undefined
+    try {
+      // PoolClient.release(true) returns before PostgreSQL observes TCP closure.
+      // Await server acknowledgement so orderly replacement can acquire immediately.
+      await Promise.race([client.query('select pg_advisory_unlock(105, 1)'), new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => reject(new Error()), 1000)
+      })])
+    } catch { /* Broken connections still fail closed and are destroyed below. */ }
+    finally { clearTimeout(timer); client.release(true) }
   }
 }
