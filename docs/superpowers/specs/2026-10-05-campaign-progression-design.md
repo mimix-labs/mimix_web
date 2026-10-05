@@ -18,7 +18,7 @@ Reglas puras en campaigns y esquemas públicos en contracts.
 ## Invariantes
 
 - Campaña identificada por id y SemVer exacto (sin metadata build); schemaVersion 1.
-- DAG no vacío de hasta 100 nodos; id de nodo único, referencias exactas a retos,
+- DAG no vacío de hasta 100 nodos; id de nodo único (IDs de campaña/nodo excluyen los segmentos URL `.` y `..`), referencias exactas a retos,
   prerequisitos existentes y únicos, sin ciclos/autorreferencias. AND entre prerequisitos.
   Una secuencia es un DAG con una dependencia por nodo. Todos los nodos son requeridos.
 - Definición y asociación intento/campaña/versión/nodo son append-only, protegidas

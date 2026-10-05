@@ -22,7 +22,8 @@ El dominio vive en `apps/api/src/modules/campaigns`; los contratos públicos en
 
 El esquema rechaza campos desconocidos, nodos vacíos/duplicados, prerequisitos
 repetidos/inexistentes y ciclos. Máximo 100 nodos. IDs de campaña/nodo: 1–80 caracteres
-`[A-Za-z0-9._-]`, sensibles a mayúsculas. Referencias de reto usan el esquema del
+`[A-Za-z0-9._-]`, sensibles a mayúsculas, excepto `.` y `..` (segmentos
+normalizados por el navegador). Referencias de reto usan el esquema del
 manifest y versiones SemVer exactas sin build metadata. No rangos ni `latest`.
 El catálogo no descarga paquetes ni prueba su disponibilidad: quien publica debe
 verificar sus manifests/artefactos. La semilla fija las dos versiones oficiales.

@@ -11,7 +11,7 @@ test('campaign contract validates a bounded DAG and exact pinned versions', () =
     assert.equal(schema.safeParse({ ...definition, nodes }).success, false)
   }
   assert.equal(schema.safeParse({ ...definition, nodes: Array.from({ length: 100 }, (_, i) => node(`n${i}`)) }).success, true)
-  for (const patch of [{ version: 'latest' }, { version: '1.0.0+build' }, { title: ' ' }, { schemaVersion: 2 }, { progress: 100 }, { nodes: [{ ...node('a'), challengeVersion: '*' }] }]) assert.equal(schema.safeParse({ ...definition, ...patch }).success, false)
+  for (const patch of [{ id: '.' }, { id: '..' }, { nodes: [node('.')] }, { nodes: [node('..')] }, { version: 'latest' }, { version: '1.0.0+build' }, { title: ' ' }, { schemaVersion: 2 }, { progress: 100 }, { nodes: [{ ...node('a'), challengeVersion: '*' }] }]) assert.equal(schema.safeParse({ ...definition, ...patch }).success, false)
 })
 test('campaign start and cursors are strict and preserve context ownership', () => {
   assert.ok(contracts.campaignStartSchema, 'start schema exported')

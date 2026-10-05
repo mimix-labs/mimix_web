@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { challengeManifestSchema } from './challenge.js'
 
-export const campaignIdSchema = z.string().regex(/^[A-Za-z0-9._-]{1,80}$/)
+export const campaignIdSchema = z.string().regex(/^[A-Za-z0-9._-]{1,80}$/).refine(value => value !== '.' && value !== '..', 'URL dot segments are not identifiers')
 export const campaignVersionSchema = challengeManifestSchema.shape.version
 const nodeSchema = z.strictObject({
   id: campaignIdSchema,
