@@ -1,0 +1,6 @@
+{
+  "context": {"page":"challenge","challenge":"science","selectedObject":"oxygen","updatedAt":1700000000000},
+  "navigation": {"action":"navigate_to","destination":"mathematics"},
+  "motion": {"id":"0be5f420-4317-4aee-8034-9c93f3c82885","action":"forward","maxDurationMs":300,"issuedAt":1700000000000,"expiresAt":1700000003000},
+  "emptyHands": {"landmarks":[],"handedness":[],"timestamp":1700000000000,"source":"jetson-native"}
+}

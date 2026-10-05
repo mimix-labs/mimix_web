@@ -4,6 +4,7 @@ packages:
   - apps/*
   - packages/*
   - characters/*
+  - tools/*
 
 onlyBuiltDependencies:
   - esbuild

@@ -105,6 +105,14 @@ El [coordinador](docs/architecture/embodiment-coordinator.md) añade lease tempo
 y evita síntesis web cuando el robot posee el lease. No conecta hardware ni modifica
 la UI. [Límites, validación y rollback](docs/runbooks/embodiment-coordinator.md).
 
+## Protocolo y simulador de robot
+
+El [protocolo versionado](docs/architecture/robot-protocol.md) conserva los contratos
+HTTP/SSE de `mimix_robot` y prepara presencia, capabilities, cámara e intenciones
+semánticas. El [simulador sin hardware](docs/runbooks/robot-protocol-simulator.md)
+permite probar autenticación, latencia, fallos y reconexión contra la API local.
+No conecta motores ni activa pairing, MQTT o WebRTC.
+
 ## Modos de visión
 
 ### Laptop o Railway

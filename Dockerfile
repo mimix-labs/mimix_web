@@ -19,12 +19,15 @@ COPY packages/agent-core/package.json ./packages/agent-core/package.json
 COPY characters/wall-e/package.json ./characters/wall-e/package.json
 COPY packages/voice-contract/package.json ./packages/voice-contract/package.json
 COPY packages/embodiment-contract/package.json ./packages/embodiment-contract/package.json
+COPY packages/robot-protocol/package.json ./packages/robot-protocol/package.json
+COPY tools/robot-simulator/package.json ./tools/robot-simulator/package.json
 
 FROM base AS build
 RUN pnpm install --frozen-lockfile
 COPY turbo.json ./
 COPY packages/ ./packages/
 COPY characters/ ./characters/
+COPY tools/robot-simulator/ ./tools/robot-simulator/
 COPY client/ ./client/
 COPY server/src/ ./server/src/
 COPY apps/api/tsconfig.json ./apps/api/tsconfig.json
