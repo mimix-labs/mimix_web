@@ -15,6 +15,7 @@ export const routeAccess: Record<string, Access> = {
   'GET /api/learning/attempts/:id': 'user', 'POST /api/learning/attempts/:id/events': 'user',
   'GET /api/campaigns': 'user', 'GET /api/campaigns/:id/versions/:version': 'user',
   'GET /api/campaigns/:id/versions/:version/progress': 'user', 'POST /api/campaigns/:id/versions/:version/nodes/:nodeId/attempts': 'user',
+  'POST /api/voice/utterances': 'user', 'DELETE /api/voice/utterances/:id': 'user',
   'GET /api/identity/me': 'user', 'POST /api/challenges/events': 'user',
   'POST /api/vision/hand-landmarks': 'bridge', 'GET /api/robot/context': 'bridge',
   'POST /api/robot/commands': 'bridge', 'GET /api/robot/motion/stream': 'bridge',
@@ -24,7 +25,7 @@ export const routeAccess: Record<string, Access> = {
 }
 export function requestPath(url: string): string { return url.split('?')[0].toLowerCase().replace(/\/+$/, '') || '/' }
 export function policyPath(path: string): string {
-  return path.replace(/^\/api\/campaigns\/[a-z0-9._-]{1,80}\/versions\/[a-z0-9._-]{1,80}(?=\/|$)/, '/api/campaigns/:id/versions/:version')
+  return path.replace(/^\/api\/voice\/utterances\/[0-9a-f-]{36}$/, '/api/voice/utterances/:id').replace(/^\/api\/campaigns\/[a-z0-9._-]{1,80}\/versions\/[a-z0-9._-]{1,80}(?=\/|$)/, '/api/campaigns/:id/versions/:version')
     .replace(/^(\/api\/campaigns\/:id\/versions\/:version)\/nodes\/[a-z0-9._-]{1,80}\/attempts$/, '$1/nodes/:nodeId/attempts')
     .replace(/^\/api\/learning\/attempts\/[0-9a-f-]{36}(?=\/events$|$)/, '/api/learning/attempts/:id')
 }
@@ -74,6 +75,7 @@ export class HttpSecurityPolicy {
     // Express accepts absolute-form request targets; never classify those as static assets.
     if (!request.url.startsWith('/')) return reject(400, 'invalid request target')
     const path = policyPath(requestPath(request.url))
+    if (path.startsWith('/api/voice/') && this.config.authMode !== 'clerk') return reject(404, 'not found')
     if ((path.startsWith('/api/learning') || path.startsWith('/api/campaigns')) && this.config.dataStore !== 'postgres') return reject(404, 'not found')
     // Static frontend is explicitly public. API never falls through to SPA assets.
     const api = path === '/api' || path.startsWith('/api/')
@@ -108,7 +110,7 @@ export class HttpSecurityPolicy {
     const route = `${method} ${path}`
     const access = routeAccess[route]
     if (!access) return anonymous('unknown') ?? reject(404, 'not found')
-    if (path === '/api/identity/me' || path.startsWith('/api/learning/') || path === '/api/campaigns' || path.startsWith('/api/campaigns/')) headers['cache-control'] = 'no-store'
+    if (path.startsWith('/api/voice/') || path === '/api/identity/me' || path.startsWith('/api/learning/') || path === '/api/campaigns' || path.startsWith('/api/campaigns/')) headers['cache-control'] = 'no-store'
     if (path === '/api/health') return { headers }
     if (access === 'public') return anonymous(route) ?? { headers }
 

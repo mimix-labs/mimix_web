@@ -1,3 +1,5 @@
+import type { VoiceService } from './modules/voice/service.js'
+import { addVoicePaths } from './modules/voice/openapi.js'
 import 'reflect-metadata'
 import { ConsoleLogger } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
@@ -14,7 +16,7 @@ import { addCampaignPaths } from './modules/campaigns/openapi.js'
 import { addLearningPaths } from './modules/learning/openapi.js'
 import { addLegacyPaths } from './openapi.js'
 
-export async function createApi(config: ApiConfig, dependencies: IdentityDependencies = {}): Promise<NestFastifyApplication> {
+export async function createApi(config: ApiConfig, dependencies: IdentityDependencies & { voice?: VoiceService } = {}): Promise<NestFastifyApplication> {
   const services = dataServices(config, dependencies)
   const policy = new HttpSecurityPolicy(config, services.identity)
   const adapter = new FastifyAdapter({
@@ -29,7 +31,7 @@ export async function createApi(config: ApiConfig, dependencies: IdentityDepende
     },
     requestIdHeader: false,
   })
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule.register(config, services.learning, services.close, services.campaigns), adapter, {
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule.register(config, services.learning, services.close, services.campaigns, dependencies.voice), adapter, {
     logger: config.logLevel === 'silent' ? false : new ConsoleLogger({ json: true, colors: false }),
     abortOnError: false,
   })
@@ -68,6 +70,7 @@ export async function createApi(config: ApiConfig, dependencies: IdentityDepende
     .build()), config)
   addLearningPaths(document, config)
   addCampaignPaths(document, config)
+  addVoicePaths(document, config)
   SwaggerModule.setup('api/docs', app, document, { ui: false, jsonDocumentUrl: '/api/openapi.json' })
   await app.init()
   return app

@@ -1,6 +1,8 @@
+import { parseVoiceEnvironment, type VoiceConfig } from '../modules/voice/config.js'
 import { isAbsolute } from 'node:path'
 
 export interface ApiConfig {
+  voice: VoiceConfig
   dataStore: 'file' | 'postgres'
   databaseUrl: string
   authMode: 'legacy' | 'clerk'
@@ -80,7 +82,7 @@ export function parseEnvironment(env: NodeJS.ProcessEnv): ApiConfig {
   if (bridgeToken && bridgeToken === controlToken) fail('MIMIX_ROBOT_CONTROL_TOKEN must differ from bridge token')
   const logLevel = env.LOG_LEVEL ?? 'info'
   if (!['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'].includes(logLevel)) fail('LOG_LEVEL')
-  return { dataStore: dataStore as ApiConfig['dataStore'], databaseUrl, authMode: authMode as ApiConfig['authMode'], allowedOrigins, rateLimits, identityFile, clerk, port, host, runtime: runtime as ApiConfig['runtime'], visionMode: visionMode as ApiConfig['visionMode'], videoUrl, bridgeToken, controlToken, logLevel: logLevel as ApiConfig['logLevel'] }
+  return { voice: parseVoiceEnvironment(env, authMode), dataStore: dataStore as ApiConfig['dataStore'], databaseUrl, authMode: authMode as ApiConfig['authMode'], allowedOrigins, rateLimits, identityFile, clerk, port, host, runtime: runtime as ApiConfig['runtime'], visionMode: visionMode as ApiConfig['visionMode'], videoUrl, bridgeToken, controlToken, logLevel: logLevel as ApiConfig['logLevel'] }
 }
 
 export function legacyEnvironment(config: ApiConfig): NodeJS.ProcessEnv {
