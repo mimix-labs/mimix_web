@@ -19,6 +19,7 @@ COPY packages/agent-core/package.json ./packages/agent-core/package.json
 COPY characters/wall-e/package.json ./characters/wall-e/package.json
 COPY packages/voice-contract/package.json ./packages/voice-contract/package.json
 COPY packages/embodiment-contract/package.json ./packages/embodiment-contract/package.json
+COPY packages/media-contract/package.json ./packages/media-contract/package.json
 COPY packages/robot-protocol/package.json ./packages/robot-protocol/package.json
 COPY tools/robot-simulator/package.json ./tools/robot-simulator/package.json
 
@@ -59,9 +60,12 @@ COPY --from=production-deps /app/packages/voice-contract/node_modules/ ./package
 COPY --from=build /app/packages/voice-contract/dist/ ./packages/voice-contract/dist/
 COPY --from=production-deps /app/packages/embodiment-contract/node_modules/ ./packages/embodiment-contract/node_modules/
 COPY --from=build /app/packages/embodiment-contract/dist/ ./packages/embodiment-contract/dist/
+COPY packages/media-contract/package.json ./packages/media-contract/package.json
 COPY packages/robot-protocol/package.json ./packages/robot-protocol/package.json
 COPY --from=production-deps /app/packages/robot-protocol/node_modules/ ./packages/robot-protocol/node_modules/
 COPY --from=build /app/packages/robot-protocol/dist/ ./packages/robot-protocol/dist/
+COPY --from=production-deps /app/packages/media-contract/node_modules/ ./packages/media-contract/node_modules/
+COPY --from=build /app/packages/media-contract/dist/ ./packages/media-contract/dist/
 COPY --chown=node:node apps/api/migrations/ ./apps/api/migrations/
 COPY --chown=node:node --from=build /app/client/dist/ ./client/dist/
 

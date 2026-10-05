@@ -108,6 +108,23 @@ jobs:
             client/test-results/
           if-no-files-found: ignore
 
+  media-transport:
+    name: LiveKit WebRTC transport
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec turbo run build --filter=@mimix/api...
+      - run: pnpm --filter @mimix/api exec playwright install --with-deps chromium
+      - run: pnpm --filter @mimix/api exec node --test test/livekit/transport.test.js
+
   dependency-audit:
     name: Dependency audit (informational)
     runs-on: ubuntu-latest

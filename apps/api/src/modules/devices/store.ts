@@ -3,7 +3,7 @@ import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypt
 import { and, asc, desc, eq, gt, lte, or, sql } from 'drizzle-orm'
 import {
   devicePairingRequestSchema, deviceExchangeRequestSchema, deviceHeartbeatSchema,
-  deviceAuthorizationSchema, deviceSessionSchema, supportedDeviceCapabilities, type DeviceSession,
+  deviceAuthorizationSchema, deviceSessionSchema, supportedDeviceCapabilities, type DeviceSession, type DeviceCapability,
 } from '@mimix/robot-protocol'
 import type { Database, Transaction } from '../../database/database.js'
 import { devicePairings, deviceSessions, deviceAudit } from '../../database/schema.js'
@@ -16,6 +16,12 @@ const hash = (value: string) => createHash('sha256').update(value).digest('hex')
 const identityHash = (value: VerifiedIdentity) => hash(JSON.stringify([value.provider, value.issuer, value.subject, value.sessionId]))
 const equalHash = (a: string, b: string) => timingSafeEqual(Buffer.from(a, 'hex'), Buffer.from(b, 'hex'))
 const PAIR_TTL = 300000, SESSION_TTL = 900000, PRESENCE_TTL = 30000
+
+export interface DeviceAuthority {
+  sessionId: string; userId: string; deviceId: string; capabilities: DeviceCapability[]
+  expiresAt: number; presenceExpiresAt: number; now: number
+}
+type SessionOperation<T> = (tx: Transaction, authority: DeviceAuthority) => Promise<T>
 
 /** PostgreSQL is the authority; no credential or revocation cache across requests. */
 export class DeviceStore {
@@ -216,6 +222,33 @@ export class DeviceStore {
       return { authorized: true, sessionId: row.id, deviceId: row.deviceId, capability: input.capability,
         expiresAt: Math.min(row.expiresAt, row.presenceExpiresAt) }
     })
+  }
+  /** Server-owned operation executed while revocation is fenced by the same owner lock. */
+  async withUserSession<T>(actor: DeviceActor, id: string, capabilities: DeviceCapability[], action: SessionOperation<T>): Promise<T> {
+    const sessionId = parseDevice(deviceId, id)
+    return this.transaction(actor.userId, async tx => {
+      const [row] = await tx.select().from(deviceSessions).where(and(eq(deviceSessions.id, sessionId), eq(deviceSessions.userId, actor.userId))).for('update')
+      if (!row) return new DeviceError(404, 'device session not found')
+      if (!equalHash(identityHash(actor.identity), row.sessionHash)) return new DeviceError(403)
+      const current = await this.active(tx, row)
+      return current instanceof DeviceError ? current : this.useSession(tx, current.row, current.now, capabilities, action)
+    })
+  }
+  async withDeviceSession<T>(token: string, id: string, capabilities: DeviceCapability[], action: SessionOperation<T>): Promise<T> {
+    return this.forToken(token, async (tx, row, now) => {
+      if (row.id !== id) return new DeviceError(403)
+      return this.useSession(tx, row, now, capabilities, action)
+    })
+  }
+  private async useSession<T>(tx: Transaction, row: Session, now: number, capabilities: DeviceCapability[], action: SessionOperation<T>): Promise<T | DeviceError> {
+    if (row.lastSeenAt === null || !capabilities.every(capability => row.capabilities.includes(capability))) return new DeviceError(403)
+    const result = await action(tx, { sessionId: row.id, userId: row.userId, deviceId: row.deviceId,
+      capabilities: row.capabilities, expiresAt: row.expiresAt, presenceExpiresAt: row.presenceExpiresAt, now })
+    // An external provider may have taken longer than the remaining device lease.
+    const finished = await this.now(tx)
+    if ((await this.expire(tx, row, finished)).status !== 'active') return new DeviceError(401)
+    await this.auditEvent(tx, row, 'authorized', 'scoped_session_operation', finished)
+    return result
   }
   async get(userId: string, id: string): Promise<DeviceSession> {
     const sessionId = parseDevice(deviceId, id)

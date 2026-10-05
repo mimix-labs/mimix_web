@@ -1,3 +1,5 @@
+import type { MediaProvider } from '@mimix/media-contract'
+import { addMediaPaths } from './modules/media/openapi.js'
 import { addDevicePaths } from './modules/devices/openapi.js'
 import type { VerifiedIdentity } from './modules/identity/identity.contract.js'
 import type { VoiceService } from './modules/voice/service.js'
@@ -18,7 +20,7 @@ import { addCampaignPaths } from './modules/campaigns/openapi.js'
 import { addLearningPaths } from './modules/learning/openapi.js'
 import { addLegacyPaths } from './openapi.js'
 
-export async function createApi(config: ApiConfig, dependencies: IdentityDependencies & { voice?: VoiceService } = {}): Promise<NestFastifyApplication> {
+export async function createApi(config: ApiConfig, dependencies: IdentityDependencies & { voice?: VoiceService; mediaProvider?: MediaProvider } = {}): Promise<NestFastifyApplication> {
   const services = dataServices(config, dependencies)
   const policy = new HttpSecurityPolicy(config, services.identity)
   const adapter = new FastifyAdapter({
@@ -33,7 +35,7 @@ export async function createApi(config: ApiConfig, dependencies: IdentityDepende
     },
     requestIdHeader: false,
   })
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule.register(config, services.learning, services.close, services.campaigns, dependencies.voice, services.devices), adapter, {
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule.register(config, services.learning, services.close, services.campaigns, dependencies.voice, services.devices, services.media), adapter, {
     logger: config.logLevel === 'silent' ? false : new ConsoleLogger({ json: true, colors: false }),
     abortOnError: false,
   })
@@ -75,6 +77,7 @@ export async function createApi(config: ApiConfig, dependencies: IdentityDepende
   addCampaignPaths(document, config)
   addVoicePaths(document, config)
   addDevicePaths(document, config)
+  addMediaPaths(document, config)
   SwaggerModule.setup('api/docs', app, document, { ui: false, jsonDocumentUrl: '/api/openapi.json' })
   await app.init()
   return app

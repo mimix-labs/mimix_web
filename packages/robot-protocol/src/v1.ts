@@ -12,6 +12,7 @@ export const robotCapabilitiesSchema = z.strictObject({
   behaviors: z.array(behaviorSchema).max(4).refine(unique, 'Duplicate behavior'),
   camera: z.array(z.enum(['mjpeg', 'webrtc'])).max(2).refine(unique, 'Duplicate transport'),
   handLandmarks: z.boolean(), speech: z.boolean(),
+  audio: z.strictObject({ microphone: z.boolean(), speaker: z.boolean() }).optional(),
 })
 /** Receiver-clock observation. Not an authenticated heartbeat or an embodiment lease. */
 export const robotPresenceSchema = z.strictObject({

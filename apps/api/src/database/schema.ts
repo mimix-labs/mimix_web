@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { bigint, bigserial, check, foreignKey, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
+import { bigint, bigserial, check, foreignKey, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 export const users = pgTable('users', { id: uuid().primaryKey(), createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull() })
 export const externalIdentities = pgTable('external_identities', {
   id: uuid().primaryKey(), userId: uuid('user_id').notNull().references(() => users.id),
@@ -65,3 +65,13 @@ export const deviceAudit = pgTable('device_audit', {
   event: text().notNull(), reason: text().notNull(), sequence: bigint({ mode: 'number' }),
   observedAt: bigint('observed_at', { mode: 'number' }).notNull(),
 }, t => [index('device_audit_owner_page').on(t.userId, t.id)])
+
+
+export const mediaSessions = pgTable('media_sessions', {
+  id: uuid().primaryKey(), deviceSessionId: uuid('device_session_id').notNull().references(() => deviceSessions.id),
+  userId: uuid('user_id').notNull().references(() => users.id), tracks: jsonb().notNull().$type<import('@mimix/media-contract').MediaTrack[]>(),
+  state: text().notNull(), reason: text().notNull(), createdAt: bigint('created_at', { mode: 'number' }).notNull(),
+  expiresAt: bigint('expires_at', { mode: 'number' }).notNull(),
+}, t => [index('media_session_owner').on(t.userId, t.id), index('media_session_cleanup').on(t.state, t.expiresAt),
+  uniqueIndex('media_device_open').on(t.deviceSessionId).where(sql`${t.state} <> 'closed'`),
+  check('media_session_state', sql`${t.state} IN ('active','closing','closed')`)])

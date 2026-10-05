@@ -36,6 +36,13 @@
       "when": 1791236352848,
       "tag": "0004_device-sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791239201143,
+      "tag": "0005_media-sessions",
+      "breakpoints": true
     }
   ]
 }
