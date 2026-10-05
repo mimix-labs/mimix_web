@@ -1,3 +1,6 @@
+import { VoiceModule } from './modules/voice/voice.module.js'
+import { createVoiceService } from './modules/voice/factory.js'
+import type { VoiceService } from './modules/voice/service.js'
 import { Module, type DynamicModule } from '@nestjs/common'
 import { HealthController } from './health/health.controller.js'
 import { LegacyService } from './legacy/legacy.service.js'
@@ -20,7 +23,7 @@ import { SyncModule } from './modules/sync/sync.module.js'
   controllers: [HealthController],
 })
 export class AppModule {
-  static register(config: ApiConfig, learning?: LearningStore, close?: () => Promise<void> | undefined, campaigns?: CampaignStore): DynamicModule {
-    return { module: AppModule, imports: [LearningModule.register(learning), CampaignsModule.register(campaigns)], providers: [{ provide: 'DATABASE_LIFECYCLE', useValue: { onApplicationShutdown: close } }, { provide: API_CONFIG, useValue: config }, LegacyService] }
+  static register(config: ApiConfig, learning?: LearningStore, close?: () => Promise<void> | undefined, campaigns?: CampaignStore, voice?: VoiceService): DynamicModule {
+    return { module: AppModule, imports: [VoiceModule.register(voice ?? createVoiceService(config.voice)), LearningModule.register(learning), CampaignsModule.register(campaigns)], providers: [{ provide: 'DATABASE_LIFECYCLE', useValue: { onApplicationShutdown: close } }, { provide: API_CONFIG, useValue: config }, LegacyService] }
   }
 }

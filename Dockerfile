@@ -17,6 +17,7 @@ COPY packages/agent-contract/package.json ./packages/agent-contract/package.json
 COPY packages/character-contract/package.json ./packages/character-contract/package.json
 COPY packages/agent-core/package.json ./packages/agent-core/package.json
 COPY characters/wall-e/package.json ./characters/wall-e/package.json
+COPY packages/voice-contract/package.json ./packages/voice-contract/package.json
 
 FROM base AS build
 RUN pnpm install --frozen-lockfile
@@ -48,6 +49,9 @@ COPY --chown=node:node --from=build /app/apps/api/dist/ ./apps/api/dist/
 COPY packages/contracts/package.json ./packages/contracts/package.json
 COPY --from=production-deps /app/packages/contracts/node_modules/ ./packages/contracts/node_modules/
 COPY --from=build /app/packages/contracts/dist/ ./packages/contracts/dist/
+COPY packages/voice-contract/package.json ./packages/voice-contract/package.json
+COPY --from=production-deps /app/packages/voice-contract/node_modules/ ./packages/voice-contract/node_modules/
+COPY --from=build /app/packages/voice-contract/dist/ ./packages/voice-contract/dist/
 COPY --chown=node:node apps/api/migrations/ ./apps/api/migrations/
 COPY --chown=node:node --from=build /app/client/dist/ ./client/dist/
 
