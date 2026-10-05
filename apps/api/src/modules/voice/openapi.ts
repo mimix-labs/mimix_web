@@ -9,7 +9,7 @@ export function addVoicePaths(document: OpenAPIObject, config: Pick<ApiConfig, '
   const errors = { '400': { description: 'Invalid request' }, '401': { description: 'Invalid or revoked session' }, '413': { description: 'Body exceeds 16 KiB' }, '429': { description: 'HTTP user quota exceeded' } }
   document.paths['/api/voice/utterances'] = { post: {
     tags: ['voice'], summary: 'Synthesize bounded speech or return text-only fallback', security: [{ bearer: [] }],
-    description: 'No-store. Requires Clerk. New admitted utterance interrupts the same user. Subtitle is untimed original text. Audio is bounded base64 MP3, buffered before response. Provider failures and generation quotas return text_only. No automatic retries; repeated completed IDs may incur charges. Clients must stop prior playback and ignore stale results.',
+    description: 'No-store. Requires Clerk. New admitted utterance interrupts the same user. Subtitle is untimed original text. Audio is bounded base64 MP3, buffered before response. Provider failures and generation quotas return text_only. An active robot lease or a lease change during synthesis returns text_only with EMBODIMENT_MUTED. No automatic retries; repeated completed IDs may incur charges. Clients must stop prior playback and ignore stale results.',
     requestBody: { required: true, content: { 'application/json': { schema: schema(voiceRequestSchema) } } },
     responses: { ...errors, '200': { description: 'Voice result', content: { 'application/json': { schema: schema(voiceResultSchema) } } } },
   } }

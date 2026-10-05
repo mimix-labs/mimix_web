@@ -5,7 +5,7 @@ export const MAX_AUDIO_BYTES = 1048576
 export const voiceIdSchema = z.uuid().transform(value => value.toLowerCase())
 const text = z.string().min(1).max(MAX_VOICE_TEXT).refine(value => value.trim().length > 0)
 export const voiceRequestSchema = z.strictObject({ schemaVersion: z.literal(1), id: voiceIdSchema, text })
-export const voiceReasonSchema = z.enum(['DISABLED', 'CANCELLED', 'INTERRUPTED', 'TIMEOUT', 'QUOTA_EXCEEDED', 'BUSY', 'RATE_LIMITED', 'PROVIDER_UNAVAILABLE', 'INVALID_AUDIO'])
+export const voiceReasonSchema = z.enum(['DISABLED', 'CANCELLED', 'INTERRUPTED', 'TIMEOUT', 'QUOTA_EXCEEDED', 'BUSY', 'RATE_LIMITED', 'PROVIDER_UNAVAILABLE', 'INVALID_AUDIO', 'EMBODIMENT_MUTED'])
 const base = { schemaVersion: z.literal(1), id: voiceIdSchema, subtitle: text }
 export const voiceResultSchema = z.discriminatedUnion('status', [
   z.strictObject({ ...base, status: z.literal('text_only'), reason: voiceReasonSchema }),
