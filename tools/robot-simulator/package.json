@@ -1,0 +1,19 @@
+{
+  "name": "@mimix/robot-simulator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test test/*.test.js",
+    "start": "node dist/cli.js"
+  },
+  "dependencies": { "@mimix/robot-protocol": "workspace:*" },
+  "devDependencies": {
+    "@mimix/api": "workspace:*",
+    "mimix-server": "workspace:*",
+    "@types/node": "^24.5.2",
+    "typescript": "^5.9.3"
+  }
+}
