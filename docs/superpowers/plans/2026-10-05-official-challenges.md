@@ -23,23 +23,25 @@ sandbox v1 intacto. Preservar rutas y rollback legacy.
 **Files:** tests browser/paridad; paquetes manifests/fixtures; helpers lifecycle.
 **Interfaces:** createChallenge(ChallengeContext) → ChallengeLifecycle más
 handleHands para el host confiable; manifest v1; importaciones ESM sin globals.
-- [ ] Baseline existente capturado; escribir contratos RED para paquetes ausentes.
-- [ ] Implementar paquetes/shared lifecycle y observar GREEN.
-- [ ] Commit coherente con evidence RED/GREEN.
+- [x] Baseline existente capturado; escribir contratos RED para paquetes ausentes.
+- [x] Implementar paquetes/shared lifecycle y observar GREEN.
+- [x] Commit coherente con evidence RED/GREEN.
 
 ### Task 2: Host y rutas de transición
 
 **Files:** client/src/challenges; entradas HTML Vite; legacy HTML; build/config.
 **Interfaces:** host posee camera/landmarks, sdk adapters y navegación; vista solo
 procesa resultados mientras running, dispose es idempotente.
-- [ ] Pruebas RED de rutas paquete y rollback/paridad antes de cablear host.
-- [ ] Integrar host con recursos acotados y vistas conservadas.
-- [ ] Pruebas de errores cámara, abort tardío y fixture de gestos por reto.
+- [x] Pruebas RED de rutas paquete y rollback/paridad antes de cablear host.
+- [x] Integrar host con recursos acotados y vistas conservadas.
+- [x] Pruebas de errores cámara, abort tardío y fixture de gestos por reto.
 
 ### Task 3: Verificación y entrega
 
 **Files:** CI/Docker/scripts, README, runbook de migración/paridad.
-- [ ] Frozen install, pnpm check/build/browser/smoke/PostgreSQL/Docker.
-- [ ] Revisar capturas/paridad y documentar límites de simulación/hardware.
-- [ ] Revisión independiente y correcciones RED→GREEN necesarias.
-- [ ] Commit/push, único PR adjunto, esperar CI sin merge ni prompt 10.
+- [x] Frozen install, pnpm check/build/browser/smoke/PostgreSQL/Docker.
+- [x] Revisar capturas/paridad y documentar límites de simulación/hardware.
+- [x] Revisión independiente y correcciones RED→GREEN necesarias.
+- Entrega: commit/push, único PR adjunto y espera de CI; sin merge ni prompt 10.
+
+Evidencia y límites: [verificación](../../runbooks/official-challenges-verification.md).

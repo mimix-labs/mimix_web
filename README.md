@@ -73,9 +73,9 @@ rollback: [runbook de aprendizaje](docs/runbooks/learning-event-store.md).
 
 ## Challenge SDK
 
-Los nuevos contratos y el SDK neutral se documentan en [Challenge SDK v1](docs/architecture/challenge-sdk.md). Incluyen manifest, CLI y fixture de referencia; Matemáticas y Ciencias conservan su implementación actual.
+Los nuevos contratos y el SDK neutral se documentan en [Challenge SDK v1](docs/architecture/challenge-sdk.md). Incluyen manifest, CLI y fixture de referencia. Matemáticas y Ciencias se empaquetan ahora como retos oficiales v1.0.0, conservando sus rutas y comportamiento mediante un [host de transición confiable](docs/architecture/official-challenges.md), con rollback legacy.
 
-El [runtime aislado](docs/architecture/challenge-runtime.md) añade iframe sandbox, bridge con grants y un harness local con pruebas hostiles en Chromium, Firefox y WebKit. Todavía no monta los retos de producción.
+El [runtime aislado](docs/architecture/challenge-runtime.md) añade iframe sandbox, bridge con grants y un harness local con pruebas hostiles en Chromium, Firefox y WebKit. La integración de sensores de los retos oficiales sigue en el host confiable; no se afirma aislamiento de esas vistas ni se relaja el sandbox.
 
 ## Modos de visión
 
@@ -123,11 +123,16 @@ El healthcheck es `/api/health`. Railway inyecta `PORT`, por lo que no debe conf
 ```text
 client/                    Aplicación Vite, mundo Three.js y retos
   src/                     Escena principal, entidades, sistemas y UI
-  public/challenges/       Experiencias de Matemáticas y Ciencias
+  challenges/              Entradas públicas de Matemáticas y Ciencias
+  public/challenges/       Scripts legacy y compatibilidad
+  public/legacy/challenges/ HTML de rollback
 apps/api/                  API Nest/Fastify, configuración, health y OpenAPI
 packages/contracts/        Esquemas Zod compartidos de retos y aprendizaje
 packages/challenge-sdk/    API pública de retos, CLI y fixture mínimo
 packages/challenge-runtime/ Host aislado, bridge y harness de desarrollo
+packages/challenge-mathematics/ Reto oficial de Matemáticas v1.0.0
+packages/challenge-science/ Reto oficial de Ciencias v1.0.0
+packages/challenge-browser/ Utilidades de vistas oficiales confiables
 server/                    Adaptador Express temporal: SSE y puente de visión/robot
 docs/                      Arquitectura, integración y despliegue
 .railway/railway.ts        Infraestructura de Railway
