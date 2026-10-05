@@ -77,7 +77,7 @@ test('restricted application role can append but cannot mutate immutable history
   const { LearningStore } = await import('../../dist/modules/learning/store.js')
   const { PostgresIdentityRepository } = await import('../../dist/modules/identity/postgres.repository.js')
   const f = await fixture(t), role = `app_${randomUUID().replaceAll('-', '')}`
-  await f.database.pool.query(`CREATE ROLE "${role}" LOGIN PASSWORD 'test-only'; GRANT USAGE ON SCHEMA public TO "${role}"; GRANT SELECT,INSERT ON users,external_identities,attempts,learning_events TO "${role}"; GRANT SELECT,INSERT,UPDATE ON attempt_progress TO "${role}"; GRANT UPDATE(id) ON attempts TO "${role}"`)
+  await f.database.pool.query(`CREATE ROLE "${role}" LOGIN PASSWORD 'test-only'; GRANT USAGE ON SCHEMA public TO "${role}"; GRANT SELECT,INSERT ON users,external_identities,attempts,learning_events TO "${role}"; GRANT SELECT,INSERT,UPDATE ON attempt_progress TO "${role}"; GRANT UPDATE(id) ON attempts TO "${role}"; GRANT SELECT ON campaign_versions TO "${role}"; GRANT SELECT,INSERT ON campaign_attempts TO "${role}"`)
   const url = new URL(f.url); url.username = role; url.password = 'test-only'
   const db = new Database(url.toString())
   t.after(async () => { await db.close(); const { Pool } = await import('pg'); const admin = new Pool({ connectionString: process.env.MIMIX_TEST_DATABASE_URL }); try { await admin.query(`DROP ROLE "${role}"`) } finally { await admin.end() } })
@@ -85,6 +85,18 @@ test('restricted application role can append but cannot mutate immutable history
   const store = new LearningStore(db), result = await store.create(user.id, { idempotencyKey: randomUUID(), challengeId: 'math', challengeVersion: '1' })
   await store.append(user.id, result.attempt.id, { eventId: randomUUID(), sequence: 2, type: 'attempt_completed', payload: {} })
   assert.equal((await store.get(user.id, result.attempt.id)).progress.status, 'completed')
+  assert.equal((await store.create(user.id, { idempotencyKey: result.attempt.idempotencyKey, challengeId: 'math', challengeVersion: '1' })).duplicate, true)
+  const { CampaignStore } = await import('../../dist/modules/campaigns/store.js')
+  const { officialIntro } = await import('../../dist/modules/campaigns/seed.js')
+  await new CampaignStore(f.database).publish(officialIntro)
+  const campaigns = new CampaignStore(db), input = { idempotencyKey: randomUUID() }
+  const campaignAttempt = await campaigns.start(user.id, 'official-intro', '1.0.0', 'shapes', input)
+  assert.equal((await campaigns.start(user.id, 'official-intro', '1.0.0', 'shapes', input)).duplicate, true)
+  await store.append(user.id, campaignAttempt.attempt.id, { eventId: randomUUID(), sequence: 2, type: 'attempt_completed', payload: {} })
+  assert.equal((await campaigns.progress(user.id, 'official-intro', '1.0.0')).nodes[1].canStart, true)
+  await assert.rejects(campaigns.publish({ ...officialIntro, version: '2.0.0' }))
+  await assert.rejects(db.pool.query('UPDATE campaign_attempts SET node_id=node_id'))
+  await assert.rejects(db.pool.query('DELETE FROM campaign_versions'))
   await assert.rejects(db.pool.query('UPDATE attempts SET challenge_id=challenge_id'))
   await assert.rejects(db.pool.query('DELETE FROM learning_events'))
 })

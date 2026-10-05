@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { check, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
+import { check, foreignKey, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
 export const users = pgTable('users', { id: uuid().primaryKey(), createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull() })
 export const externalIdentities = pgTable('external_identities', {
   id: uuid().primaryKey(), userId: uuid('user_id').notNull().references(() => users.id),
@@ -22,3 +22,14 @@ export const attemptProgress = pgTable('attempt_progress', {
   attemptId: uuid('attempt_id').primaryKey().references(() => attempts.id), status: text().notNull(), lastSequence: integer('last_sequence').notNull(),
   answers: integer().notNull(), correctAnswers: integer('correct_answers').notNull(), hints: integer().notNull(),
 }, t => [check('progress_counts', sql`${t.answers} >= 0 AND ${t.correctAnswers} BETWEEN 0 AND ${t.answers} AND ${t.hints} >= 0 AND ${t.lastSequence} >= 1`), check('progress_status', sql`${t.status} IN ('active','completed','abandoned')`)])
+
+// Catalog and bindings are immutable facts, not editable progress.
+export const campaignVersions = pgTable('campaign_versions', {
+  id: text().notNull(), version: text().notNull(), title: text().notNull(),
+  definition: jsonb().notNull().$type<import('@mimix/contracts').CampaignDefinition>(),
+}, t => [primaryKey({ columns: [t.id, t.version] })])
+export const campaignAttempts = pgTable('campaign_attempts', {
+  attemptId: uuid('attempt_id').primaryKey().references(() => attempts.id),
+  campaignId: text('campaign_id').notNull(), campaignVersion: text('campaign_version').notNull(), nodeId: text('node_id').notNull(),
+}, t => [foreignKey({ columns: [t.campaignId, t.campaignVersion], foreignColumns: [campaignVersions.id, campaignVersions.version] }),
+  index('campaign_attempt_scope').on(t.campaignId, t.campaignVersion, t.attemptId)])

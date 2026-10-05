@@ -36,6 +36,8 @@ El usuario de migración es dueño del esquema. Usar otro rol para la API con US
 sobre public; SELECT/INSERT sobre users, external_identities, attempts, learning_events;
 SELECT/INSERT/UPDATE sobre attempt_progress; UPDATE(id) sobre attempts es necesario
 para SELECT FOR UPDATE (el trigger sigue prohibiendo modificar esa columna).
+Desde prompt10, añadir SELECT sobre campaign_versions y SELECT/INSERT sobre
+campaign_attempts, incluso para reintentos del endpoint learning independiente.
 No conceder DDL, TRUNCATE, DELETE ni
 superuser al proceso HTTP. La reconstrucción/importación/exportación usan el rol
 operativo adecuado. Los triggers también bloquean UPDATE/DELETE/TRUNCATE del
@@ -76,7 +78,9 @@ Operador/bridge no puede escribir aprendizaje en nombre de una persona.
 
 Reto/versión aún son referencias opacas: la validación contra manifest pertenece al
 prompt 07. `correct` y finalización son hechos reportados por el cliente autenticado,
-no evaluación pedagógica certificada; no producen logros, campañas ni desbloqueos.
+no evaluación pedagógica certificada. No producen logros. Desde prompt10, solo los
+intentos asociados explícitamente a una campaña conceden desbloqueos en su versión
+exacta; ver [reglas de campañas](../architecture/campaign-progression.md).
 
 ## Reconstrucción
 

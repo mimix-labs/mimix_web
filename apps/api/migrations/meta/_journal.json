@@ -22,6 +22,13 @@
       "when": 1791140951464,
       "tag": "0002_strict-event-payload",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791223499579,
+      "tag": "0003_campaign-progression",
+      "breakpoints": true
     }
   ]
 }

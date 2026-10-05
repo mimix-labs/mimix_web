@@ -10,6 +10,7 @@ import { LegacyService } from './legacy/legacy.service.js'
 import { HttpSecurityPolicy, type IdentityDependencies } from './security/policy.js'
 import type { User } from './modules/identity/identity.contract.js'
 import { dataServices } from './database/services.js'
+import { addCampaignPaths } from './modules/campaigns/openapi.js'
 import { addLearningPaths } from './modules/learning/openapi.js'
 import { addLegacyPaths } from './openapi.js'
 
@@ -28,7 +29,7 @@ export async function createApi(config: ApiConfig, dependencies: IdentityDepende
     },
     requestIdHeader: false,
   })
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule.register(config, services.learning, services.close), adapter, {
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule.register(config, services.learning, services.close, services.campaigns), adapter, {
     logger: config.logLevel === 'silent' ? false : new ConsoleLogger({ json: true, colors: false }),
     abortOnError: false,
   })
@@ -66,6 +67,7 @@ export async function createApi(config: ApiConfig, dependencies: IdentityDepende
     .addApiKey({ type: 'apiKey', in: 'header', name: 'X-Mimix-Control-Token', description: 'Deprecated operator credential; distinct from bridge token.' }, 'ControlToken')
     .build()), config)
   addLearningPaths(document, config)
+  addCampaignPaths(document, config)
   SwaggerModule.setup('api/docs', app, document, { ui: false, jsonDocumentUrl: '/api/openapi.json' })
   await app.init()
   return app

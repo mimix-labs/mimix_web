@@ -77,6 +77,13 @@ Los nuevos contratos y el SDK neutral se documentan en [Challenge SDK v1](docs/a
 
 El [runtime aislado](docs/architecture/challenge-runtime.md) añade iframe sandbox, bridge con grants y un harness local con pruebas hostiles en Chromium, Firefox y WebKit. La integración de sensores de los retos oficiales sigue en el host confiable; no se afirma aislamiento de esas vistas ni se relaja el sandbox.
 
+## Campañas y progresión
+
+La [API de campañas versionadas](docs/architecture/campaign-progression.md) deriva
+desbloqueos y finalización desde eventos de aprendizaje. Incluye prerequisitos,
+reintentos y una semilla técnica opt-in; no añade UI ni finalizaciones automáticas
+a los retos exploratorios. [Migración, permisos y rollback](docs/runbooks/campaign-progression.md).
+
 ## Modos de visión
 
 ### Laptop o Railway
