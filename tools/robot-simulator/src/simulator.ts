@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { MIMEType } from 'node:util'
 import { setTimeout as delay } from 'node:timers/promises'
 import {
   bridgeHeaders, legacyContextSchema, legacyNavigationSchema, legacyHandFrameSchema,
@@ -26,6 +27,11 @@ export type SimulatorEvent =
 function integer(value: number, min: number, max: number): number {
   if (!Number.isSafeInteger(value) || value < min || value > max) throw new Error('Invalid simulator scenario')
   return value
+}
+
+function isEventStream(contentType: string | null): boolean {
+  if (!contentType) return false
+  try { return new MIMEType(contentType).essence === 'text/event-stream' } catch { return false }
 }
 
 /** Robot-side contract client. Records commands; never maps them to hardware. */
@@ -129,28 +135,55 @@ export class RobotSimulator {
     let timer = setTimeout(() => idle.abort(), this.timeout)
     const touch = () => { clearTimeout(timer); timer = setTimeout(() => idle.abort(), this.timeout) }
     let reader: ReadableStreamDefaultReader<Uint8Array> | undefined
+    let receiving: Promise<void> | undefined
     try {
       await this.beforeRequest(active)
       const response = await fetch(this.baseUrl + '/api/robot/motion/stream', { headers: bridgeHeaders(this.token, true), signal: active, redirect: 'error' })
-      if (!response.ok || !response.headers.get('content-type')?.startsWith('text/event-stream') || !response.body) {
+      if (!response.ok || !isEventStream(response.headers.get('content-type')) || !response.body) {
         await response.body?.cancel()
         throw new Error('Invalid robot stream')
       }
       reader = response.body.getReader()
-      // Transport failure must cancel a delivery already waiting on injected latency.
-      void reader.closed.catch(() => idle.abort())
+      // Both EOF and transport failure cancel pending delivery. Handle both promise
+      // branches so cancellation cannot create an unhandled rejection.
+      void reader.closed.then(() => idle.abort(), () => idle.abort())
       this.connectionId = randomUUID()
       this.observe('online')
       emit({ type: 'connected', connectionId: this.connectionId })
       const parser = new SseParser()
       const decoder = new TextDecoder()
       let delivered = 0
+      const chunks: Uint8Array[] = []
+      let queuedBytes = 0
+      let wake: (() => void) | undefined
+      // Fetch may only discover EOF when another read is pending. Keep receiving
+      // during delivery latency, but bound the queue independently of SSE frames.
+      const receive = async () => {
+        try {
+          while (!active.aborted) {
+            const chunk = await reader!.read()
+            active.throwIfAborted()
+            if (chunk.done) return
+            if (queuedBytes + chunk.value.byteLength > 65536) throw new Error('SSE receive limit exceeded')
+            queuedBytes += chunk.value.byteLength
+            chunks.push(chunk.value)
+            touch()
+            this.observe('online')
+            wake?.()
+          }
+        } finally {
+          idle.abort()
+          wake?.()
+        }
+      }
+      // Attach rejection handling immediately, even while delivery is delayed.
+      receiving = receive().catch(() => idle.abort())
       while (!active.aborted) {
-        const chunk = await reader.read()
-        if (chunk.done) return
-        touch()
-        this.observe('online')
-        for (const event of parser.push(decoder.decode(chunk.value, { stream: true }))) {
+        if (!chunks.length) await new Promise<void>(resolve => { wake = resolve })
+        active.throwIfAborted()
+        const chunk = chunks.shift()!
+        queuedBytes -= chunk.byteLength
+        for (const event of parser.push(decoder.decode(chunk, { stream: true }))) {
           if (event.event !== 'robot-motion') continue
           if (this.latency) await delay(this.latency, undefined, { signal: active })
           active.throwIfAborted()
@@ -166,6 +199,7 @@ export class RobotSimulator {
       clearTimeout(timer)
       idle.abort()
       await reader?.cancel().catch(() => {})
+      await receiving
     }
   }
 }

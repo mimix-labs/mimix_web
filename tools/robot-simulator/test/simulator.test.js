@@ -164,3 +164,55 @@ test('remote socket failure during delivery latency cancels pending motion befor
   assert.equal(session.events.filter(e => e.type === 'motion').length, 0)
   assert.deepEqual(session.events.slice(0, 3).map(e => e.type), ['connected', 'stop', 'retrying'])
 })
+
+test('clean SSE EOF during delivery latency cancels pending motion before stop/retry', async t => {
+  let response
+  const baseUrl = await serve(t, (_req, res) => {
+    response = res
+    res.writeHead(200, { 'Content-Type': 'text/event-stream' })
+    res.write(`event: robot-motion\ndata: ${JSON.stringify(motion())}\n\n`)
+  })
+  const session = run(t, new simulator.RobotSimulator({ baseUrl, latencyMs: 200, reconnectMs: 1000 }))
+  await until(() => session.events.some(e => e.type === 'connected'))
+  response.end()
+  await until(() => session.events.some(e => e.type === 'retrying'))
+  session.controller.abort(); await session.done
+  assert.equal(session.events.filter(e => e.type === 'motion').length, 0)
+  assert.deepEqual(session.events.map(e => e.type), ['connected', 'stop', 'retrying', 'stop'])
+})
+
+for (const [label, contentType, accepted] of [
+  ['exact type with charset', 'text/event-stream; charset=utf-8', true],
+  ['mixed case, OWS and quoted parameters', '\t TeXt/EvEnT-StReAm \t; charset="UTF-8"; profile="robot;v1" \t', true],
+  ['near-match subtype', 'text/event-streaming', false],
+  ['extra subtype suffix', 'text/event-stream/extra', false],
+  ['different media type', 'application/json', false],
+]) {
+  test(`SSE Content-Type: ${label}`, async t => {
+    const baseUrl = await serve(t, (_req, res) => {
+      res.writeHead(200, { 'Content-Type': contentType })
+      res.write(`event: robot-motion\ndata: ${JSON.stringify(motion())}\n\n`)
+    })
+    const session = run(t, new simulator.RobotSimulator({ baseUrl, reconnectMs: 1000 }))
+    await until(() => session.events.some(e => e.type === 'motion' || e.type === 'retrying'))
+    session.controller.abort(); await session.done
+    assert.equal(session.events.some(e => e.type === 'connected'), accepted)
+    assert.equal(session.events.some(e => e.type === 'motion'), accepted)
+    assert.equal(session.events.some(e => e.type === 'retrying'), !accepted)
+  })
+}
+
+test('SSE receive buffer overflow cancels pending delivery instead of growing during latency', async t => {
+  let response
+  const baseUrl = await serve(t, (_req, res) => {
+    response = res
+    res.writeHead(200, { 'Content-Type': 'text/event-stream' })
+    res.write(`event: robot-motion\ndata: ${JSON.stringify(motion())}\n\n`)
+  })
+  const session = run(t, new simulator.RobotSimulator({ baseUrl, latencyMs: 200, reconnectMs: 1000 }))
+  await until(() => session.events.some(e => e.type === 'connected'))
+  response.write((': ' + 'x'.repeat(1024) + '\n\n').repeat(128))
+  await until(() => session.events.some(e => e.type === 'retrying'))
+  session.controller.abort(); await session.done
+  assert.equal(session.events.some(e => e.type === 'motion'), false)
+})

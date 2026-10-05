@@ -65,9 +65,12 @@ Nothing replays. With `MIMIX_SIM_LATENCY_MS=3500`, motion's 3000 ms delivery TTL
 expires and the simulator emits `rejected` rather than `motion`. Latency greater
 than timeout instead causes a timeout. JSON mutations are never auto-retried.
 
-SSE disconnect/idle timeout causes a simulated stop before retry. Malformed,
+SSE disconnect (including clean EOF)/idle timeout causes a simulated stop before retry. Malformed,
 oversized or wrong-content-type streams cannot run unbounded: frame buffers are
-limited to 65,536 characters. Individual malformed or expired motion is rejected;
+limited to 65,536 characters. Reception continues during delivery latency to detect
+EOF, with a separate 65,536-byte queue; overflow cancels pending delivery and
+retries. Content-Type is parsed as MIME and its essence must be exactly
+`text/event-stream` (case-insensitive, with valid whitespace/parameters). Individual malformed or expired motion is rejected;
 a broken/oversized stream is closed and retried. Unsupported events are ignored.
 The legacy Python bridge does not deduplicate motion IDs; neither does this
 compatibility simulator. Do not infer exactly-once delivery from its output.
@@ -117,7 +120,7 @@ repository. Do not claim presence counts prove identity or grant leases. Prompts
 - Frozen install, lint, typecheck, full tests, build, production smoke and
   `pnpm check`: passed; post-review check completed 47/47 Turbo tasks.
 - Protocol: 8/8 with optional actual Python consumer test enabled (10 vectors).
-- Simulator: 18/18 including the review regression for remote socket failure
+- Initial simulator suite: 18/18 including the review regression for remote socket failure
   during injected delivery latency. It first reproduced one late motion, then
   passed with zero motions after the transport failed.
 - PostgreSQL migrations, ownership/concurrency/reconstruction: 20/20.
@@ -143,3 +146,22 @@ An ARM64 Node-container probe could not start (`exec format error`); this amd64
 host has no ARM64 execution support/buildx. This PR is not ARM64-certified and
 contains no robot/edge deployment change. Test on an ARM64 runner before shipping
 this tool as part of a future edge image.
+
+### Review follow-up: clean EOF and MIME validation
+
+The clean-EOF regression first reproduced one late motion after `res.end()` during
+latency. Handling resolution of `reader.closed` alone still reproduced it because
+Node fetch needed another pending read to discover EOF. Reception now runs while
+motion delivery is delayed, with a bounded 64 KiB queue; both resolution and
+rejection of `reader.closed` abort delivery, all read rejections are handled, and
+the receiver is awaited during teardown. EOF, socket failure, shutdown, retry and
+receive-buffer-overflow tests pass.
+
+MIME regressions first showed that `text/event-streaming` and
+`text/event-stream/extra` were accepted while mixed-case SSE was rejected.
+The built-in Node MIME parser now checks the exact essence; five live HTTP cases
+cover near matches, another media type, charset, OWS, mixed case and quoted
+parameters. The final simulator suite is 25/25 (no skips).
+
+Post-fix `pnpm check` passed all 47 tasks, including repository tests, lint,
+typechecks, required builds and production smoke.
