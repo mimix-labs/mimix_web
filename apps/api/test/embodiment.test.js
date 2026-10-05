@@ -134,7 +134,7 @@ test('playback cannot start without a stop-capable output adapter', () => {
   c.close()
 })
 
-test('active web playback survives virtual lease expiry and releases its retention on stop', () => {
+test('active web playback survives virtual lease expiry and natural completion releases retention', () => {
   const { coordinator: c, advance } = fixture()
   let stops = 0
   const web = new adapters.WebEmbodiment(c, { stop: () => { stops++ } })
@@ -143,11 +143,30 @@ test('active web playback survives virtual lease expiry and releases its retenti
   advance(100)
   assert.equal(permit.isCurrent(), true)
   assert.equal(stops, 0)
-  web.close()
-  assert.equal(stops, 1)
+  assert.equal(web.complete(other), false)
+  assert.equal(web.complete(utterance), true)
+  assert.equal(web.complete(utterance), false)
+  assert.equal(stops, 0)
   advance(200)
   assert.equal(permit.signal.aborted, true)
+  web.close()
+  assert.equal(stops, 0)
   c.close()
+})
+
+test('late completion from a replaced clip cannot release current playback', () => {
+  const { coordinator: c, advance } = fixture()
+  let stops = 0
+  const web = new adapters.WebEmbodiment(c, { stop: () => { stops++ } })
+  const permit = web.permit()
+  assert.equal(web.present(permit, utterance, () => {}), true)
+  assert.equal(web.present(permit, other, () => {}), true)
+  assert.equal(stops, 1)
+  assert.equal(web.complete(utterance), false)
+  advance(100)
+  assert.equal(permit.isCurrent(), true)
+  assert.equal(web.complete(other), true)
+  web.close(); c.close()
 })
 
 test('failing stop closes authority and reentrant output cannot obtain a second permission', () => {

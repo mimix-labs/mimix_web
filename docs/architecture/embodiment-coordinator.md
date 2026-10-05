@@ -57,7 +57,9 @@ transporte de estado quedan para sus fases.
 comprueba autoridad justo antes de invocar el callback síncrono de reproducción.
 Requiere un puerto `stop()`; al perder lease o cerrar el adaptador, lo invoca.
 Mientras la reproducción está activa retiene el lease virtual y libera esa retención
-al detener, reemplazar o cerrar la salida.
+al detener, reemplazar o cerrar la salida. El driver debe llamar
+`complete(utteranceId)` cuando el clip termina naturalmente; un callback tardío de
+un clip reemplazado no puede liberar la reproducción actual.
 Un fallo de `stop()` cierra la autoridad y rechaza cesión a robot. Esto es una
 protección lógica: no puede garantizar silencio de un dispositivo cuyo driver falla.
 
