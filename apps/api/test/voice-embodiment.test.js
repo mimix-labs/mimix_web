@@ -48,3 +48,18 @@ test('voice fails closed on exhausted registry and shutdown revokes every lease'
   service.close()
   assert.equal(c.snapshot().phase, 'closed')
 })
+
+test('virtual lease expiry does not cancel an active synthesis when no robot takes authority', async () => {
+  let now = 0, finish
+  const scheduled = new Set()
+  const clock = { now: () => now, schedule: (callback, delay) => { const task = { callback, at: now + delay }; scheduled.add(task); return () => scheduled.delete(task) } }
+  const sessions = new EmbodimentSessions({ ttlMs: 100, clock })
+  const service = new VoiceService({ synthesize: () => new Promise(resolve => { finish = resolve }) }, limits, () => now, sessions)
+  const pending = service.speak(user, input)
+  await Promise.resolve()
+  now = 100
+  for (const task of [...scheduled]) if (task.at <= now) { scheduled.delete(task); task.callback() }
+  finish(audio)
+  assert.equal((await pending).status, 'ready')
+  service.close()
+})

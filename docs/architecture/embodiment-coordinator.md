@@ -34,6 +34,10 @@ Un lease contiene `conversationId`, `leaseId`, `holderId`, `kind`, `revision` y
 - Heartbeat exige token y titular actuales. Se acepta solo antes del vencimiento;
   en el instante de expiración ya no puede resucitar el lease. Renueva el plazo,
   sin cambiar token/revisión ni interrumpir salida.
+- Una síntesis o reproducción web activa retiene su lease virtual. Si vence mientras
+  sigue retenido, el coordinador amplía su plazo sin abortar la salida; al liberar
+  la última retención, la próxima expiración vuelve a rotar token y revisión.
+  La retención nunca impide una cesión explícita a robot.
 - El temporizador provoca fallback incluso sin peticiones; toda lectura o uso
   vuelve a comprobar expiración para cubrir temporizadores demorados. Timers viejos
   no invalidan un heartbeat nuevo. Producción usa un reloj monotónico del proceso
@@ -52,6 +56,8 @@ transporte de estado quedan para sus fases.
 `WebEmbodiment.permit()` obtiene un permiso web revocable. `present(permit, id, play)`
 comprueba autoridad justo antes de invocar el callback síncrono de reproducción.
 Requiere un puerto `stop()`; al perder lease o cerrar el adaptador, lo invoca.
+Mientras la reproducción está activa retiene el lease virtual y libera esa retención
+al detener, reemplazar o cerrar la salida.
 Un fallo de `stop()` cierra la autoridad y rechaza cesión a robot. Esto es una
 protección lógica: no puede garantizar silencio de un dispositivo cuyo driver falla.
 
@@ -79,7 +85,7 @@ virtual. No acepta un conversationId, holder ni lease proporcionados por el cuer
 HTTP. Cada usuario tiene autoridad independiente.
 
 Antes de reservar cuotas y llamar a ElevenLabs, la síntesis obtiene permiso web
-(renovando el lease virtual). Con lease robot retorna `text_only/EMBODIMENT_MUTED`
+(renovando y reteniendo el lease virtual hasta terminar). Con lease robot retorna `text_only/EMBODIMENT_MUTED`
 y subtítulo exacto, sin consumir cuota de generación. Una transferencia, expiración
 o revocación aborta la síntesis pendiente y su resultado tardío nunca devuelve
 audio, aunque se haya vuelto a virtual. Cancelación/timeout/cuotas mantienen los

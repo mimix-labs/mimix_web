@@ -14,12 +14,15 @@ export class WebEmbodiment {
   present(permit: EmbodimentPermit | undefined, utteranceId: string, play: () => void): boolean {
     if (this.closed || !this.output || !permit) return false
     const current = this.coordinator.permit('web', permit.leaseId)
-    if (!current || current.signal !== permit.signal || !this.coordinator.claimUtterance(permit.leaseId, utteranceId)) return false
+    if (!current || current.signal !== permit.signal) return false
+    const release = this.coordinator.retainWeb(permit.leaseId)
+    if (!release) return false
+    if (!this.coordinator.claimUtterance(permit.leaseId, utteranceId)) { release(); return false }
     this.stop()
-    if (this.closed || !current.isCurrent()) return false
+    if (this.closed || !current.isCurrent()) { release(); return false }
     const stop = () => this.stop()
     current.signal.addEventListener('abort', stop, { once: true })
-    this.detach = () => current.signal.removeEventListener('abort', stop)
+    this.detach = () => { current.signal.removeEventListener('abort', stop); release() }
     try { play() } catch (error) { this.stop(); throw error }
     return true
   }

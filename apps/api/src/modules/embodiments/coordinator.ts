@@ -23,6 +23,7 @@ export class EmbodimentCoordinator {
   private closed = false
   private transitioning = false
   private readonly delivered = new Set<string>()
+  private readonly webRetentions = new Map<string, number>()
   private readonly conversationId: string
   private readonly webHolderId: string
   private readonly clock: LeaseClock
@@ -60,7 +61,14 @@ export class EmbodimentCoordinator {
     return { ...this.lease! }
   }
   private expire(): void {
-    if (!this.closed && !this.transitioning && this.lease!.expiresAt <= this.clock.now()) this.replace('web', this.webHolderId)
+    const lease = this.lease
+    if (this.closed || this.transitioning || !lease || lease.expiresAt > this.clock.now()) return
+    if (lease.kind === 'web' && (this.webRetentions.get(lease.leaseId) ?? 0) > 0) {
+      lease.expiresAt = this.clock.now() + this.ttlMs
+      this.arm()
+      return
+    }
+    this.replace('web', this.webHolderId)
   }
   snapshot(): EmbodimentState {
     this.expire()
@@ -100,6 +108,21 @@ export class EmbodimentCoordinator {
       return !this.closed && !this.transitioning && !signal.aborted && this.lease?.leaseId === id
     } }
   }
+  /** Keeps active virtual output alive without weakening robot transfer or stale-lease fencing. */
+  retainWeb(leaseId: string): (() => void) | undefined {
+    const permit = this.permit('web', leaseId)
+    if (!permit) return undefined
+    const id = permit.leaseId
+    this.webRetentions.set(id, (this.webRetentions.get(id) ?? 0) + 1)
+    let retained = true
+    return () => {
+      if (!retained) return
+      retained = false
+      const count = this.webRetentions.get(id) ?? 0
+      if (count <= 1) this.webRetentions.delete(id)
+      else this.webRetentions.set(id, count - 1)
+    }
+  }
   claimUtterance(leaseId: string, utteranceId: string): boolean {
     const id = embodimentIdSchema.parse(leaseId), utterance = embodimentIdSchema.parse(utteranceId)
     this.expire()
@@ -114,5 +137,6 @@ export class EmbodimentCoordinator {
     this.cancelTimer?.()
     this.controller.abort()
     this.delivered.clear()
+    this.webRetentions.clear()
   }
 }

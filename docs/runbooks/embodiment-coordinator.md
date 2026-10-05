@@ -33,7 +33,8 @@ verificar que detuvo salida: el servidor anterior no conoce leases.
 
 ## Verificación
 
-Pruebas deterministas cubren contrato, CAS, heartbeat al borde del plazo, fallback
+Pruebas deterministas cubren contrato, CAS, heartbeat al borde del plazo, retención
+de síntesis/reproducción web durante expiración, fallback
 por timer y por lectura, revocación, reconexión con token nuevo, cierre, snapshots,
 una sola entrega por utterance, límites de memoria, stop obligatorio/fallido,
 audio tardío y aislamiento entre usuarios. Nest y Express verifican el nuevo fallback

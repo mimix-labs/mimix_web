@@ -56,9 +56,11 @@ export class VoiceService {
     if (state.phase === 'virtual') coordinator.heartbeat(state.lease.leaseId, state.lease.holderId)
     const permission = new WebEmbodiment(coordinator).permit()
     if (!permission) return fallback('EMBODIMENT_MUTED')
+    const releaseWeb = coordinator.retainWeb(permission.leaseId)
+    if (!releaseWeb) return fallback('EMBODIMENT_MUTED')
     const previous = this.active.get(user)
-    if (previous?.id === request.id || this.providerCalls >= this.limits.maxConcurrent) return fallback('BUSY')
-    if (!this.reserve(user, request.text.length)) return fallback('QUOTA_EXCEEDED')
+    if (previous?.id === request.id || this.providerCalls >= this.limits.maxConcurrent) { releaseWeb(); return fallback('BUSY') }
+    if (!this.reserve(user, request.text.length)) { releaseWeb(); return fallback('QUOTA_EXCEEDED') }
     if (previous) this.abort(previous, 'INTERRUPTED')
     const active: Active = { id: request.id, controller: new AbortController(), reason: 'CANCELLED' }
     this.active.set(user, active)
@@ -86,6 +88,7 @@ export class VoiceService {
       return fallback(active.controller.signal.aborted ? active.reason : error instanceof VoiceError ? error.code : 'PROVIDER_UNAVAILABLE')
     } finally {
       clearTimeout(timer)
+      releaseWeb()
       permission.signal.removeEventListener('abort', leaseLost)
       clientSignal?.removeEventListener('abort', disconnect)
       active.controller.signal.removeEventListener('abort', rejectAbort)

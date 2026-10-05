@@ -134,6 +134,22 @@ test('playback cannot start without a stop-capable output adapter', () => {
   c.close()
 })
 
+test('active web playback survives virtual lease expiry and releases its retention on stop', () => {
+  const { coordinator: c, advance } = fixture()
+  let stops = 0
+  const web = new adapters.WebEmbodiment(c, { stop: () => { stops++ } })
+  const permit = web.permit()
+  assert.equal(web.present(permit, utterance, () => {}), true)
+  advance(100)
+  assert.equal(permit.isCurrent(), true)
+  assert.equal(stops, 0)
+  web.close()
+  assert.equal(stops, 1)
+  advance(200)
+  assert.equal(permit.signal.aborted, true)
+  c.close()
+})
+
 test('failing stop closes authority and reentrant output cannot obtain a second permission', () => {
   const { coordinator: c } = fixture()
   let permissionDuringStop
