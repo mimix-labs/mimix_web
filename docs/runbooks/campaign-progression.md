@@ -89,3 +89,19 @@ real. El PR enlaza el resultado de CI del commit final y la revisión independie
 
 Alcance excluido: UI, mapa, ranking, economía y prompt11. No certifica evaluación
 pedagógica, hardware ni disponibilidad de recursos remotos de los retos.
+
+### Resultado local de esta entrega (2026-10-05)
+
+- Instalación congelada y `pnpm check`: 23/23 tareas, 84/84 pruebas.
+- PostgreSQL completo: 20/20; incluye los dos runtimes y rol SQL restringido.
+- Imagen `mimix:campaign` compilada y smoke contenedor: 5/5; la campaña restaurada
+  conserva exactamente su proyección y el desbloqueo del segundo nodo.
+- Revisión independiente de la rama y corrección de segmentos URL: 15/15 pruebas
+  focalizadas, sin hallazgos pendientes. IDs `.`/`..` fallaron primero y ahora se
+  rechazan, evitando definiciones sin una ruta utilizable en navegador.
+- El primer smoke ampliado detectó un error en la URL de la DB restaurada del test:
+  una sustitución de texto cambiaba el usuario. Se corrigió asignando URL.pathname;
+  el smoke completo posterior pasó conservando sus aserciones de restore.
+
+El resultado de CI está ligado al SHA final en el PR. No se verificó hardware ni
+se introdujeron cambios a vistas/sensores; la matriz existente se mantiene en CI.

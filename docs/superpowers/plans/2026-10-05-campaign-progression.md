@@ -1,6 +1,6 @@
 # Campaign Progression Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Campañas versionadas con progreso derivado y API compatible.
 **Architecture:** Definiciones/asociaciones inmutables en PostgreSQL; agregación de eventos más reglas puras. Reutilizar creación atómica y append de learning.
@@ -31,12 +31,12 @@ apps/api/src/modules/campaigns/projection.ts; apps/api/test/campaign.test.js.
 campaignPageQuerySchema y projectCampaign(definition, facts): CampaignProgress.
 Facts por nodo: nodeId, attempts, completedAttempts, activeAttemptId.
 
-- [ ] Escribir tests: DAG secuencia/diamante, ciclos, referencias ausentes, duplicados,
+- [x] Escribir tests: DAG secuencia/diamante, ciclos, referencias ausentes, duplicados,
   límites, versiones; desbloqueo AND, sin crédito por respuesta, reintento conserva
   éxito, finalización total y nodos con mismo reto separados. Esperados literales.
-- [ ] Ejecutar node --test de los archivos; comprobar RED por exports ausentes.
-- [ ] Implementar schemas estrictos y proyección pura con estados locked/available/in_progress/completed, canStart, blockedBy, completedNodes/totalNodes/status.
-- [ ] Compilar y ejecutar contratos/API completos; esperado PASS. Commit feat(campaigns).
+- [x] Ejecutar node --test de los archivos; comprobar RED por exports ausentes.
+- [x] Implementar schemas estrictos y proyección pura con estados locked/available/in_progress/completed, canStart, blockedBy, completedNodes/totalNodes/status.
+- [x] Compilar y ejecutar contratos/API completos; esperado PASS. Commit feat(campaigns).
 
 ### Task 2: Historial y persistencia
 
@@ -46,13 +46,13 @@ campaigns/store.ts y seed.ts; database/cli.ts; test/postgres/campaign.test.js.
 publish(value), list(query), get(id,version), progress(user,id,version), start(user,id,version,node,input).
 LearningStore.createInTransaction(tx,user,input,context?) reutiliza escritura atómica.
 
-- [ ] Tests PostgreSQL de publicaciones inmutables, conflicto; bindings exactos y
+- [x] Tests PostgreSQL de publicaciones inmutables, conflicto; bindings exactos y
   append-only; AND, reintento/terminal, concurrencia misma/distinta clave, aislamiento
   usuario/nodo/versión/independiente, rebuild independiente y seed CLI dos veces.
-- [ ] Ejecutar con DB desechable y verificar RED antes de implementar.
-- [ ] Migración aditiva + índices; helper transaccional y clave contextual; serializar
+- [x] Ejecutar con DB desechable y verificar RED antes de implementar.
+- [x] Migración aditiva + índices; helper transaccional y clave contextual; serializar
   start por usuario; agregar eventos en SQL sin leer attempt_progress; seed opt-in.
-- [ ] Ejecutar suite PostgreSQL completa y suite API; esperado PASS. Commit feat(campaigns).
+- [x] Ejecutar suite PostgreSQL completa y suite API; esperado PASS. Commit feat(campaigns).
 
 ### Task 3: API, operación y entrega
 
@@ -63,10 +63,11 @@ docs/architecture/campaign-progression.md, docs/runbooks/campaign-progression.md
 **Interfaces:** consume CampaignStore; produce cuatro rutas autenticadas documentadas,
 Nest/Express equivalentes, cache no-store, cuotas por plantilla, flag postgres existente.
 
-- [ ] HTTP RED: 401, 400 estricto, 404 desconocido/disabled, 409 bloqueo/activo/clave,
+- [x] HTTP RED: 401, 400 estricto, 404 desconocido/disabled, 409 bloqueo/activo/clave,
   429 IDs variables, 503 DB, usuario aislado, OpenAPI y flujo completo ambos runtimes.
-- [ ] Conectar store/rutas/política; documentar schemas de respuesta y reglas/versiones.
-- [ ] Ampliar smoke real para seed/progreso de campaña persistido tras backup/restore.
-- [ ] pnpm install --frozen-lockfile; pnpm check; test:postgres; Docker build y smoke.
+- [x] Conectar store/rutas/política; documentar schemas de respuesta y reglas/versiones.
+- [x] Ampliar smoke real para seed/progreso de campaña persistido tras backup/restore.
+- [x] pnpm install --frozen-lockfile; pnpm check; test:postgres; Docker build y smoke.
   Esperado PASS; revisión independiente sobre rama completa, corregir con RED→GREEN.
-- [ ] Commit docs/evidencia, push, PR contra main, adjuntar y esperar CI final verde.
+- [ ] Entrega remota: push, PR contra main, adjuntar y esperar CI final verde.
+  El resultado y SHA definitivos se registran en el PR, sin merge.

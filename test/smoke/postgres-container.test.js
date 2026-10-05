@@ -48,7 +48,8 @@ test('production image migrates PostgreSQL, persists progress, restores backup a
   assert.deepEqual(restored.stdout.trim().split('\n'), ['completed:2', 'completed:2'])
   const ids = await docker('exec', pg, 'psql', '-U', 'postgres', '-d', 'restored', '-Atc', 'SELECT id FROM users')
   assert.equal(ids.stdout.trim(), JSON.parse(seeded.stdout).attempt.userId)
-  const restoredProgress = await docker('run', '--rm', '--network', network, '-e', `DATABASE_URL=${url.replace('/postgres', '/restored')}`, image, 'node', '--input-type=module', '-e', `
+  const restoredUrl = new URL(url); restoredUrl.pathname = '/restored'
+  const restoredProgress = await docker('run', '--rm', '--network', network, '-e', `DATABASE_URL=${restoredUrl.toString()}`, image, 'node', '--input-type=module', '-e', `
     import { Database } from './apps/api/dist/database/database.js';
     import { CampaignStore } from './apps/api/dist/modules/campaigns/store.js';
     const db=new Database(process.env.DATABASE_URL);
