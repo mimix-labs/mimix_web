@@ -10,6 +10,8 @@ export interface PolicyRequest { method: string; url: string; headers: IncomingH
 export interface PolicyResult { status?: number; error?: string; headers: Record<string, string>; user?: User; identity?: VerifiedIdentity }
 type Access = 'public' | 'user' | 'operator' | 'bridge' | 'device'
 export const routeAccess: Record<string, Access> = {
+  'POST /api/robot-control/leases': 'user', 'GET /api/robot-control/leases/:id': 'user', 'DELETE /api/robot-control/leases/:id': 'user',
+  'POST /api/robot-control/leases/:id/heartbeat': 'user', 'POST /api/robot-control/intents': 'user', 'GET /api/robot-control/intents/:id': 'user', 'GET /api/robot-control/audit': 'user',
   'POST /api/media/sessions': 'user', 'GET /api/media/sessions': 'user',
   'GET /api/media/sessions/:id': 'user', 'DELETE /api/media/sessions/:id': 'user',
   'POST /api/media/sessions/:id/user-token': 'user', 'POST /api/media/sessions/:id/device-token': 'device',
@@ -34,7 +36,7 @@ export const routeAccess: Record<string, Access> = {
 }
 export function requestPath(url: string): string { return url.split('?')[0].toLowerCase().replace(/\/+$/, '') || '/' }
 export function policyPath(path: string): string {
-  return path.replace(/^\/api\/media\/sessions\/[0-9a-f-]{36}(?=\/(user-token|device-token|disconnect)$|$)/, '/api/media/sessions/:id').replace(/^\/api\/devices\/(pairings|sessions)\/[0-9a-f-]{36}(?=\/authorize$|$)/, '/api/devices/$1/:id').replace(/^\/api\/voice\/utterances\/[0-9a-f-]{36}$/, '/api/voice/utterances/:id').replace(/^\/api\/campaigns\/[a-z0-9._-]{1,80}\/versions\/[a-z0-9._-]{1,80}(?=\/|$)/, '/api/campaigns/:id/versions/:version')
+  return path.replace(/^\/api\/robot-control\/(leases|intents)\/[0-9a-f-]{36}(?=\/heartbeat$|$)/, '/api/robot-control/$1/:id').replace(/^\/api\/media\/sessions\/[0-9a-f-]{36}(?=\/(user-token|device-token|disconnect)$|$)/, '/api/media/sessions/:id').replace(/^\/api\/devices\/(pairings|sessions)\/[0-9a-f-]{36}(?=\/authorize$|$)/, '/api/devices/$1/:id').replace(/^\/api\/voice\/utterances\/[0-9a-f-]{36}$/, '/api/voice/utterances/:id').replace(/^\/api\/campaigns\/[a-z0-9._-]{1,80}\/versions\/[a-z0-9._-]{1,80}(?=\/|$)/, '/api/campaigns/:id/versions/:version')
     .replace(/^(\/api\/campaigns\/:id\/versions\/:version)\/nodes\/[a-z0-9._-]{1,80}\/attempts$/, '$1/nodes/:nodeId/attempts')
     .replace(/^\/api\/learning\/attempts\/[0-9a-f-]{36}(?=\/events$|$)/, '/api/learning/attempts/:id')
 }
@@ -85,6 +87,11 @@ export class HttpSecurityPolicy {
     // Express accepts absolute-form request targets; never classify those as static assets.
     if (!request.url.startsWith('/')) return reject(400, 'invalid request target')
     const path = policyPath(requestPath(request.url))
+    if (path.startsWith('/api/robot-control')) {
+      headers['cache-control'] = 'no-store'
+      if (this.config.robot.transport !== 'mqtt') return reject(404, 'not found')
+    }
+    if (this.config.robot.transport === 'mqtt' && ['/api/robot/motion', '/api/robot/motion/stream'].includes(path)) return reject(404, 'not found')
     if (path.startsWith('/api/media')) {
       headers['cache-control'] = 'no-store'
       if (this.config.media.provider === 'disabled') return reject(404, 'not found')

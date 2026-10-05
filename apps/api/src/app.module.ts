@@ -1,3 +1,5 @@
+import type { RobotControlService } from './modules/robot-control/service.js'
+import { RobotControlModule } from './modules/robot-control/robot-control.module.js'
 import type { MediaService } from './modules/media/service.js'
 import { VoiceModule } from './modules/voice/voice.module.js'
 import { createVoiceService } from './modules/voice/factory.js'
@@ -25,7 +27,7 @@ import { SyncModule } from './modules/sync/sync.module.js'
   controllers: [HealthController],
 })
 export class AppModule {
-  static register(config: ApiConfig, learning?: LearningStore, close?: () => Promise<void> | undefined, campaigns?: CampaignStore, voice?: VoiceService, devices?: DeviceStore, media?: MediaService): DynamicModule {
-    return { module: AppModule, imports: [MediaModule.register(media), DevicesModule.register(devices), VoiceModule.register(voice ?? createVoiceService(config.voice)), LearningModule.register(learning), CampaignsModule.register(campaigns)], providers: [{ provide: 'DATABASE_LIFECYCLE', useValue: { onApplicationShutdown: close } }, { provide: API_CONFIG, useValue: config }, LegacyService] }
+  static register(config: ApiConfig, learning?: LearningStore, close?: () => Promise<void> | undefined, campaigns?: CampaignStore, voice?: VoiceService, devices?: DeviceStore, media?: MediaService, robot?: RobotControlService): DynamicModule {
+    return { module: AppModule, imports: [RobotControlModule.register(robot), MediaModule.register(media), DevicesModule.register(devices), VoiceModule.register(voice ?? createVoiceService(config.voice)), LearningModule.register(learning), CampaignsModule.register(campaigns)], providers: [{ provide: 'DATABASE_LIFECYCLE', useValue: { onApplicationShutdown: close } }, { provide: API_CONFIG, useValue: config }, LegacyService] }
   }
 }

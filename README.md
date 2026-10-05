@@ -201,3 +201,11 @@ El backend ofrece `@mimix/media-contract` y un adaptador LiveKit con tokens de s
 acotados por DeviceSession, cámara/micrófono/altavoz explícitos y fallback MJPEG LAN.
 Configuración, límites de revocación, pruebas y gate Jetson: [runbook MediaProvider](docs/runbooks/media-livekit.md).
 Desactivado por defecto; no incorpora todavía un consumidor de medios en la UI o el robot.
+
+### Semantic robot control (opt-in)
+
+`MIMIX_ROBOT_TRANSPORT=mqtt` enables authorized `BehaviorIntent` delivery through
+MQTT 5, with TTL, scoped ACK, durable audit and gateway stopping. Requires Clerk,
+PostgreSQL, DeviceSessions and a single API process; credentials stay on the
+backend/gateway. Default `legacy` retains HTTP/SSE rollback. No physical motor
+integration is included. See [MQTT runbook](docs/runbooks/robot-control-mqtt.md).

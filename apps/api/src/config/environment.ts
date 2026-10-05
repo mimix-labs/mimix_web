@@ -1,9 +1,11 @@
+import { parseRobotEnvironment, type RobotControlConfig } from '../modules/robot-control/config.js'
 import { parseMediaEnvironment, type MediaConfig } from '../modules/media/config.js'
 import { isDeviceTokenKey } from '../modules/devices/tokens.js'
 import { parseVoiceEnvironment, type VoiceConfig } from '../modules/voice/config.js'
 import { isAbsolute } from 'node:path'
 
 export interface ApiConfig {
+  robot: RobotControlConfig
   media: MediaConfig
   deviceTokenKey: string
   deviceSessionsEnabled: boolean
@@ -93,11 +95,12 @@ export function parseEnvironment(env: NodeJS.ProcessEnv): ApiConfig {
   if (bridgeToken && bridgeToken === controlToken) fail('MIMIX_ROBOT_CONTROL_TOKEN must differ from bridge token')
   const logLevel = env.LOG_LEVEL ?? 'info'
   if (!['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'].includes(logLevel)) fail('LOG_LEVEL')
-  return { media: parseMediaEnvironment(env, deviceSessionsEnabled, videoUrl), deviceTokenKey, deviceSessionsEnabled, voice: parseVoiceEnvironment(env, authMode), dataStore: dataStore as ApiConfig['dataStore'], databaseUrl, authMode: authMode as ApiConfig['authMode'], allowedOrigins, rateLimits, identityFile, clerk, port, host, runtime: runtime as ApiConfig['runtime'], visionMode: visionMode as ApiConfig['visionMode'], videoUrl, bridgeToken, controlToken, logLevel: logLevel as ApiConfig['logLevel'] }
+  return { robot: parseRobotEnvironment(env, deviceSessionsEnabled), media: parseMediaEnvironment(env, deviceSessionsEnabled, videoUrl), deviceTokenKey, deviceSessionsEnabled, voice: parseVoiceEnvironment(env, authMode), dataStore: dataStore as ApiConfig['dataStore'], databaseUrl, authMode: authMode as ApiConfig['authMode'], allowedOrigins, rateLimits, identityFile, clerk, port, host, runtime: runtime as ApiConfig['runtime'], visionMode: visionMode as ApiConfig['visionMode'], videoUrl, bridgeToken, controlToken, logLevel: logLevel as ApiConfig['logLevel'] }
 }
 
 export function legacyEnvironment(config: ApiConfig): NodeJS.ProcessEnv {
   return {
+    MIMIX_ROBOT_TRANSPORT: config.robot.transport,
     MIMIX_CORS_ORIGINS: config.allowedOrigins.join(','),
     MIMIX_VISION_MODE: config.visionMode,
     MIMIX_VISION_VIDEO_URL: config.videoUrl,

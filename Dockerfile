@@ -21,6 +21,7 @@ COPY packages/voice-contract/package.json ./packages/voice-contract/package.json
 COPY packages/embodiment-contract/package.json ./packages/embodiment-contract/package.json
 COPY packages/media-contract/package.json ./packages/media-contract/package.json
 COPY packages/robot-protocol/package.json ./packages/robot-protocol/package.json
+COPY packages/robot-mqtt/package.json ./packages/robot-mqtt/package.json
 COPY tools/robot-simulator/package.json ./tools/robot-simulator/package.json
 
 FROM base AS build
@@ -62,8 +63,11 @@ COPY --from=production-deps /app/packages/embodiment-contract/node_modules/ ./pa
 COPY --from=build /app/packages/embodiment-contract/dist/ ./packages/embodiment-contract/dist/
 COPY packages/media-contract/package.json ./packages/media-contract/package.json
 COPY packages/robot-protocol/package.json ./packages/robot-protocol/package.json
+COPY packages/robot-mqtt/package.json ./packages/robot-mqtt/package.json
 COPY --from=production-deps /app/packages/robot-protocol/node_modules/ ./packages/robot-protocol/node_modules/
 COPY --from=build /app/packages/robot-protocol/dist/ ./packages/robot-protocol/dist/
+COPY --from=production-deps /app/packages/robot-mqtt/node_modules/ ./packages/robot-mqtt/node_modules/
+COPY --from=build /app/packages/robot-mqtt/dist/ ./packages/robot-mqtt/dist/
 COPY --from=production-deps /app/packages/media-contract/node_modules/ ./packages/media-contract/node_modules/
 COPY --from=build /app/packages/media-contract/dist/ ./packages/media-contract/dist/
 COPY --chown=node:node apps/api/migrations/ ./apps/api/migrations/

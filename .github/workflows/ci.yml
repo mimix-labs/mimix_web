@@ -55,6 +55,12 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Pull MQTT broker fixture
+        run: docker pull eclipse-mosquitto:2.0.22
+
+      - name: MQTT ACL, outage, TTL and replay proof
+        run: pnpm --filter @mimix/robot-mqtt test:broker
+
       - name: PostgreSQL migrations, ownership, concurrency and reconstruction
         run: pnpm --filter @mimix/api test:postgres
         env:
