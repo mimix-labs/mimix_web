@@ -111,7 +111,15 @@ El [protocolo versionado](docs/architecture/robot-protocol.md) conserva los cont
 HTTP/SSE de `mimix_robot` y prepara presencia, capabilities, cámara e intenciones
 semánticas. El [simulador sin hardware](docs/runbooks/robot-protocol-simulator.md)
 permite probar autenticación, latencia, fallos y reconexión contra la API local.
-No conecta motores ni activa pairing, MQTT o WebRTC.
+El simulador conserva el flujo heredado; no conecta motores, MQTT o WebRTC.
+
+## Sesiones de dispositivo
+
+El [pairing revocable](docs/architecture/device-sessions.md) vincula un robot con
+usuario, login y capabilities aprobadas sin entregarle credenciales Clerk.
+Incluye presencia, heartbeat, caducidad y auditoría PostgreSQL. Está desactivado
+por defecto; [activación y recuperación](docs/runbooks/device-sessions.md).
+No añade UI ni despacho físico.
 
 ## Modos de visión
 
