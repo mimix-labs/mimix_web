@@ -91,8 +91,10 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Install Chromium, Firefox and WebKit
         run: pnpm --filter @mimix/challenge-runtime exec playwright install --with-deps chromium firefox webkit
-      - name: SDK fixture, isolation and hostile message harness
+      - name: SDK isolation, official challenge parity and sensor lifecycle
         run: pnpm test:browser
+      - name: Production challenge routes and legacy rollback
+        run: pnpm --filter mimix-client test:deployment
 
   dependency-audit:
     name: Dependency audit (informational)

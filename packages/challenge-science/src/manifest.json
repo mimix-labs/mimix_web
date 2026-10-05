@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "science",
+  "version": "1.0.0",
+  "title": "Ciencias",
+  "description": "Exploración interactiva oficial con las manos y una vista tridimensional.",
+  "entrypoint": "index.js",
+  "objectives": [
+    {
+      "id": "explore-atoms",
+      "description": "Explorar elementos, estructura atómica y carga de iones."
+    }
+  ],
+  "completion": {
+    "description": "Exploración abierta; salir finaliza la experiencia visual. No se registra acierto ni finalización de aprendizaje automática."
+  },
+  "capabilities": {
+    "required": [],
+    "optional": [
+      "agent",
+      "embodiment",
+      "camera",
+      "hand-tracking"
+    ]
+  }
+}

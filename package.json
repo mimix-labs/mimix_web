@@ -16,11 +16,11 @@
     "typecheck": "turbo run typecheck:repo typecheck",
     "typecheck:repo": "tsc --project jsconfig.json",
     "test": "turbo run test:repo test",
-    "test:repo": "node --test test/smoke/api.test.js test/smoke/frontend.test.js test/contracts/*.test.js",
+    "test:repo": "node --test test/smoke/api.test.js test/smoke/frontend.test.js test/contracts/*.test.js test/challenges/*.test.js",
     "test:smoke": "turbo run test:production",
     "test:production": "node --test test/smoke/production.test.js",
     "check": "turbo run lint:repo typecheck:repo typecheck test:repo test test:production",
-    "test:browser": "turbo run test:browser --filter @mimix/challenge-runtime"
+    "test:browser": "turbo run test:browser --filter @mimix/challenge-runtime --filter mimix-client"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

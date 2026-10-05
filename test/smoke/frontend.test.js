@@ -4,8 +4,8 @@ import test from 'node:test'
 
 const criticalPages = [
   ['client/index.html', 'id="canvas"'],
-  ['client/public/challenges/mathematics/index.html', '<title>'],
-  ['client/public/challenges/science/index.html', '<title>'],
+  ['client/challenges/mathematics/index.html', '<title>'],
+  ['client/challenges/science/index.html', '<title>'],
 ]
 
 for (const [file, marker] of criticalPages) {
