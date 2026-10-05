@@ -31,7 +31,8 @@
     "zod": "4.6.5",
     "@mimix/contracts": "workspace:*",
     "@mimix/voice-contract": "workspace:*",
-    "@mimix/embodiment-contract": "workspace:*"
+    "@mimix/embodiment-contract": "workspace:*",
+    "@mimix/robot-protocol": "workspace:*"
   },
   "devDependencies": {
     "@types/express": "^4.17.25",

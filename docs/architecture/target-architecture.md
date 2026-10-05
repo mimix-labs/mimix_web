@@ -153,6 +153,10 @@ La integración separará tres planos:
 
 Video no viajará por un WebSocket genérico. El MJPEG actual podrá mantenerse como fallback temporal en red local. El robot se vinculará mediante `DeviceSession`; nunca recibirá la sesión Clerk del usuario.
 
+La fase 15 implementa [pairing y DeviceSession](device-sessions.md) mediante HTTPS
+transitorio, con token propio, caducidad, revocación y auditoría PostgreSQL. Está
+desactivada por defecto y no conecta todavía el plano de control ni los leases.
+
 ## Cloud, local y offline
 
 Cloud se desplegará con Docker en Railway mientras una sola región sea suficiente. El build de Next.js usará salida `standalone`; API y web serán servicios separados cuando exista la primera necesidad operativa real, no antes.

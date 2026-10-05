@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { check, foreignKey, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
+import { bigint, bigserial, check, foreignKey, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
 export const users = pgTable('users', { id: uuid().primaryKey(), createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull() })
 export const externalIdentities = pgTable('external_identities', {
   id: uuid().primaryKey(), userId: uuid('user_id').notNull().references(() => users.id),
@@ -33,3 +33,35 @@ export const campaignAttempts = pgTable('campaign_attempts', {
   campaignId: text('campaign_id').notNull(), campaignVersion: text('campaign_version').notNull(), nodeId: text('node_id').notNull(),
 }, t => [foreignKey({ columns: [t.campaignId, t.campaignVersion], foreignColumns: [campaignVersions.id, campaignVersions.version] }),
   index('campaign_attempt_scope').on(t.campaignId, t.campaignVersion, t.attemptId)])
+
+
+export const devicePairings = pgTable('device_pairings', {
+  id: uuid().primaryKey(), userId: uuid('user_id').notNull().references(() => users.id),
+  identity: jsonb().notNull().$type<import('../modules/identity/identity.contract.js').VerifiedIdentity>(),
+  sessionHash: text('session_hash').notNull(), codeHash: text('code_hash').notNull(), challenge: text().notNull(),
+  capabilities: jsonb().notNull().$type<import('@mimix/robot-protocol').DeviceCapability[]>(),
+  state: text().notNull(), failures: integer().notNull().default(0),
+  createdAt: bigint('created_at', { mode: 'number' }).notNull(), expiresAt: bigint('expires_at', { mode: 'number' }).notNull(),
+}, t => [index('device_pairing_owner').on(t.userId), index('device_pairing_expiry').on(t.state, t.expiresAt),
+  check('device_pairing_state', sql`${t.state} IN ('pending','exchanged','cancelled','expired','locked')`),
+  check('device_pairing_failures', sql`${t.failures} BETWEEN 0 AND 5`),
+  check('device_pairing_secrets', sql`${t.codeHash} ~ '^[a-f0-9]{64}$' AND ${t.challenge} ~ '^[a-f0-9]{64}$' AND ${t.sessionHash} ~ '^[a-f0-9]{64}$'`)])
+export const deviceSessions = pgTable('device_sessions', {
+  id: uuid().primaryKey(), pairingId: uuid('pairing_id').notNull().unique().references(() => devicePairings.id),
+  deviceId: uuid('device_id').notNull().unique(), userId: uuid('user_id').notNull().references(() => users.id),
+  identity: jsonb().notNull().$type<import('../modules/identity/identity.contract.js').VerifiedIdentity>(),
+  sessionHash: text('session_hash').notNull(), tokenHash: text('token_hash').notNull().unique(),
+  capabilities: jsonb().notNull().$type<import('@mimix/robot-protocol').DeviceCapability[]>(), status: text().notNull(),
+  lastSequence: bigint('last_sequence', { mode: 'number' }).notNull().default(0), lastSeenAt: bigint('last_seen_at', { mode: 'number' }),
+  presenceExpiresAt: bigint('presence_expires_at', { mode: 'number' }).notNull(),
+  createdAt: bigint('created_at', { mode: 'number' }).notNull(), expiresAt: bigint('expires_at', { mode: 'number' }).notNull(),
+}, t => [index('device_session_owner').on(t.userId, t.id), index('device_session_expiry').on(t.status, t.presenceExpiresAt),
+  check('device_session_status', sql`${t.status} IN ('active','revoked','expired','disconnected')`),
+  check('device_session_sequence', sql`${t.lastSequence} BETWEEN 0 AND 9007199254740990`),
+  check('device_session_secrets', sql`${t.tokenHash} ~ '^[a-f0-9]{64}$' AND ${t.sessionHash} ~ '^[a-f0-9]{64}$'`)])
+export const deviceAudit = pgTable('device_audit', {
+  id: bigserial({ mode: 'number' }).primaryKey(), userId: uuid('user_id').notNull().references(() => users.id),
+  pairingId: uuid('pairing_id').references(() => devicePairings.id), sessionId: uuid('session_id').references(() => deviceSessions.id),
+  event: text().notNull(), reason: text().notNull(), sequence: bigint({ mode: 'number' }),
+  observedAt: bigint('observed_at', { mode: 'number' }).notNull(),
+}, t => [index('device_audit_owner_page').on(t.userId, t.id)])

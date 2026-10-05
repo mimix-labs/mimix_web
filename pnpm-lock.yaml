@@ -53,6 +53,9 @@ importers:
       '@mimix/embodiment-contract':
         specifier: workspace:*
         version: link:../../packages/embodiment-contract
+      '@mimix/robot-protocol':
+        specifier: workspace:*
+        version: link:../../packages/robot-protocol
       '@mimix/voice-contract':
         specifier: workspace:*
         version: link:../../packages/voice-contract
