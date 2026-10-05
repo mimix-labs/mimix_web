@@ -75,3 +75,27 @@ export const mediaSessions = pgTable('media_sessions', {
 }, t => [index('media_session_owner').on(t.userId, t.id), index('media_session_cleanup').on(t.state, t.expiresAt),
   uniqueIndex('media_device_open').on(t.deviceSessionId).where(sql`${t.state} <> 'closed'`),
   check('media_session_state', sql`${t.state} IN ('provisioning','active','closing','closed')`)])
+
+export const robotControlSessions = pgTable('robot_control_sessions', {
+  id: uuid().primaryKey(), userId: uuid('user_id').notNull().references(() => users.id),
+  deviceSessionId: uuid('device_session_id').notNull().references(() => deviceSessions.id), deviceId: uuid('device_id').notNull(),
+  connectionId: uuid('connection_id').notNull(), leaseId: uuid('lease_id').notNull(),
+  state: text().notNull(), reason: text().notNull(), expiresAt: bigint('expires_at', { mode: 'number' }).notNull(),
+}, t => [uniqueIndex('robot_control_owner_active').on(t.userId).where(sql`${t.state} = 'active'`),
+  index('robot_control_active').on(t.state, t.id), check('robot_control_state', sql`${t.state} IN ('active','closed')`)])
+export const robotCommands = pgTable('robot_commands', {
+  sequence: bigserial({ mode: 'number' }).primaryKey(), id: uuid().notNull(), userId: uuid('user_id').notNull().references(() => users.id),
+  controlSessionId: uuid('control_session_id').notNull().references(() => robotControlSessions.id),
+  behavior: text().notNull().$type<import('@mimix/robot-protocol').BehaviorIntent['behavior']>(), ttlMs: integer('ttl_ms').notNull(),
+  envelope: jsonb().notNull().$type<import('@mimix/robot-protocol').RobotControlEnvelope>(),
+  internal: integer().notNull().default(0), state: text().notNull(), reason: text().notNull(),
+  issuedAt: bigint('issued_at', { mode: 'number' }).notNull(), expiresAt: bigint('expires_at', { mode: 'number' }).notNull(),
+}, t => [unique('robot_command_idempotency').on(t.userId, t.id), index('robot_command_pending').on(t.state, t.expiresAt),
+  check('robot_command_state', sql`${t.state} IN ('prepared','published','accepted','rejected','unknown','cancelled')`),
+  check('robot_command_limits', sql`${t.sequence} BETWEEN 1 AND 9007199254740990 AND ${t.ttlMs} BETWEEN 1 AND 2000 AND ${t.expiresAt} > ${t.issuedAt} AND ${t.expiresAt} - ${t.issuedAt} <= ${t.ttlMs}`),
+  check('robot_command_behavior', sql`${t.behavior} IN ('greet','celebrate','attend','stop') AND ${t.internal} IN (0,1)`)])
+export const robotControlAudit = pgTable('robot_control_audit', {
+  id: bigserial({ mode: 'number' }).primaryKey(), userId: uuid('user_id').notNull().references(() => users.id),
+  controlSessionId: uuid('control_session_id').notNull().references(() => robotControlSessions.id), commandId: uuid('command_id'),
+  event: text().notNull(), reason: text().notNull(), observedAt: bigint('observed_at', { mode: 'number' }).notNull(),
+}, t => [index('robot_control_audit_owner_page').on(t.userId, t.id)])

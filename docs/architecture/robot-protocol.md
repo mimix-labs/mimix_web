@@ -104,3 +104,14 @@ Tokens remain shared compatibility secrets without scoped device expiry; they ar
    window, and a separate removal PR has an operator-approved rollback plan.
 
 Operation, tests and rollback: [runbook](../runbooks/robot-protocol-simulator.md).
+
+## Phase 17: opt-in MQTT control
+
+`@mimix/robot-protocol` now defines strict control envelopes, correlated ACKs,
+connection-scoped gateway presence, HTTP input and the pure local `GatewayGuard`.
+`@mimix/robot-mqtt` is a Node-only adapter behind `RobotControlTransport`; no MQTT
+SDK or credential enters the browser. The API authorizes DeviceSession ownership,
+original login, capability, presence and the shared embodiment lease before
+publishing. Commands and transitions are persisted in PostgreSQL; restart never
+replays uncertain commands. See the [design](../superpowers/specs/2026-10-05-robot-control-mqtt-design.md)
+and [operations/rollback runbook](../runbooks/robot-control-mqtt.md).

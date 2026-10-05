@@ -1,10 +1,14 @@
+import { MqttGateway } from '@mimix/robot-mqtt'
 import { RobotSimulator } from './simulator.js'
 
 const command = process.argv[2] ?? 'motion'
 if (command === '--help') {
   console.log(`Hardware-free robot protocol simulator
-Usage: pnpm --filter @mimix/robot-simulator start [motion|context|navigate DESTINATION|hands]
-Credentials are read only from MIMIX_ROBOT_BRIDGE_TOKEN.
+Usage: pnpm --filter @mimix/robot-simulator start [motion|context|navigate DESTINATION|hands|mqtt]
+Legacy credentials are read only from MIMIX_ROBOT_BRIDGE_TOKEN.
+MQTT mode requires MIMIX_MQTT_URL, MIMIX_MQTT_PASSWORD, MIMIX_DEVICE_SESSION_ID, MIMIX_DEVICE_ID.
+Optional MIMIX_MQTT_CA_PEM; cleartext loopback requires MIMIX_MQTT_ALLOW_LOOPBACK=true.
+MQTT records semantic behavior and stop events only; a paired, heartbeating DeviceSession is required.
 MIMIX_WEB_URL: HTTPS origin or loopback HTTP (default http://127.0.0.1:4000)
 MIMIX_SIM_DEVICE_ID: local observation identity (default robot-simulator-001)
 MIMIX_SIM_LATENCY_MS: delay each request and motion delivery (default 0)
@@ -14,6 +18,19 @@ MIMIX_SIM_RECONNECT_MS: retry delay (default 1000)
 MIMIX_SIM_TIMEOUT_MS: request / SSE idle timeout (default 30000)
 'hands' publishes one empty hand frame. 'motion' records commands until SIGINT/SIGTERM.
 This tool never executes motors, acquires a lease, or grants device authority.`)
+} else if (command === 'mqtt') {
+  try {
+    const sessionId = process.env.MIMIX_DEVICE_SESSION_ID ?? ''
+    const gateway = new MqttGateway({ url: process.env.MIMIX_MQTT_URL ?? '', password: process.env.MIMIX_MQTT_PASSWORD ?? '', username: sessionId,
+      sessionId, deviceId: process.env.MIMIX_DEVICE_ID ?? '', behaviors: ['greet', 'celebrate', 'attend', 'stop'],
+      ca: process.env.MIMIX_MQTT_CA_PEM, allowLoopback: process.env.MIMIX_MQTT_ALLOW_LOOPBACK === 'true' }, {
+      perform(intent) { console.log(JSON.stringify({ type: 'behavior', behavior: intent.behavior, intentId: intent.intentId })) },
+      stop(reason) { console.log(JSON.stringify({ type: 'stop', reason })) },
+    })
+    const shutdown = () => { void gateway.close() }
+    process.once('SIGINT', shutdown); process.once('SIGTERM', shutdown)
+    gateway.start()
+  } catch { console.error('MQTT simulator failed: check provisioned identity, credentials and TLS configuration.'); process.exitCode = 1 }
 } else {
   const abort = new AbortController()
   const stop = () => abort.abort()

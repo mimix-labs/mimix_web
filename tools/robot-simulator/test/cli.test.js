@@ -25,3 +25,11 @@ test('CLI invalid configuration and request failures have nonzero exit without s
     return true
   })
 })
+
+test('MQTT CLI validates env-only identity and redacts broker failures', async () => {
+  const help = await exec(process.execPath, [cli, '--help'])
+  assert.match(help.stdout, /mqtt/)
+  await assert.rejects(exec(process.execPath, [cli, 'mqtt'], { env: { ...process.env, MIMIX_MQTT_URL: 'mqtts://user:private-secret@example.com', MIMIX_MQTT_PASSWORD: 'private-secret' } }), error => {
+    assert.equal(error.code, 1); assert.equal((error.stdout + error.stderr).includes('private-secret'), false); return true
+  })
+})

@@ -34,7 +34,8 @@
     "@mimix/embodiment-contract": "workspace:*",
     "@mimix/robot-protocol": "workspace:*",
     "@mimix/media-contract": "workspace:*",
-    "livekit-server-sdk": "2.19.1"
+    "livekit-server-sdk": "2.19.1",
+    "@mimix/robot-mqtt": "workspace:*"
   },
   "devDependencies": {
     "@types/express": "^4.17.25",

@@ -1,0 +1,10 @@
+# Backend is the only producer of semantic intentions.
+user mimix-backend
+topic write mimix/v1/devices/+/intents
+topic read mimix/v1/devices/+/ack
+topic read mimix/v1/devices/+/presence
+
+# A gateway username is exactly its provisioned DeviceSession UUID.
+pattern read mimix/v1/devices/%u/intents
+pattern write mimix/v1/devices/%u/ack
+pattern write mimix/v1/devices/%u/presence

@@ -1,3 +1,5 @@
+import type { RobotControlTransport } from '@mimix/robot-protocol'
+import { addRobotControlPaths } from './modules/robot-control/openapi.js'
 import type { MediaProvider } from '@mimix/media-contract'
 import { addMediaPaths } from './modules/media/openapi.js'
 import { addDevicePaths } from './modules/devices/openapi.js'
@@ -20,8 +22,9 @@ import { addCampaignPaths } from './modules/campaigns/openapi.js'
 import { addLearningPaths } from './modules/learning/openapi.js'
 import { addLegacyPaths } from './openapi.js'
 
-export async function createApi(config: ApiConfig, dependencies: IdentityDependencies & { voice?: VoiceService; mediaProvider?: MediaProvider } = {}): Promise<NestFastifyApplication> {
+export async function createApi(config: ApiConfig, dependencies: IdentityDependencies & { voice?: VoiceService; mediaProvider?: MediaProvider; robotTransport?: RobotControlTransport } = {}): Promise<NestFastifyApplication> {
   const services = dataServices(config, dependencies)
+  try { await services.ready } catch (error) { await services.close(); throw error }
   const policy = new HttpSecurityPolicy(config, services.identity)
   const adapter = new FastifyAdapter({
     bodyLimit: 16384,
@@ -35,7 +38,7 @@ export async function createApi(config: ApiConfig, dependencies: IdentityDepende
     },
     requestIdHeader: false,
   })
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule.register(config, services.learning, services.close, services.campaigns, dependencies.voice, services.devices, services.media), adapter, {
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule.register(config, services.learning, services.close, services.campaigns, services.voice, services.devices, services.media, services.robot), adapter, {
     logger: config.logLevel === 'silent' ? false : new ConsoleLogger({ json: true, colors: false }),
     abortOnError: false,
   })
@@ -78,6 +81,7 @@ export async function createApi(config: ApiConfig, dependencies: IdentityDepende
   addVoicePaths(document, config)
   addDevicePaths(document, config)
   addMediaPaths(document, config)
+  addRobotControlPaths(document, config)
   SwaggerModule.setup('api/docs', app, document, { ui: false, jsonDocumentUrl: '/api/openapi.json' })
   await app.init()
   return app

@@ -230,7 +230,7 @@ export function createLegacyApp({ env = process.env, corsEnabled = true, beforeR
   // Control remoto acotado: el navegador envía intenciones, nunca PWM ni pulsos.
   // Cada pulso mueve como máximo 300 ms y debe renovarse mientras la tecla siga
   // pulsada. El sobre SSE dispone de un margen separado para atravesar Internet.
-  app.post('/api/robot/motion', requireRobotControl, (req, res) => {
+  app.post('/api/robot/motion', (req, res, next) => env.MIMIX_ROBOT_TRANSPORT === 'mqtt' ? res.status(404).json({ error: 'not found' }) : next(), requireRobotControl, (req, res) => {
     const { action, controllerId, sequence } = req.body ?? {}
     if (!ALLOWED_MOTION_ACTIONS.has(action)) {
       return res.status(400).json({ error: 'unsupported motion action' })
@@ -279,7 +279,7 @@ export function createLegacyApp({ env = process.env, corsEnabled = true, beforeR
     return res.status(202).json({ accepted: true, command })
   })
 
-  app.get('/api/robot/motion/stream', requireConfiguredRobotBridge, (req, res) => {
+  app.get('/api/robot/motion/stream', (req, res, next) => env.MIMIX_ROBOT_TRANSPORT === 'mqtt' ? res.status(404).json({ error: 'not found' }) : next(), requireConfiguredRobotBridge, (req, res) => {
     res.writeHead(200, {
       'Cache-Control': 'no-cache, no-transform',
       Connection: 'keep-alive',

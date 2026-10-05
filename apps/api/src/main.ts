@@ -9,10 +9,10 @@ try {
   const config = parseEnvironment(process.env)
   if (config.runtime === 'express') {
     const legacy = createSecuredLegacy(config)
+    try { await legacy.ready } catch (error) { await legacy.close(); throw error }
     const server = legacy.app.listen(config.port, config.host)
     for (const signal of ['SIGTERM', 'SIGINT']) process.once(signal, () => {
-      legacy.close()
-      server.close(() => process.exit(0))
+      void legacy.close().finally(() => server.close(() => process.exit(0)))
     })
     server.on('error', () => { console.error(JSON.stringify({ event: 'startup-failed' })); process.exitCode = 1 })
     server.on('listening', () => console.log(JSON.stringify({ event: 'listening', runtime: 'express', port: config.port })))
