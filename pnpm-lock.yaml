@@ -449,6 +449,9 @@ importers:
       three:
         specifier: ^0.167.0
         version: 0.167.1
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
     devDependencies:
       '@mimix/agent-core':
         specifier: workspace:*

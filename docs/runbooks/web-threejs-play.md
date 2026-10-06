@@ -53,6 +53,15 @@ mezcla con las mediciones de producción del [informe](web-threejs-play-evidence
 IDs conocidos en un origen fijo configurado. No acepta URLs del agente o de retos.
 Los retos continúan siendo los artefactos Vite versionados; no se reescriben en React.
 
+El catálogo es instalado por el host (`challenges`, validado al crear la instancia);
+por defecto conserva los dos manifests oficiales. Solo el host llama
+`apiFor(challengeId, {challengeId, challengeVersion, attemptId})` antes de entregar
+la API al reto. El binding debe provenir de un intento ya autorizado y coincidir
+con el manifest instalado; no es una credencial de autenticación. Cada llamada al
+adapter recibe un contexto inmutable con esos identificadores y la señal de
+cancelación. Los registros de aprendizaje no pueden aportar ni sustituir esa
+atribución. Sin binding, `progress.record` falla incluso si tiene grant y adapter.
+
 La superficie `MimixAPI` conserva los contratos `agent.speak`, `progress.record` y
 `embodiment.perform`: valida entradas, exige tanto la capacidad del manifest como
 una concesión del host y transmite cancelación. Las salidas virtuales requieren un

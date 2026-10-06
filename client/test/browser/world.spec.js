@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-test('shared world keeps movement, camera, collisions, entrances and releases every mount', async ({ page }) => {
+for (const frameDelay of [0, 1500]) test(`shared world keeps movement, camera, collisions, entrances and releases every mount (frame delay ${frameDelay} ms)`, async ({ page }) => {
   test.setTimeout(180000)
   const errors = []
   page.on('pageerror', error => errors.push(error.message))
@@ -7,10 +7,20 @@ test('shared world keeps movement, camera, collisions, entrances and releases ev
   await page.waitForFunction(() => window.harnessReady)
   for (let cycle = 0; cycle < 2; cycle++) {
     await page.evaluate(() => window.mount())
+    // Reproduce a scheduler that cannot deliver a frame within the old 600 ms hold.
+    if (frameDelay) await page.evaluate(delay => {
+      const loop = window.world.loop
+      loop.stop()
+      setTimeout(() => loop.start(), delay)
+    }, frameDelay)
     const initial = await page.evaluate(() => window.world.characters.active.position.toArray())
-    await page.keyboard.down('KeyW'); await page.waitForTimeout(600); await page.keyboard.up('KeyW')
-    const moved = await page.evaluate(() => window.world.characters.active.position.toArray())
-    expect(moved).not.toEqual(initial)
+    await page.keyboard.down('KeyW')
+    try {
+      // Keep input active until a real simulation update moves along the requested axis.
+      await expect.poll(() => page.evaluate(() => window.world.characters.active.position.z), {
+        message: 'W moves the character forward once the renderer delivers a frame', timeout: 10000,
+      }).toBeLessThan(initial[2])
+    } finally { await page.keyboard.up('KeyW') }
     const checks = await page.evaluate(() => {
       const w = window.world
       const bridge = w.steamMap.bridges[0].getWalkwayHeightAt(0.5, -29)

@@ -25,7 +25,8 @@
     "@mimix/challenge-mathematics": "workspace:*",
     "@mimix/challenge-science": "workspace:*",
     "@mimix/agent-contract": "workspace:*",
-    "@mimix/embodiment-contract": "workspace:*"
+    "@mimix/embodiment-contract": "workspace:*",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@mimix/agent-core": "workspace:*",

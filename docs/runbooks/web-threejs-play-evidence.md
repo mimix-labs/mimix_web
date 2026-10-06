@@ -1,6 +1,9 @@
 # Evidencia de migración Three.js — prompt 21
 
 Fecha: 2026-10-05, Linux x86_64, Node 22.23.2, pnpm 10.34.6.
+Las mediciones y validaciones originales de este informe corresponden al estado
+publicado en `59c946ce4ec961b86e1997e2151ee7f82da87c37`; las correcciones posteriores
+se documentan al final sin atribuirles nuevas mediciones de rendimiento.
 Base reconstruida desde `1e2440fa9fade050872eaf8b529bb4ab04d21952` con sus fuentes
 originales. Next 16.3.8 standalone y Vite 5.4.21 production, viewport 1280×800.
 Render: Chromium 153.0.8010.12 con ANGLE/SwiftShader Vulkan por software.
@@ -95,3 +98,34 @@ node client/scripts/measure-world.mjs http://127.0.0.1:3101/play /tmp/next.json
 El script conserva JSON y una captura por host; recoge tres contextos nuevos,
 60 intervalos RAF (descartando el primer timestamp), recursos JS/GLB y memoria
 retenida tras GC. `--memory-only` omite la captura y el muestreo de FPS.
+
+## Corrección del CI y atribución de progreso — 2026-10-06
+
+El [job fallido 112090239830](https://github.com/mimix-labs/mimix_web/actions/runs/37408145606/job/112090239830)
+aprobó las 63 pruebas SDK y falló en el movimiento Chromium del mundo Vite. El test
+soltaba W tras 600 ms, aunque SwiftShader todavía no hubiese entregado un frame de
+simulación. Se reprodujo el fallo suspendiendo el loop 1500 ms: la aserción anterior
+falló; mantener W hasta observar un avance real en Z pasó. La regresión conserva
+ambos casos (sin retraso y con retraso) en Chromium, Firefox y WebKit. No cambia
+los controles ni el loop del producto.
+
+Cada API de reto conserva ahora la atribución inmutable del manifest instalado y
+del intento vinculado por el host. Las pruebas cubren dos retos, versiones distintas,
+varios intentos, mutación del binding original, atribución falsificada y ausencia de
+binding. El catálogo se valida y se copia al instalarlo; los manifests oficiales de
+exploración siguen sin conceder progreso. La autorización del intento sigue siendo
+responsabilidad del host y del backend, según el runbook.
+
+Validación de las correcciones:
+
+- Instalación con lockfile congelado correcta; `pnpm check --concurrency=2`: 58
+  tareas y 245 pruebas aprobadas, incluidas 12 de world.
+- Comando del job de navegadores: 63 pruebas SDK y 63 Vite aprobadas en los tres
+  motores, seguido de 2 pruebas de rutas production/rollback aprobadas.
+- Playwright Next: 8 pruebas aprobadas, incluidas mundo, retry, BFCache y shell.
+- Revisión independiente sin hallazgos importantes pendientes; lint focalizado y
+  `git diff --check` correctos.
+
+El comando local de navegadores añade `--env-mode=loose` para transmitir a Turbo
+el `PLAYWRIGHT_BROWSERS_PATH` compatible descrito arriba. No se cambió el workflow
+ni se reintentó el job fallido sin una corrección.
