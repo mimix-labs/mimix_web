@@ -84,11 +84,12 @@ CMD ["node", "apps/api/dist/main.js"]
 
 # Separate recording simulator; no ROS, GPU or physical driver in either image.
 FROM runtime AS simulator
+ENV MIMIX_SIM_HEALTH_SOCKET=/tmp/mimix-simulator.sock
 COPY tools/robot-simulator/package.json ./tools/robot-simulator/package.json
 COPY --from=production-deps /app/tools/robot-simulator/node_modules/ ./tools/robot-simulator/node_modules/
 COPY --from=build /app/tools/robot-simulator/dist/ ./tools/robot-simulator/dist/
-# A live authenticated context request proves reachability; connection state is
-# observed through simulator logs. MQTT mode needs its own deployment health policy.
+# Query the running motion receiver through local IPC, including stream expiry.
+# MQTT mode needs its own deployment health policy.
 HEALTHCHECK --interval=10s --timeout=10s --start-period=60s --retries=3 CMD ["node", "healthcheck.cjs", "simulator"]
 CMD ["node", "tools/robot-simulator/dist/cli.js", "motion"]
 

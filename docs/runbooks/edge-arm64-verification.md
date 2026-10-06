@@ -6,7 +6,7 @@ Host de validación: Linux amd64, Node 22.23.2, pnpm 10.34.6,
 Docker 29.1.3, Compose 2.40.3, Buildx 0.37.2.
 ARM64 se ejecutó mediante QEMU registrado temporalmente, **no en Jetson física**.
 
-## Imágenes definitivas locales
+## Imágenes locales de la primera entrega
 
 Build con `docker buildx bake --load`, ambas plataformas en cada índice:
 
@@ -71,6 +71,45 @@ completa pasó 5/5; la prueba afectada se repitió también en amd64 y pasó.
 
 Muestra puntual bajo emulación, no benchmark Jetson: gateway 220,3 MiB/512 MiB;
 simulador 152,5 MiB/384 MiB. El pico incluye probes; no extrapolar a carga física.
+
+## Corrección del entorno CI
+
+El run [37397273642](https://github.com/mimix-labs/mimix_web/actions/runs/37397273642)
+construyó ambas imágenes nativas, pero los jobs edge amd64 y ARM64 fallaron en
+`image inspect --platform` con `unknown flag: --platform`. Los logs de ambos
+runners muestran Docker Engine/CLI 28.0.4 y API 1.48, por debajo del mínimo 1.49
+documentado; el host local usaba Docker 29.1.3. No fue un fallo intermitente ni
+específico de ARM64.
+
+El workflow ahora instala Engine y CLI 29.1.3 mediante la acción oficial de Docker
+antes de Buildx, con el almacén containerd habilitado como en la validación local.
+Se conservan la selección explícita de plataforma y todas las aserciones de
+rollback y aislamiento. El nuevo run verifica ambas arquitecturas nativas. La CLI oficial 28.0.4 también
+reprodujo localmente el mismo rechazo del flag antes de acceder al daemon.
+
+## Corrección de salud del simulador
+
+Una prueba con contenedores reales reprodujo un falso healthy cuando gateway y
+simulador tenían token vacío: el contexto era público, pero el stream de movimiento
+no estaba disponible. El receptor motion ahora exige credencial no vacía y expone
+su presencia en un socket Unix privado. El healthcheck consulta al proceso real,
+con timeout, límite de respuesta y comprobación de estado online no expirado.
+
+Tres pruebas nuevas cubren credencial ausente, incorrecta y conexión válida; esta
+última también detiene el receptor con SIGSTOP manteniendo el gateway disponible,
+lo reanuda y corta el stream para comprobar que la salud sigue al receptor.
+No se añade un consumidor de movimiento paralelo ni se cambian contratos robot.
+
+Verificación de la corrección: build multiarch correcto, `pnpm check` 53/53,
+5/5 pruebas de despliegue y 3/3 pruebas de salud en amd64, lint y YAML correctos.
+La primera ejecución del test de receptor bloqueado usó una señal inefectiva contra
+PID 1 desde su mismo namespace. Se corrigió para enviarla mediante el daemon y
+se repitieron las tres pruebas de salud correctamente.
+
+| Imagen corregida local | Digest del índice multiarch |
+| --- | --- |
+| mimix-runtime:edge-reviewed | sha256:680fc89df6e4dd38395af1274c283a489249a8f67292b11e14e3ebd746b439af |
+| mimix-simulator:edge-reviewed | sha256:685996c60f74db641d881c17d536122c93b16e6adb26e5544720fa0f0f39d6e1 |
 
 ## Límite de la evidencia y handoff
 

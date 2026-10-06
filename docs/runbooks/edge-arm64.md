@@ -61,7 +61,10 @@ Buildx ejecuta pnpm/TypeScript/Vite sobre `BUILDPLATFORM`; el runtime usa la
 plataforma destino. Los paquetes de producción copiados actualmente son JS/WASM
 independientes de arquitectura. Si se añade un addon nativo hay que cambiar esa
 estrategia y probarlo por plataforma. CI construye y ejecuta amd64 y arm64 en
-runners nativos separados. No se publica automáticamente desde un PR.
+runners nativos separados con Docker Engine/CLI 29.1.3 y el almacén de imágenes
+containerd. El workflow instala esa versión antes de configurar Buildx, porque
+Docker 28.0/API 1.48 de los runners no ofrece `image inspect --platform`.
+No se publica automáticamente desde un PR.
 
 Mantener los tags únicos por commit o usar referencias de digest del registro.
 No utilizar `latest` para operación. Dockerfile conserva `production` como target
@@ -145,8 +148,11 @@ MIMIX_PLATFORM=linux/amd64 MIMIX_RUNTIME_IMAGE=mimix-runtime:git-sha \
 ## Salud, logs y fallos
 
 Health de runtime comprueba `/api/health` y que Vite sirva el HTML; no certifica
-ROS, vídeo, proveedores cloud ni conexión física. Simulador consulta el contexto
-autenticado; confirmar conexión SSE en logs. Docker marca `unhealthy`, pero no
+ROS, vídeo, proveedores cloud ni conexión física. El simulador exige un token
+bridge no vacío y expone su presencia real por un socket Unix privado en `/tmp`.
+Su healthcheck consulta ese mismo proceso y exige un stream online sin expirar;
+una credencial rechazada, desconexión o receptor bloqueado deja de dar healthy.
+La presencia es una observación local, no una garantía de ejecución física. Docker marca `unhealthy`, pero no
 reinicia automáticamente por ese estado; `unless-stopped` solo cubre salida del
 proceso. El operador debe investigar estados unhealthy persistentes.
 
