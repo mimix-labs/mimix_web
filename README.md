@@ -165,12 +165,13 @@ El healthcheck es `/api/health`. Railway inyecta `PORT`, por lo que no debe conf
 ## Estructura
 
 ```text
-client/                    Aplicación Vite, mundo Three.js y retos
+client/                    Host Vite edge y artefactos de retos
   src/                     Escena principal, entidades, sistemas y UI
   challenges/              Entradas públicas de Matemáticas y Ciencias
   public/challenges/       Scripts legacy y compatibilidad
   public/legacy/challenges/ HTML de rollback
 apps/api/                  API Nest/Fastify, configuración, health y OpenAPI
+packages/world/            Mundo Three.js compartido y activos de Vite / Next
 packages/contracts/        Esquemas Zod compartidos de retos y aprendizaje
 packages/challenge-sdk/    API pública de retos, CLI y fixture mínimo
 packages/challenge-runtime/ Host aislado, bridge y harness de desarrollo
@@ -225,4 +226,7 @@ y [operación y recuperación](docs/runbooks/offline-progress-sync.md).
 3100 (`pnpm web`). El despliegue Vite/API y `pnpm start` permanecen operativos.
 Build Turbopack, imagen standalone, configuración de identidad, límites de transición,
 pruebas y rollback: [runbook del shell](docs/runbooks/web-nextjs-shell.md).
-No migra el mundo Three.js ni añade `/play` en este PR.
+El mundo compartido está disponible en `/play`, cargado solo en cliente.
+`MIMIX_WORLD_MODE=legacy` mantiene el enlace anterior por defecto; `next` permite
+evaluar la migración. Contratos, límites, mediciones y rollback:
+[runbook del mundo compartido](docs/runbooks/web-threejs-play.md).

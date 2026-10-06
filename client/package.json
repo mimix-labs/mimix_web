@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node scripts/world-assets.mjs && vite",
+    "build": "node scripts/world-assets.mjs && vite build",
     "preview": "vite preview",
     "test:browser": "playwright test -c test/playwright.config.js",
     "test:deployment": "playwright test -c test/production.config.js"
@@ -16,7 +16,8 @@
     "@mimix/challenge-browser": "workspace:*",
     "@mimix/challenge-mathematics": "workspace:*",
     "@mimix/challenge-science": "workspace:*",
-    "@mimix/challenge-sdk": "workspace:*"
+    "@mimix/challenge-sdk": "workspace:*",
+    "@mimix/world": "workspace:*"
   },
   "devDependencies": {
     "vite": "^5.4.0",

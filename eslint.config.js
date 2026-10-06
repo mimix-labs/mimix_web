@@ -10,6 +10,7 @@ export default [
       '**/next-env.d.ts',
       '**/node_modules/**',
       'client/public/challenges/**/vendor/**',
+      'apps/web/public/vendor/**',
       'graphify-out/**',
       '**/harness-dist/**',
       '**/test-results/**',
@@ -18,7 +19,7 @@ export default [
   },
   js.configs.recommended,
   ...tseslint.configs.recommended.map(config => ({ ...config, files: ['apps/api/**/*.ts', 'apps/web/**/*.{ts,tsx}', 'server/src/*.d.ts', 'packages/**/*.ts', 'characters/**/*.ts', 'tools/**/*.ts'] })),
-  { files: ['apps/api/**/*.{ts,js}', 'apps/web/**/*.{ts,tsx,js,mjs}', 'packages/**/*.{ts,js}', 'characters/**/*.{ts,js}', 'tools/**/*.{ts,js}', 'client/test/**/*.js'], languageOptions: { globals: globals.node } },
+  { files: ['apps/api/**/*.{ts,js}', 'apps/web/**/*.{ts,tsx,js,mjs}', 'packages/**/*.{ts,js,mjs}', 'characters/**/*.{ts,js}', 'tools/**/*.{ts,js}', 'client/test/**/*.js', 'client/scripts/*.mjs'], languageOptions: { globals: globals.node } },
   { files: ['packages/challenge-{browser,mathematics,science}/src/*.js'], languageOptions: { globals: globals.browser } },
   {
     files: ['server/**/*.js', 'test/**/*.js', 'infra/docker/*.cjs', '*.js'],
@@ -29,7 +30,7 @@ export default [
     },
   },
   {
-    files: ['client/**/*.js'],
+    files: ['client/**/*.js', 'packages/world/src/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',

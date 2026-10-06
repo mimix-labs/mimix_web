@@ -7,6 +7,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY client/package.json ./client/package.json
 COPY server/package.json ./server/package.json
 COPY apps/api/package.json ./apps/api/package.json
+COPY packages/world/package.json ./packages/world/package.json
 COPY packages/contracts/package.json ./packages/contracts/package.json
 COPY packages/challenge-sdk/package.json ./packages/challenge-sdk/package.json
 COPY packages/challenge-runtime/package.json ./packages/challenge-runtime/package.json
