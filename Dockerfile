@@ -1,4 +1,5 @@
-FROM node:22-alpine AS base
+ARG NODE_IMAGE=node:22.23.2-alpine
+FROM --platform=$BUILDPLATFORM ${NODE_IMAGE} AS base
 
 RUN npm install --global pnpm@10.34.6
 WORKDIR /app
@@ -25,7 +26,8 @@ COPY packages/robot-mqtt/package.json ./packages/robot-mqtt/package.json
 COPY tools/robot-simulator/package.json ./tools/robot-simulator/package.json
 
 FROM base AS build
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=mimix-pnpm-10,target=/pnpm/store,sharing=locked \
+    pnpm install --frozen-lockfile --store-dir /pnpm/store --network-concurrency=4 --fetch-retries=2 --fetch-timeout=30000
 COPY turbo.json ./
 COPY packages/ ./packages/
 COPY characters/ ./characters/
@@ -38,9 +40,10 @@ ARG VITE_MIMIX_CHALLENGES_MODE=package
 RUN pnpm build
 
 FROM base AS production-deps
-RUN pnpm --filter @mimix/api... install --frozen-lockfile --prod
+RUN --mount=type=cache,id=mimix-pnpm-10,target=/pnpm/store,sharing=locked \
+    pnpm --filter @mimix/api... --filter @mimix/robot-simulator... install --frozen-lockfile --prod --store-dir /pnpm/store --network-concurrency=4 --fetch-retries=2 --fetch-timeout=30000
 
-FROM node:22-alpine AS production
+FROM ${NODE_IMAGE} AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 
@@ -73,6 +76,21 @@ COPY --from=build /app/packages/media-contract/dist/ ./packages/media-contract/d
 COPY --chown=node:node apps/api/migrations/ ./apps/api/migrations/
 COPY --chown=node:node --from=build /app/client/dist/ ./client/dist/
 
+COPY infra/docker/healthcheck.cjs ./healthcheck.cjs
+HEALTHCHECK --interval=10s --timeout=5s --start-period=20s --retries=3 CMD ["node", "healthcheck.cjs"]
 USER node
 EXPOSE 4000
 CMD ["node", "apps/api/dist/main.js"]
+
+# Separate recording simulator; no ROS, GPU or physical driver in either image.
+FROM runtime AS simulator
+COPY tools/robot-simulator/package.json ./tools/robot-simulator/package.json
+COPY --from=production-deps /app/tools/robot-simulator/node_modules/ ./tools/robot-simulator/node_modules/
+COPY --from=build /app/tools/robot-simulator/dist/ ./tools/robot-simulator/dist/
+# A live authenticated context request proves reachability; connection state is
+# observed through simulator logs. MQTT mode needs its own deployment health policy.
+HEALTHCHECK --interval=10s --timeout=10s --start-period=60s --retries=3 CMD ["node", "healthcheck.cjs", "simulator"]
+CMD ["node", "tools/robot-simulator/dist/cli.js", "motion"]
+
+# Keep the final/default target compatible with Railway and existing CI.
+FROM runtime AS production

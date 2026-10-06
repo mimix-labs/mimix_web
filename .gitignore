@@ -13,3 +13,7 @@ graphify-out/
 harness-dist/
 test-results/
 playwright-report/
+
+# Private deployment configuration and release state
+infra/docker/cloud.env
+.edge-release/

@@ -8,7 +8,7 @@ const loader = new GLTFLoader()
 
 // DRACO decompression — required for compressed .glb files
 const draco = new DRACOLoader()
-draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
+draco.setDecoderPath('/vendor/draco/')
 loader.setDRACOLoader(draco)
 
 export class CharacterManager {

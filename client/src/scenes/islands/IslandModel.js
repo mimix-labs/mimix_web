@@ -4,7 +4,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 
 const loader = new GLTFLoader()
 const draco = new DRACOLoader()
-draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
+draco.setDecoderPath('/vendor/draco/')
 loader.setDRACOLoader(draco)
 
 // Carga un GLB de isla, lo añade a la escena y vuelca sus dimensiones

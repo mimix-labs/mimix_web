@@ -1,0 +1,6 @@
+Draco 3D Data Compression — Google
+https://github.com/google/draco
+
+The decoder files served here are copied unchanged from the locked Three.js
+package, examples/jsm/libs/draco/gltf, during the Vite build.
+Draco is distributed under the Apache License, Version 2.0 (see LICENSE).

@@ -1,0 +1,89 @@
+# Preload release images before disconnecting. Boot/update never pulls or builds.
+name: mimix
+x-runtime: &runtime
+  image: ${MIMIX_RUNTIME_IMAGE:-mimix-runtime:dev}
+  platform: ${MIMIX_PLATFORM:-linux/arm64}
+  pull_policy: never
+  init: true
+  restart: unless-stopped
+  read_only: true
+  tmpfs:
+    - /tmp:size=32m,mode=1777
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  pids_limit: 128
+  stop_grace_period: 15s
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: '3'
+
+services:
+  cloud:
+    <<: *runtime
+    profiles: [cloud]
+    # Supply existing Clerk/PostgreSQL/provider settings in this private file.
+    env_file:
+      - path: ${MIMIX_CLOUD_ENV_FILE:-./cloud.env}
+        required: false
+    environment:
+      PORT: '4000'
+      HOST: 0.0.0.0
+    ports:
+      - '${MIMIX_CLOUD_BIND:-127.0.0.1}:${MIMIX_CLOUD_PORT:-4000}:4000'
+    cpus: 2.0
+    mem_limit: 1g
+    memswap_limit: 1g
+    networks: [cloud]
+
+  edge-gateway:
+    <<: *runtime
+    profiles: [edge, simulator]
+    environment:
+      PORT: '4000'
+      HOST: 0.0.0.0
+      MIMIX_API_RUNTIME: nest
+      MIMIX_AUTH_MODE: legacy
+      MIMIX_DATA_STORE: file
+      MIMIX_DEVICE_SESSIONS_ENABLED: 'false'
+      MIMIX_VOICE_PROVIDER: disabled
+      MIMIX_MEDIA_PROVIDER: disabled
+      MIMIX_ROBOT_TRANSPORT: legacy
+      MIMIX_VISION_MODE: jetson
+      MIMIX_VISION_VIDEO_URL: ${MIMIX_VISION_VIDEO_URL:-http://host.docker.internal:8081/stream.mjpg}
+      MIMIX_ALLOWED_ORIGINS: ${MIMIX_EDGE_ORIGINS:-http://localhost:4080,http://127.0.0.1:4080}
+      MIMIX_ROBOT_BRIDGE_TOKEN: ${MIMIX_ROBOT_BRIDGE_TOKEN:-}
+      MIMIX_ROBOT_CONTROL_TOKEN: ${MIMIX_ROBOT_CONTROL_TOKEN:-}
+      LOG_LEVEL: ${MIMIX_LOG_LEVEL:-info}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - '${MIMIX_EDGE_BIND:-127.0.0.1}:${MIMIX_EDGE_PORT:-4080}:4000'
+    cpus: 1.0
+    mem_limit: 512m
+    memswap_limit: 512m
+    networks: [edge]
+
+  robot-simulator:
+    <<: *runtime
+    image: ${MIMIX_SIMULATOR_IMAGE:-mimix-simulator:dev}
+    profiles: [simulator]
+    depends_on:
+      edge-gateway:
+        condition: service_healthy
+        restart: true
+    # The existing protocol requires HTTPS or loopback. Share only this namespace,
+    # never the host network; no weakening of the simulator's URL policy.
+    network_mode: service:edge-gateway
+    environment:
+      MIMIX_WEB_URL: http://127.0.0.1:4000
+      MIMIX_ROBOT_BRIDGE_TOKEN: ${MIMIX_ROBOT_BRIDGE_TOKEN:-}
+    cpus: 0.5
+    mem_limit: 384m
+    memswap_limit: 384m
+    pids_limit: 64
+
+networks:
+  cloud: {}
+  edge: {}
