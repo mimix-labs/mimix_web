@@ -218,3 +218,11 @@ healthchecks, límites y actualización con rollback. Incluye Draco local para a
 sin Internet; no modifica el launcher del robot. La cola SQLite de progreso y su
 sincronización requieren activación explícita; ver [protocolo](docs/architecture/offline-sync.md)
 y [operación y recuperación](docs/runbooks/offline-progress-sync.md).
+
+## Shell web Next.js (opt-in)
+
+`apps/web` incorpora inicio, acceso Clerk, catálogo, perfil y progreso en el puerto
+3100 (`pnpm web`). El despliegue Vite/API y `pnpm start` permanecen operativos.
+Build Turbopack, imagen standalone, configuración de identidad, límites de transición,
+pruebas y rollback: [runbook del shell](docs/runbooks/web-nextjs-shell.md).
+No migra el mundo Three.js ni añade `/play` en este PR.

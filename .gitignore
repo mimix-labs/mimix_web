@@ -17,3 +17,6 @@ playwright-report/
 # Private deployment configuration and release state
 infra/docker/cloud.env
 .edge-release/
+
+**/.next/
+**/*.tsbuildinfo

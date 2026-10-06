@@ -23,7 +23,8 @@
         "CLERK_*",
         "DATABASE_URL",
         "LOG_LEVEL",
-        "NODE_ENV"
+        "NODE_ENV",
+        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
       ],
       "dependsOn": [
         "^build"
@@ -83,6 +84,26 @@
         "build"
       ],
       "cache": false
+    },
+    "@mimix/web#build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "!.next/dev/**"
+      ],
+      "env": [
+        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
+      ],
+      "passThroughEnv": [
+        "MIMIX_WEB_AUTH_MODE",
+        "MIMIX_API_ORIGIN",
+        "MIMIX_LEGACY_ORIGIN",
+        "CLERK_SECRET_KEY",
+        "CLERK_JWT_KEY"
+      ]
     }
   }
 }
