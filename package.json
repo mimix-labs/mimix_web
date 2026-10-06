@@ -22,7 +22,9 @@
     "check": "turbo run lint:repo typecheck:repo typecheck test:repo test test:production",
     "test:edge": "node --test test/edge/*.test.js",
     "test:edge:browser": "node client/test/edge-offline.js",
-    "test:browser": "turbo run test:browser --concurrency=1 --filter @mimix/challenge-runtime --filter mimix-client"
+    "test:browser": "turbo run test:browser --concurrency=1 --filter @mimix/challenge-runtime --filter mimix-client",
+    "web": "pnpm --filter @mimix/web dev",
+    "test:web": "pnpm --filter @mimix/web test:browser"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

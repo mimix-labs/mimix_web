@@ -1,0 +1,27 @@
+:root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; --surface: #0b111b; --raised: #141c28; --text: #f6f7f9; --muted: #aab5c4; --accent: #f5c400; --focus: #8fd3ff; background: var(--surface); color: var(--text); }
+* { box-sizing: border-box; }
+body { margin: 0; line-height: 1.6; }
+a { color: var(--focus); text-underline-offset: .2em; }
+a, button { touch-action: manipulation; }
+button { font: inherit; cursor: pointer; }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
+header, main, footer { max-width: 1050px; margin: auto; padding: 24px; }
+header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid #354152; }
+.brand { color: var(--accent); font-family: monospace; letter-spacing: .14em; font-size: 1.6rem; font-weight: 900; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+nav a, .button { display: inline-flex; align-items: center; min-height: 44px; }
+main { min-height: 65vh; padding-block: 48px; }
+h1 { line-height: 1.15; font-size: clamp(2rem, 5vw, 3rem); max-width: 22ch; margin: 0 0 24px; }
+h2 { line-height: 1.25; }
+p { max-width: 68ch; }
+.muted, footer { color: var(--muted); }
+.eyebrow { color: var(--accent); font-weight: 700; }
+.button { background: var(--accent); color: #111; border: 0; border-radius: 10px; padding: 10px 20px; font-weight: 800; text-decoration: none; }
+.actions { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-top: 24px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 20px; padding: 0; list-style: none; }
+.card { padding: 24px; background: var(--raised); border: 1px solid #354152; border-radius: 16px; overflow-wrap: anywhere; }
+.card h2 { margin-top: 0; }
+.skip { position: absolute; top: -100px; padding: 12px; background: var(--surface); z-index: 10; }
+.skip:focus { top: 8px; left: 8px; }
+dt { color: var(--muted); } dd { margin: 0 0 20px; overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }

@@ -217,3 +217,39 @@ jobs:
           trap 'docker compose -p mimix-browser -f infra/docker/compose.yaml --profile edge down' EXIT
           docker compose -p mimix-browser -f infra/docker/compose.yaml --profile edge up -d --wait --wait-timeout 90 --pull never
           pnpm test:edge:browser
+
+  web-shell:
+    name: Next.js shell and standalone
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-bookworm
+        env:
+          POSTGRES_PASSWORD: mimix-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec turbo run build --filter=@mimix/web... --filter=@mimix/api...
+      - run: pnpm --filter @mimix/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @mimix/web test:browser
+      - run: pnpm --filter @mimix/web test:contracts
+        env:
+          MIMIX_TEST_DATABASE_URL: postgres://postgres:mimix-ci-only@127.0.0.1:5432/postgres
+      - run: docker build -f apps/web/Dockerfile -t mimix-web:ci .
+      - run: pnpm --filter @mimix/web test:container
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: web-shell-results
+          path: apps/web/test-results/
+          if-no-files-found: ignore
