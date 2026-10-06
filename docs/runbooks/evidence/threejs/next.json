@@ -1,0 +1,61 @@
+{
+  "url": "http://127.0.0.1:3101/play",
+  "viewport": [
+    1280,
+    800
+  ],
+  "frames": 60,
+  "browser": "153.0.8010.12",
+  "runs": [
+    {
+      "loadMs": 2011.6122899999998,
+      "fps": 5.333522969705589,
+      "heapBytes": 97845900,
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "glbDecodedBytes": 36351080,
+      "glbBytes": 7001627,
+      "retainedHeapBytes": 7848076,
+      "retainedBackingBytes": 35870401,
+      "jsBytes": 1701313,
+      "jsGzipBytes": 449795,
+      "errors": []
+    },
+    {
+      "loadMs": 5385.742136000001,
+      "fps": 3.7230081906180192,
+      "heapBytes": 115586909,
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "glbDecodedBytes": 36351080,
+      "glbBytes": 7001627,
+      "retainedHeapBytes": 7868640,
+      "retainedBackingBytes": 35870290,
+      "jsBytes": 1701313,
+      "jsGzipBytes": 449795,
+      "errors": []
+    },
+    {
+      "loadMs": 2490.2829760000022,
+      "fps": 5.286576501167452,
+      "heapBytes": 115638494,
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "glbDecodedBytes": 36351080,
+      "glbBytes": 7001627,
+      "retainedHeapBytes": 8476156,
+      "retainedBackingBytes": 35870401,
+      "jsBytes": 1701313,
+      "jsGzipBytes": 449795,
+      "errors": []
+    }
+  ],
+  "medians": {
+    "loadMs": 2490.2829760000022,
+    "fps": 5.286576501167452,
+    "heapBytes": 115586909,
+    "retainedHeapBytes": 7868640,
+    "retainedBackingBytes": 35870401,
+    "glbBytes": 7001627,
+    "glbDecodedBytes": 36351080,
+    "jsBytes": 1701313,
+    "jsGzipBytes": 449795
+  }
+}

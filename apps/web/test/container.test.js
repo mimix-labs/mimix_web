@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import test from 'node:test'
+import { readFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 const docker = (...args) => execFileSync('docker', args, { encoding: 'utf8' }).trim()
 test('standalone container serves routes, static chunks and health without the build tree', async t => {
   const id = docker('run', '-d', '--rm', '-p', '127.0.0.1::3100', '-e', 'MIMIX_WEB_AUTH_MODE=disabled', '-e', 'MIMIX_LEGACY_ORIGIN=https://legacy.example.com', 'mimix-web:ci')
@@ -16,7 +18,18 @@ test('standalone container serves routes, static chunks and health without the b
   assert.equal(docker('exec', id, 'id', '-u'), '1000')
   const health = await fetch(`${base}/healthz`)
   assert.deepEqual(await health.json(), { status: 'ok', service: 'mimix-web' })
-  for (const path of ['/', '/catalogo', '/acceso']) assert.equal((await fetch(base + path)).status, 200)
+  for (const path of ['/', '/catalogo', '/acceso', '/play']) assert.equal((await fetch(base + path)).status, 200)
+  for (const asset of ['/assets/models/islands/home.glb', '/assets/models/islands/mathematics.glb', '/assets/models/islands/sciencie.glb', '/assets/models/resources/bridge.glb', '/assets/models/walle/walle.glb', '/vendor/draco/draco_decoder.wasm']) {
+    const response = await fetch(base + asset)
+    assert.equal(response.status, 200, asset)
+    const body = Buffer.from(await response.arrayBuffer())
+    assert.ok(body.byteLength > 1000, asset)
+    if (asset.endsWith('.glb')) {
+      const original = await readFile(new URL('../../../packages/world/assets/' + asset.split('/assets/models/')[1], import.meta.url))
+      const hash = bytes => createHash('sha256').update(bytes).digest('hex')
+      assert.equal(hash(body), hash(original), asset)
+    }
+  }
   const home = await (await fetch(base)).text()
   assert.ok(home.includes('https://legacy.example.com'))
   const chunks = [...home.matchAll(/src="([^" ]*\/_next\/[^" ]+\.js)"/g)].map(match => match[1])

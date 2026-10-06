@@ -1,0 +1,19 @@
+<!doctype html><html lang="es"><head><meta charset="UTF-8"><title>World lifecycle test harness</title></head><body><div id="mount"></div><script type="module">
+import { mountWorld } from '@mimix/world'
+import { World } from '../../packages/world/src/core/World.js'
+import { createWorldHost } from '@mimix/world/host'
+window.mount = async () => {
+  const root = document.getElementById('mount').shadowRoot ?? document.getElementById('mount').attachShadow({mode: 'open'})
+  root.innerHTML = '<canvas id="canvas"></canvas>'
+  const host = createWorldHost({challengeOrigin: location.origin, navigate: url => { window.visits.push(url) }})
+  window.world = new World({canvas: root.getElementById('canvas'), root, host})
+  await window.world.loadWallE()
+}
+window.mountUI = () => {
+  const root = document.getElementById('mount').shadowRoot ?? document.getElementById('mount').attachShadow({mode: 'open'})
+  return mountWorld(root, { host: createWorldHost({challengeOrigin: location.origin, navigate() {}}) })
+}
+window.visits = []
+window.unmount = () => { window.world.dispose(); window.world.host.dispose() }
+window.harnessReady = true
+</script></body></html>

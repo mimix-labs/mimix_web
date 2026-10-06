@@ -23,3 +23,8 @@ graphify-out
 
 **/.next/
 **/*.tsbuildinfo
+
+# World assets are copied from packages/world during build/dev.
+client/public/assets/models/
+apps/web/public/assets/models/
+apps/web/public/vendor/draco/

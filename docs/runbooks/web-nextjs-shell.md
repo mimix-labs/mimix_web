@@ -2,7 +2,8 @@
 
 `apps/web` añade inicio `/`, `/catalogo`, `/acceso/[[...sign-in]]`, `/perfil` y
 `/progreso`. El dominio sigue en Nest/Fastify. No hay escrituras, campañas jugables
-nuevas, ruta `/play`, captura de sensores ni mundo Three.js dentro de Next.
+nuevas ni captura de sensores. El alcance original del prompt 20 no incluía el mundo;
+el prompt 21 añade `/play` según el [runbook de migración](web-threejs-play.md).
 
 ## Auditoría y decisiones
 

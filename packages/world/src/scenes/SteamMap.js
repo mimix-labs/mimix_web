@@ -1,0 +1,153 @@
+import * as THREE from 'three'
+import { IslandModel } from './islands/IslandModel.js'
+import { BridgeModel } from './islands/BridgeModel.js'
+
+export const ISLAND_LAYOUT = {
+  home:        { position: [0, 0, 0],   path: '/assets/models/islands/home.glb' },
+  mathematics: { position: [0, 0, -55], path: '/assets/models/islands/mathematics.glb' },
+  science:     { position: [55, 0, 0],  path: '/assets/models/islands/sciencie.glb' },
+}
+
+const BRIDGE_MODEL_PATH = '/assets/models/resources/bridge.glb'
+// Movement limits in world units. Reduce MAX_STEP_UP for a stricter climb limit.
+const MAX_STEP_UP = 2.5
+const MAX_WALKABLE_SLOPE_DEGREES = 25
+// Applies to island terrain only. Bridges have their own designated deck.
+const MAX_TERRAIN_HEIGHT_ABOVE_HOME_GROUND = 1.2
+const MIN_WALKABLE_NORMAL_Y = Math.cos(THREE.MathUtils.degToRad(MAX_WALKABLE_SLOPE_DEGREES))
+
+// Edit these values to place the original bridge model manually.
+// position: [X, Y, Z] | rotationY: radians | scale: [X, Y, Z]
+export const BRIDGE_LAYOUT = {
+  mathematics: {
+    position: [0.5, 2.5, -29],
+    rotationY: Math.PI / 2,
+    scale: [3, 3, 3],
+  },
+  science: {
+    position: [30, 2.5, 0],
+    rotationY: 0,
+    scale: [3, 3, 3],
+  },
+}
+
+// Loads the complete three-island world and treats all floor meshes as one
+// collision surface for Wall-E.
+export class SteamMap {
+  constructor(scene, { assets, onAssetProgress = null } = {}) {
+    this.assets = assets
+    this.scene = scene
+    this.homeGroundHeight = null
+    this._build(onAssetProgress)
+  }
+
+  _build(onAssetProgress) {
+    const grid = new THREE.GridHelper(42, 42, 0x333344, 0x202834)
+    this.scene.add(grid)
+
+    this.islands = Object.fromEntries(Object.entries(ISLAND_LAYOUT).map(([key, config]) => [
+      key,
+      new IslandModel(this.scene, config.path, {
+        assets: this.assets,
+        position: config.position,
+        onProgress: event => onAssetProgress?.(key, event),
+      }),
+    ]))
+    this.islands.science.group.rotation.y = -Math.PI / 2
+
+    this.bridges = [
+      this._createBridge('mathematics', event => onAssetProgress?.('bridgeMathematics', event)),
+      this._createBridge('science', event => onAssetProgress?.('bridgeScience', event)),
+    ]
+    this.bridges.forEach(bridge => this.scene.add(bridge.group))
+
+    this.raycaster = new THREE.Raycaster()
+    this.raycastOrigin = new THREE.Vector3()
+    this.down = new THREE.Vector3(0, -1, 0)
+    this.surfaceNormal = new THREE.Vector3()
+    this.homeReady = this.islands.home.ready.then(() => {
+      const [homeX, , homeZ] = ISLAND_LAYOUT.home.position
+      this.homeGroundHeight = this.getGroundHeight(homeX, homeZ)
+    })
+
+    // All world assets download concurrently, but the world is not revealed
+    // until every island and bridge has been parsed and attached to the scene.
+    this.ready = Promise.all([
+      this.homeReady,
+      ...Object.values(this.islands).map(island => island.ready),
+      ...this.bridges.map(bridge => bridge.ready),
+    ])
+  }
+
+  _createBridge(key, onProgress) {
+    return new BridgeModel({
+      assets: this.assets,
+      modelPath: BRIDGE_MODEL_PATH,
+      ...BRIDGE_LAYOUT[key],
+      onProgress,
+    })
+  }
+
+  update(_delta, _elapsed) {}
+
+  get colliders() {
+    return [
+      ...Object.values(this.islands).flatMap(island => island.colliders),
+    ]
+  }
+
+  getWalkableGroundHit(x, z) {
+    for (const bridge of this.bridges) {
+      const bridgeHeight = bridge.getWalkwayHeightAt(x, z)
+      if (bridgeHeight !== null) {
+        return { point: { y: bridgeHeight }, surface: 'bridge' }
+      }
+    }
+
+    const colliders = this.colliders
+    if (!colliders.length) return null
+
+    this.raycastOrigin.set(x, 100, z)
+    this.raycaster.set(this.raycastOrigin, this.down)
+    const hits = this.raycaster.intersectObjects(colliders, true)
+    const terrainHit = hits.find(hit => {
+      if (!hit.face) return false
+      this.surfaceNormal.copy(hit.face.normal).transformDirection(hit.object.matrixWorld)
+      // Some exported terrain faces point downward, hence the absolute value.
+      return Math.abs(this.surfaceNormal.y) >= MIN_WALKABLE_NORMAL_Y
+    })
+    return terrainHit ? { ...terrainHit, surface: 'terrain' } : null
+  }
+
+  getGroundHeight(x, z) {
+    return this.getWalkableGroundHit(x, z)?.point.y ?? null
+  }
+
+  resolveMovement(from, desired) {
+    const currentHit = this.getWalkableGroundHit(from.x, from.z)
+    const nextHit = this.getWalkableGroundHit(desired.x, desired.z)
+    if (!nextHit) return null
+
+    const currentGround = currentHit?.point.y ?? null
+    const nextGround = nextHit.point.y
+
+    if (
+      nextHit.surface === 'terrain' &&
+      this.homeGroundHeight !== null &&
+      nextGround > this.homeGroundHeight + MAX_TERRAIN_HEIGHT_ABOVE_HOME_GROUND
+    ) return null
+
+    // Moving on/off the designated bridge deck is an intentional transition.
+    if (currentGround !== null && currentHit.surface === 'terrain' && nextHit.surface === 'terrain') {
+      const heightChange = nextGround - currentGround
+      if (heightChange > MAX_STEP_UP) return null
+    }
+    return new THREE.Vector3(desired.x, nextGround + 0.02, desired.z)
+  }
+
+  snapToGround(position) {
+    const ground = this.getGroundHeight(position.x, position.z)
+    if (ground !== null) position.y = ground + 0.02
+    return position
+  }
+}

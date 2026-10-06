@@ -92,7 +92,9 @@
       "outputs": [
         ".next/**",
         "!.next/cache/**",
-        "!.next/dev/**"
+        "!.next/dev/**",
+        "public/assets/models/**",
+        "public/vendor/draco/**"
       ],
       "env": [
         "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
@@ -102,7 +104,8 @@
         "MIMIX_API_ORIGIN",
         "MIMIX_LEGACY_ORIGIN",
         "CLERK_SECRET_KEY",
-        "CLERK_JWT_KEY"
+        "CLERK_JWT_KEY",
+        "MIMIX_WORLD_MODE"
       ]
     }
   }

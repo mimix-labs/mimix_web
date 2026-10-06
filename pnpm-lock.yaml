@@ -150,6 +150,9 @@ importers:
       '@mimix/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@mimix/world':
+        specifier: workspace:*
+        version: link:../../packages/world
       next:
         specifier: 16.3.8
         version: 16.3.8(@playwright/test@1.63.0)(@types/node@24.13.6)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -212,6 +215,9 @@ importers:
       '@mimix/challenge-sdk':
         specifier: workspace:*
         version: link:../packages/challenge-sdk
+      '@mimix/world':
+        specifier: workspace:*
+        version: link:../packages/world
       gsap:
         specifier: ^3.12.5
         version: 3.15.0
@@ -422,6 +428,37 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+
+  packages/world:
+    dependencies:
+      '@mimix/agent-contract':
+        specifier: workspace:*
+        version: link:../agent-contract
+      '@mimix/challenge-mathematics':
+        specifier: workspace:*
+        version: link:../challenge-mathematics
+      '@mimix/challenge-science':
+        specifier: workspace:*
+        version: link:../challenge-science
+      '@mimix/challenge-sdk':
+        specifier: workspace:*
+        version: link:../challenge-sdk
+      '@mimix/embodiment-contract':
+        specifier: workspace:*
+        version: link:../embodiment-contract
+      three:
+        specifier: ^0.167.0
+        version: 0.167.1
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@mimix/agent-core':
+        specifier: workspace:*
+        version: link:../agent-core
+      '@mimix/character-wall-e':
+        specifier: workspace:*
+        version: link:../../characters/wall-e
 
   server:
     dependencies:
