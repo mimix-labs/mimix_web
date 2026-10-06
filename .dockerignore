@@ -17,3 +17,6 @@ graphify-out
 **/harness-dist
 **/test-results
 **/playwright-report
+
+**/*.env
+.edge-release

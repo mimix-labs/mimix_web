@@ -209,3 +209,10 @@ MQTT 5, with TTL, scoped ACK, durable audit and gateway stopping. Requires Clerk
 PostgreSQL, DeviceSessions and a single API process; credentials stay on the
 backend/gateway. Default `legacy` retains HTTP/SSE rollback. No physical motor
 integration is included. See [MQTT runbook](docs/runbooks/robot-control-mqtt.md).
+
+## Runtime edge ARM64
+
+[Build multi-platform, perfiles cloud/edge/simulator y operación Jetson](docs/runbooks/edge-arm64.md).
+El runtime actual sirve Vite y gateway local en un proceso, con imágenes precargadas,
+healthchecks, límites y actualización con rollback. Incluye Draco local para arranque
+sin Internet; no modifica el launcher del robot ni implementa sincronización offline.

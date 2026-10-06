@@ -19,7 +19,7 @@ export default [
   { files: ['apps/api/**/*.{ts,js}', 'packages/**/*.{ts,js}', 'characters/**/*.{ts,js}', 'tools/**/*.{ts,js}', 'client/test/**/*.js'], languageOptions: { globals: globals.node } },
   { files: ['packages/challenge-{browser,mathematics,science}/src/*.js'], languageOptions: { globals: globals.browser } },
   {
-    files: ['server/**/*.js', 'test/**/*.js', '*.js'],
+    files: ['server/**/*.js', 'test/**/*.js', 'infra/docker/*.cjs', '*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',

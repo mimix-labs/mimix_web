@@ -1,4 +1,7 @@
 import { MqttGateway } from '@mimix/robot-mqtt'
+import { once } from 'node:events'
+import { chmodSync, rmSync } from 'node:fs'
+import { createServer } from 'node:net'
 import { RobotSimulator } from './simulator.js'
 
 const command = process.argv[2] ?? 'motion'
@@ -16,6 +19,7 @@ MIMIX_SIM_FAIL_REQUESTS: fail first N requests (default 0)
 MIMIX_SIM_DROP_AFTER_EVENTS: disconnect after N motions per connection (0 disables)
 MIMIX_SIM_RECONNECT_MS: retry delay (default 1000)
 MIMIX_SIM_TIMEOUT_MS: request / SSE idle timeout (default 30000)
+MIMIX_SIM_HEALTH_SOCKET: optional local socket exposing the motion receiver's live presence
 'hands' publishes one empty hand frame. 'motion' records commands until SIGINT/SIGTERM.
 This tool never executes motors, acquires a lease, or grants device authority.`)
 } else if (command === 'mqtt') {
@@ -47,11 +51,28 @@ This tool never executes motors, acquires a lease, or grants device authority.`)
     if (command === 'context') console.log(JSON.stringify(await robot.getContext(abort.signal)))
     else if (command === 'navigate') console.log(JSON.stringify(await robot.navigate(process.argv[3] ?? '', abort.signal)))
     else if (command === 'hands') console.log(JSON.stringify(await robot.publishHands({ landmarks: [], handedness: [], timestamp: Date.now(), source: 'jetson-native' }, abort.signal)))
-    else if (command === 'motion') await robot.run(abort.signal, event => {
-      console.log(JSON.stringify(event.type === 'motion'
-        ? { type: event.type, action: event.command.action, maxDurationMs: event.command.maxDurationMs }
-        : event))
-    })
+    else if (command === 'motion') {
+      if (!process.env.MIMIX_ROBOT_BRIDGE_TOKEN?.trim()) throw new Error('Bridge credential required')
+      const socketPath = process.env.MIMIX_SIM_HEALTH_SOCKET
+      const health = socketPath ? createServer(socket => {
+        socket.on('error', () => {})
+        socket.end(JSON.stringify(robot.presence))
+      }) : undefined
+      try {
+        if (health && socketPath) {
+          // A prior receiver may leave a socket behind after SIGKILL.
+          rmSync(socketPath, { force: true })
+          health.listen(socketPath)
+          await once(health, 'listening')
+          chmodSync(socketPath, 0o600)
+        }
+        await robot.run(abort.signal, event => {
+          console.log(JSON.stringify(event.type === 'motion'
+            ? { type: event.type, action: event.command.action, maxDurationMs: event.command.maxDurationMs }
+            : event))
+        })
+      } finally { health?.close() }
+    }
     else throw new Error('Unknown command')
   } catch {
     if (!abort.signal.aborted) {

@@ -1,0 +1,7 @@
+# Proof fixture only: Docker 29 suppresses port publishing on internal networks.
+# With no network interface at all, probe the real HTTP server from docker exec.
+services:
+  edge-gateway:
+    networks: !reset []
+    ports: !reset []
+    network_mode: none
