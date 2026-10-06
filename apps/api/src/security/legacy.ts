@@ -1,3 +1,5 @@
+import { addSyncPaths } from '../modules/sync/openapi.js'
+import { syncRouter } from '../modules/sync/express.js'
 import type { RobotControlTransport } from '@mimix/robot-protocol'
 import { robotControlRouter } from '../modules/robot-control/express.js'
 import { addRobotControlPaths } from '../modules/robot-control/openapi.js'
@@ -22,6 +24,7 @@ import { addLegacyPaths } from '../openapi.js'
 
 export function createSecuredLegacy(config: ApiConfig, dependencies: IdentityDependencies & { voice?: VoiceService; mediaProvider?: MediaProvider; robotTransport?: RobotControlTransport } = {}) {
   const services = dataServices(config, dependencies)
+  const sync = syncRouter(services.sync)
   const voice = services.voice, voiceRoutes = voiceRouter(voice)
   const policy = new HttpSecurityPolicy(config, services.identity)
   const robot = robotControlRouter(services.robot)
@@ -29,6 +32,7 @@ export function createSecuredLegacy(config: ApiConfig, dependencies: IdentityDep
   const learning = learningRouter(services.learning), campaigns = campaignRouter(services.campaigns)
   const document = addLearningPaths(addLegacyPaths({ openapi: '3.0.0', info: { title: 'Mimix API', version: '0.3.0' }, paths: {}, components: { securitySchemes: { bearer: { type: 'http', scheme: 'bearer' }, BridgeToken: { type: 'apiKey', in: 'header', name: 'X-Mimix-Robot-Token' }, ControlToken: { type: 'apiKey', in: 'header', name: 'X-Mimix-Control-Token' } } } }, config), config)
   addCampaignPaths(document, config)
+  addSyncPaths(document, config)
   addVoicePaths(document, config)
   addDevicePaths(document, config)
   addMediaPaths(document, config)
@@ -38,6 +42,7 @@ export function createSecuredLegacy(config: ApiConfig, dependencies: IdentityDep
       for (const [name, value] of Object.entries(result.headers)) res.setHeader(name, value)
       if (result.status) { res.status(result.status); if (result.status === 204) res.end(); else res.json({ error: result.error }); return }
       const path = requestPath(req.url)
+      if (path.startsWith('/api/offline/') || path.startsWith('/api/sync/')) { Object.assign(req, { user: result.user }); sync(req, res, next); return }
       if (path.startsWith('/api/robot-control/')) { Object.assign(req, { user: result.user, identity: result.identity }); robot(req, res, next); return }
       if (path.startsWith('/api/media/')) { Object.assign(req, { user: result.user, identity: result.identity }); media(req, res, next); return }
       if (path.startsWith('/api/devices/')) { Object.assign(req, { user: result.user, identity: result.identity }); devices(req, res, next); return }

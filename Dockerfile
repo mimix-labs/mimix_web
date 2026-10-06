@@ -37,7 +37,7 @@ COPY server/src/ ./server/src/
 COPY apps/api/tsconfig.json ./apps/api/tsconfig.json
 COPY apps/api/src/ ./apps/api/src/
 ARG VITE_MIMIX_CHALLENGES_MODE=package
-RUN pnpm build
+RUN pnpm build && mkdir -p /offline-volume && chmod 700 /offline-volume
 
 FROM base AS production-deps
 RUN --mount=type=cache,id=mimix-pnpm-10,target=/pnpm/store,sharing=locked \
@@ -78,6 +78,7 @@ COPY --chown=node:node --from=build /app/client/dist/ ./client/dist/
 
 COPY infra/docker/healthcheck.cjs ./healthcheck.cjs
 HEALTHCHECK --interval=10s --timeout=5s --start-period=20s --retries=3 CMD ["node", "healthcheck.cjs"]
+COPY --chown=node:node --from=build /offline-volume/ /data/offline/
 USER node
 EXPOSE 4000
 CMD ["node", "apps/api/dist/main.js"]

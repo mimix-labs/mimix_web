@@ -1,3 +1,4 @@
+import { SyncError } from '../modules/sync/contract.js'
 import { MediaError } from '../modules/media/service.js'
 import { DeviceError } from '../modules/devices/contract.js'
 import { VoiceHttpError } from '../modules/voice/http.js'
@@ -10,10 +11,10 @@ export class ApiErrorFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const reply = host.switchToHttp().getResponse<FastifyReply>()
     const request = host.switchToHttp().getRequest<FastifyRequest>()
-    const status = (exception instanceof MediaError || exception instanceof DeviceError || exception instanceof LearningError || exception instanceof VoiceHttpError) ? exception.status : exception instanceof HttpException ? exception.getStatus() : 500
+    const status = (exception instanceof SyncError || exception instanceof MediaError || exception instanceof DeviceError || exception instanceof LearningError || exception instanceof VoiceHttpError) ? exception.status : exception instanceof HttpException ? exception.getStatus() : 500
     request.log.error({ event: 'request-error', status, requestId: request.id })
     if (reply.sent) return
-    const error = (exception instanceof MediaError || exception instanceof DeviceError || exception instanceof LearningError || exception instanceof VoiceHttpError) ? exception.message : status === 404 ? 'not found' : status < 500 ? 'invalid request' : 'internal server error'
-    void reply.code(status).send({ error })
+    const error = (exception instanceof SyncError || exception instanceof MediaError || exception instanceof DeviceError || exception instanceof LearningError || exception instanceof VoiceHttpError) ? exception.message : status === 404 ? 'not found' : status < 500 ? 'invalid request' : 'internal server error'
+    void reply.code(status).send({ error, ...(exception instanceof SyncError ? { state: exception.state } : {}) })
   }
 }

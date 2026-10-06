@@ -1,3 +1,4 @@
+import { SyncService } from './modules/sync/service.js'
 import type { RobotControlService } from './modules/robot-control/service.js'
 import { RobotControlModule } from './modules/robot-control/robot-control.module.js'
 import type { MediaService } from './modules/media/service.js'
@@ -23,11 +24,11 @@ import { MediaModule } from './modules/media/media.module.js'
 import { SyncModule } from './modules/sync/sync.module.js'
 
 @Module({
-  imports: [IdentityModule, ChallengesModule, AgentModule, ConversationsModule, EmbodimentsModule, SyncModule],
+  imports: [IdentityModule, ChallengesModule, AgentModule, ConversationsModule, EmbodimentsModule],
   controllers: [HealthController],
 })
 export class AppModule {
-  static register(config: ApiConfig, learning?: LearningStore, close?: () => Promise<void> | undefined, campaigns?: CampaignStore, voice?: VoiceService, devices?: DeviceStore, media?: MediaService, robot?: RobotControlService): DynamicModule {
-    return { module: AppModule, imports: [RobotControlModule.register(robot), MediaModule.register(media), DevicesModule.register(devices), VoiceModule.register(voice ?? createVoiceService(config.voice)), LearningModule.register(learning), CampaignsModule.register(campaigns)], providers: [{ provide: 'DATABASE_LIFECYCLE', useValue: { onApplicationShutdown: close } }, { provide: API_CONFIG, useValue: config }, LegacyService] }
+  static register(config: ApiConfig, learning?: LearningStore, close?: () => Promise<void> | undefined, campaigns?: CampaignStore, voice?: VoiceService, devices?: DeviceStore, media?: MediaService, robot?: RobotControlService, sync = new SyncService(undefined, undefined, '')): DynamicModule {
+    return { module: AppModule, imports: [SyncModule.register(sync), RobotControlModule.register(robot), MediaModule.register(media), DevicesModule.register(devices), VoiceModule.register(voice ?? createVoiceService(config.voice)), LearningModule.register(learning), CampaignsModule.register(campaigns)], providers: [{ provide: 'DATABASE_LIFECYCLE', useValue: { onApplicationShutdown: close } }, { provide: API_CONFIG, useValue: config }, LegacyService] }
   }
 }

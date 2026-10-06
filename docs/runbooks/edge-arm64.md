@@ -91,8 +91,9 @@ se pueden abrir usando teclado/ratón. Fuentes web caen a las fuentes de reserva
 No se promete cámara MediaPipe sin Internet: su modelo/WASM aún son remotos.
 El perfil edge selecciona visión `jetson` para consumir landmarks locales,
 sin descargar MediaPipe. Requiere el publicador de visión existente. No hay
-voz ElevenLabs, Clerk, LiveKit, sincronización ni persistencia de progreso offline
-nueva; SQLite/reconciliación pertenece exclusivamente al prompt 19.
+voz ElevenLabs, Clerk ni LiveKit offline. El perfil base no activa persistencia de
+progreso: la cola SQLite y reconciliación del prompt 19 se habilitan con el
+[override y runbook offline](offline-progress-sync.md).
 
 Sin tokens, las rutas de movimiento que requieren puente configurado fallan
 cerradas. El simulador exige `MIMIX_ROBOT_BRIDGE_TOKEN`; provisionar además un

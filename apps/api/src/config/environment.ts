@@ -1,3 +1,4 @@
+import { parseSyncEnvironment, type SyncConfig } from '../modules/sync/config.js'
 import { parseRobotEnvironment, type RobotControlConfig } from '../modules/robot-control/config.js'
 import { parseMediaEnvironment, type MediaConfig } from '../modules/media/config.js'
 import { isDeviceTokenKey } from '../modules/devices/tokens.js'
@@ -5,6 +6,7 @@ import { parseVoiceEnvironment, type VoiceConfig } from '../modules/voice/config
 import { isAbsolute } from 'node:path'
 
 export interface ApiConfig {
+  sync: SyncConfig
   robot: RobotControlConfig
   media: MediaConfig
   deviceTokenKey: string
@@ -95,7 +97,7 @@ export function parseEnvironment(env: NodeJS.ProcessEnv): ApiConfig {
   if (bridgeToken && bridgeToken === controlToken) fail('MIMIX_ROBOT_CONTROL_TOKEN must differ from bridge token')
   const logLevel = env.LOG_LEVEL ?? 'info'
   if (!['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'].includes(logLevel)) fail('LOG_LEVEL')
-  return { robot: parseRobotEnvironment(env, deviceSessionsEnabled), media: parseMediaEnvironment(env, deviceSessionsEnabled, videoUrl), deviceTokenKey, deviceSessionsEnabled, voice: parseVoiceEnvironment(env, authMode), dataStore: dataStore as ApiConfig['dataStore'], databaseUrl, authMode: authMode as ApiConfig['authMode'], allowedOrigins, rateLimits, identityFile, clerk, port, host, runtime: runtime as ApiConfig['runtime'], visionMode: visionMode as ApiConfig['visionMode'], videoUrl, bridgeToken, controlToken, logLevel: logLevel as ApiConfig['logLevel'] }
+  return { sync: parseSyncEnvironment(env, authMode, dataStore), robot: parseRobotEnvironment(env, deviceSessionsEnabled), media: parseMediaEnvironment(env, deviceSessionsEnabled, videoUrl), deviceTokenKey, deviceSessionsEnabled, voice: parseVoiceEnvironment(env, authMode), dataStore: dataStore as ApiConfig['dataStore'], databaseUrl, authMode: authMode as ApiConfig['authMode'], allowedOrigins, rateLimits, identityFile, clerk, port, host, runtime: runtime as ApiConfig['runtime'], visionMode: visionMode as ApiConfig['visionMode'], videoUrl, bridgeToken, controlToken, logLevel: logLevel as ApiConfig['logLevel'] }
 }
 
 export function legacyEnvironment(config: ApiConfig): NodeJS.ProcessEnv {
