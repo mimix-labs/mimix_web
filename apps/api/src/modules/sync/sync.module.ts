@@ -1,5 +1,9 @@
-import { Module } from '@nestjs/common'
-
-// Domain boundary only; behavior is introduced in its delivery phase.
+import { Module, type DynamicModule } from '@nestjs/common'
+import { OfflineController, SyncController } from './sync.controller.js'
+import { SyncService } from './service.js'
 @Module({})
-export class SyncModule {}
+export class SyncModule {
+  static register(service: SyncService): DynamicModule {
+    return { module: SyncModule, controllers: [OfflineController, SyncController], providers: [{ provide: SyncService, useValue: service }] }
+  }
+}

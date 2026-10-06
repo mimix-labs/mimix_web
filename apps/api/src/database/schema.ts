@@ -99,3 +99,13 @@ export const robotControlAudit = pgTable('robot_control_audit', {
   controlSessionId: uuid('control_session_id').notNull().references(() => robotControlSessions.id), commandId: uuid('command_id'),
   event: text().notNull(), reason: text().notNull(), observedAt: bigint('observed_at', { mode: 'number' }).notNull(),
 }, t => [index('robot_control_audit_owner_page').on(t.userId, t.id)])
+
+
+export const syncSessions = pgTable('sync_sessions', {
+  id: uuid().primaryKey(), userId: uuid('user_id').notNull().references(() => users.id), claimHash: text('claim_hash').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, t => [check('sync_claim_hash', sql`${t.claimHash} ~ '^[a-f0-9]{64}$'`)])
+export const syncAttempts = pgTable('sync_attempts', {
+  sessionId: uuid('session_id').notNull().references(() => syncSessions.id), localId: uuid('local_id').notNull(),
+  attemptId: uuid('attempt_id').notNull().unique().references(() => attempts.id),
+}, t => [primaryKey({ columns: [t.sessionId, t.localId] })])

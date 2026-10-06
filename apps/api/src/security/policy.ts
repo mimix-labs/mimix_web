@@ -10,6 +10,9 @@ export interface PolicyRequest { method: string; url: string; headers: IncomingH
 export interface PolicyResult { status?: number; error?: string; headers: Record<string, string>; user?: User; identity?: VerifiedIdentity }
 type Access = 'public' | 'user' | 'operator' | 'bridge' | 'device'
 export const routeAccess: Record<string, Access> = {
+  'POST /api/offline/sessions': 'public', 'POST /api/offline/attempts': 'public', 'POST /api/offline/events': 'public',
+  'GET /api/offline/status': 'public', 'POST /api/offline/bind': 'public', 'POST /api/offline/sync': 'public',
+  'POST /api/sync/bind': 'user', 'POST /api/sync/batch': 'user',
   'POST /api/robot-control/leases': 'user', 'GET /api/robot-control/leases/:id': 'user', 'DELETE /api/robot-control/leases/:id': 'user',
   'POST /api/robot-control/leases/:id/heartbeat': 'user', 'POST /api/robot-control/intents': 'user', 'GET /api/robot-control/intents/:id': 'user', 'GET /api/robot-control/audit': 'user',
   'POST /api/media/sessions': 'user', 'GET /api/media/sessions': 'user',
@@ -87,6 +90,10 @@ export class HttpSecurityPolicy {
     // Express accepts absolute-form request targets; never classify those as static assets.
     if (!request.url.startsWith('/')) return reject(400, 'invalid request target')
     const path = policyPath(requestPath(request.url))
+    if (path.startsWith('/api/offline') || path.startsWith('/api/sync')) {
+      headers['cache-control'] = 'no-store'
+      if (path.startsWith('/api/offline') ? !this.config.sync.offlineEnabled : !this.config.sync.cloudEnabled) return reject(404, 'not found')
+    }
     if (path.startsWith('/api/robot-control')) {
       headers['cache-control'] = 'no-store'
       if (this.config.robot.transport !== 'mqtt') return reject(404, 'not found')
@@ -116,7 +123,7 @@ export class HttpSecurityPolicy {
     if (request.method === 'OPTIONS') {
       const requestedMethod = request.headers['access-control-request-method']
       const requestedHeaders = request.headers['access-control-request-headers'] ?? ''
-      const allowedHeaders = ['authorization', 'content-type', 'x-mimix-control-token', 'x-mimix-robot-token']
+      const allowedHeaders = ['authorization', 'content-type', 'x-mimix-control-token', 'x-mimix-robot-token', 'x-mimix-sync-token']
       const validPreflight = origin && typeof requestedMethod === 'string'
         && routeAccess[`${requestedMethod === 'HEAD' ? 'GET' : requestedMethod} ${path}`]
         && typeof requestedHeaders === 'string'
@@ -128,7 +135,7 @@ export class HttpSecurityPolicy {
         if (limited) return limited
       }
       headers['access-control-allow-methods'] = 'GET,HEAD,PUT,PATCH,POST,DELETE'
-      headers['access-control-allow-headers'] = 'authorization,content-type,x-mimix-control-token,x-mimix-robot-token'
+      headers['access-control-allow-headers'] = 'authorization,content-type,x-mimix-control-token,x-mimix-robot-token,x-mimix-sync-token'
       return { status: 204, headers }
     }
     const method = request.method === 'HEAD' ? 'GET' : request.method

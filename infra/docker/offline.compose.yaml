@@ -1,0 +1,11 @@
+# Opt-in persistent local progress queue. Never use `down -v` on a live queue.
+services:
+  edge-gateway:
+    environment:
+      MIMIX_OFFLINE_ENABLED: 'true'
+      MIMIX_OFFLINE_DB_PATH: /data/offline/progress.sqlite
+      MIMIX_SYNC_CLOUD_ORIGIN: ${MIMIX_SYNC_CLOUD_ORIGIN:-}
+    volumes:
+      - offline-progress:/data/offline
+volumes:
+  offline-progress: {}

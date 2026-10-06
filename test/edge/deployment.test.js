@@ -191,3 +191,39 @@ test('edge cold boot serves API and packaged assets with no network interface', 
     `)
   } finally { offline('down', '--timeout', '5') }
 })
+
+test('SQLite queue survives recreation on its volume without a network interface', { timeout: 300000 }, () => {
+  const project = `mimix-queue-test-${process.pid}`
+  const offline = (...args) => compose(project, '-f', resolve('infra/docker/offline.compose.yaml'), '-f', resolve('test/edge/offline.compose.yaml'), '--profile', 'edge', ...args)
+  try {
+    offline('up', '-d', '--pull', 'never', '--wait', '--wait-timeout', '120')
+    let id = offline('ps', '-q', 'edge-gateway')
+    assert.equal(docker('inspect', '--format', '{{.HostConfig.NetworkMode}}', id), 'none')
+    const handle = docker('exec', id, 'node', '--input-type=module', '-e', `
+      import assert from 'node:assert/strict';
+      const post = async (path, body, token) => { const response = await fetch('http://127.0.0.1:4000/api/offline/' + path, { method: 'POST', headers: { 'content-type': 'application/json', ...(token ? {authorization: 'Local ' + token} : {}) }, body: JSON.stringify(body) }); assert.ok(response.ok); return response.json(); };
+      const session = await post('sessions', {});
+      const attempt = { attemptId: crypto.randomUUID(), startedEventId: crypto.randomUUID(), challengeId: 'science', challengeVersion: '1.0.0' };
+      await post('attempts', attempt, session.token);
+      const event = { eventId: crypto.randomUUID(), sequence: 2, type: 'answer_submitted', payload: { correct: true } };
+      await post('events', {attemptId: attempt.attemptId, event}, session.token);
+      process.stdout.write(JSON.stringify({ session, attempt, event }));
+    `)
+    offline('down', '--timeout', '5')
+    offline('up', '-d', '--pull', 'never', '--wait', '--wait-timeout', '120')
+    id = offline('ps', '-q', 'edge-gateway')
+    docker('exec', id, 'node', '--input-type=module', '-e', `
+      import assert from 'node:assert/strict';
+      const {session,attempt,event} = JSON.parse(process.argv[1]);
+      const headers = {'content-type': 'application/json', authorization: 'Local ' + session.token};
+      const base = 'http://127.0.0.1:4000/api/offline/';
+      const status = await (await fetch(base + 'status', {headers})).json();
+      assert.equal(status.pendingEvents, 2); assert.equal(status.state, 'login_required');
+      const replay = await fetch(base + 'events', {method:'POST',headers,body:JSON.stringify({attemptId:attempt.attemptId,event})});
+      assert.equal(replay.status,200); assert.equal((await replay.json()).duplicate,true);
+    `, handle)
+    docker('exec', id, 'node', 'apps/api/dist/modules/sync/cli.js', 'backup', '/data/offline/progress.sqlite', '/data/offline/backup.sqlite')
+    const checked = JSON.parse(docker('exec', id, 'node', 'apps/api/dist/modules/sync/cli.js', 'check', '/data/offline/backup.sqlite'))
+    assert.equal(checked.events, 2)
+  } finally { offline('down', '-v', '--timeout', '5') }
+})

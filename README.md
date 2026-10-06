@@ -215,4 +215,6 @@ integration is included. See [MQTT runbook](docs/runbooks/robot-control-mqtt.md)
 [Build multi-platform, perfiles cloud/edge/simulator y operación Jetson](docs/runbooks/edge-arm64.md).
 El runtime actual sirve Vite y gateway local en un proceso, con imágenes precargadas,
 healthchecks, límites y actualización con rollback. Incluye Draco local para arranque
-sin Internet; no modifica el launcher del robot ni implementa sincronización offline.
+sin Internet; no modifica el launcher del robot. La cola SQLite de progreso y su
+sincronización requieren activación explícita; ver [protocolo](docs/architecture/offline-sync.md)
+y [operación y recuperación](docs/runbooks/offline-progress-sync.md).

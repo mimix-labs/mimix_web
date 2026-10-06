@@ -1,3 +1,4 @@
+import { addSyncPaths } from './modules/sync/openapi.js'
 import type { RobotControlTransport } from '@mimix/robot-protocol'
 import { addRobotControlPaths } from './modules/robot-control/openapi.js'
 import type { MediaProvider } from '@mimix/media-contract'
@@ -38,7 +39,7 @@ export async function createApi(config: ApiConfig, dependencies: IdentityDepende
     },
     requestIdHeader: false,
   })
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule.register(config, services.learning, services.close, services.campaigns, services.voice, services.devices, services.media, services.robot), adapter, {
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule.register(config, services.learning, services.close, services.campaigns, services.voice, services.devices, services.media, services.robot, services.sync), adapter, {
     logger: config.logLevel === 'silent' ? false : new ConsoleLogger({ json: true, colors: false }),
     abortOnError: false,
   })
@@ -77,6 +78,7 @@ export async function createApi(config: ApiConfig, dependencies: IdentityDepende
     .addApiKey({ type: 'apiKey', in: 'header', name: 'X-Mimix-Control-Token', description: 'Deprecated operator credential; distinct from bridge token.' }, 'ControlToken')
     .build()), config)
   addLearningPaths(document, config)
+  addSyncPaths(document, config)
   addCampaignPaths(document, config)
   addVoicePaths(document, config)
   addDevicePaths(document, config)
