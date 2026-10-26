@@ -10,7 +10,12 @@
 - Convex autorizado si hace falta; no necesario para el alcance público actual.
 - Verificado: 6/6 pruebas unitarias, build Vite y 4/4 pruebas Chromium. Capturas
   escritorio/móvil inspeccionadas; cámara simulada sin errores ni llamadas a API.
-- Publicación en curso; ver docs/deployment-vercel-classic.md y PLAN.md.
+- Publicado y verificado en https://mimix-classic.vercel.app; deployment
+  `dpl_3QNenUXuik96JPTCWBi6kadthL3r`, commit `95cc913`.
+- Las mismas 4 pruebas Chromium pasaron contra producción; cabeceras HTTPS/cámara
+  y rutas verificadas. Revisión independiente sin hallazgos accionables.
+- `npm audit --omit=dev`: cero vulnerabilidades. Hardware/gestos reales pendientes
+  de uso con webcam física; no se habilitó Convex ni robot remoto.
 
 
 Actualizado: 27 de julio de 2026.

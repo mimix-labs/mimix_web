@@ -68,3 +68,23 @@ No habilitar una API pública anónima de movimiento para activar esta demo.
 
 El backend histórico permanece como fuente, pero no se instala ni se ejecuta en
 Vercel. Las instrucciones Railway de documentos anteriores son referencia histórica.
+
+## Publicación verificada — 26 de octubre de 2026
+
+URL: https://mimix-classic.vercel.app
+
+Commit desplegado: `95cc91328e6ea3fed4afc0c4209a2050a0454b0e`.
+Deployment: `dpl_3QNenUXuik96JPTCWBi6kadthL3r`, estado READY, production.
+Rama fuente: https://github.com/mimix-labs/mimix_web/tree/codex/mimix-classic-vercel
+
+6/6 pruebas unitarias, 4/4 Chromium locales y 4/4 Chromium en la URL pública.
+Se inspeccionaron capturas de mundo escritorio/móvil y ambos retos. HTML,
+configuración y modelos sirven 200; `/api/health` sirve 404. Cabeceras de cámara,
+frame, referrer y nosniff verificadas. El modo browser persistió en URLs robot.
+La revisión independiente no encontró problemas accionables. El equipo Vercel
+quedó configurado con Node 22 para próximos builds; la salida publicada es estática.
+
+`npm audit --omit=dev` no reporta vulnerabilidades de dependencias de producción.
+Se conservan los avisos de dependencias históricas de desarrollo/build y del chunk
+principal de más de 500 kB; no se actualizaron librerías para este rescate visual.
+Los gestos reales y el control físico no se certificaron con esta cámara simulada.

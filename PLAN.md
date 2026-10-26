@@ -31,8 +31,8 @@ El usuario autorizó proceder y usar Convex solo si resulta necesario.
 - [x] Probar navegador real: mundo y controles, retos, interacción de formas,
       selección de elementos, cámara simulada y ausencia de tráfico `/api`/SSE.
 - [x] Documentar procedencia, operación, límites y validación.
-- [ ] Guardar y publicar únicamente la rama clásica y desplegar el proyecto nuevo.
-- [ ] Verificar la URL pública y entregar enlaces al sitio y a su fuente.
+- [x] Guardar y publicar únicamente la rama clásica y desplegar el proyecto nuevo.
+- [x] Verificar la URL pública y entregar enlaces al sitio y a su fuente.
 
 ## Aceptación
 
@@ -40,3 +40,15 @@ Tres entradas cargan desde un servidor estático; recursos y modelos responden;
 la cámara procesa en navegador y `?vision=robot` no activa Jetson en este build.
 Los adaptadores no abren conexiones al backend. Las pruebas automáticas no
 sustituyen una calibración real de gestos con una persona y su webcam.
+
+## Resultado verificado
+
+- Sitio: https://mimix-classic.vercel.app
+- Commit desplegado: `95cc91328e6ea3fed4afc0c4209a2050a0454b0e`.
+- Deployment: `dpl_3QNenUXuik96JPTCWBi6kadthL3r`, production, READY.
+- 6/6 pruebas unitarias; 4/4 pruebas Chromium locales y 4/4 contra producción.
+- HTTP 200 en mundo/retos/modelos/config; `/api/health` devuelve 404 esperado.
+- Cabecera de cámara verificada; revisión independiente sin hallazgos accionables.
+- `npm audit --omit=dev` sin vulnerabilidades; las dependencias de build históricas
+  mantienen avisos npm y el bundle Vite conserva su advertencia de tamaño.
+- Documentación de cierre posterior al commit desplegado; no cambia sus assets.
