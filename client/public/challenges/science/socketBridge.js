@@ -2,6 +2,7 @@
 // sin requerir el servidor de Runabit ni una conexión física a Arduino.
 window.io = () => ({
   emit(event, payload) {
+    if (globalThis.MIMIX_STATIC) return
     fetch('/api/challenges/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

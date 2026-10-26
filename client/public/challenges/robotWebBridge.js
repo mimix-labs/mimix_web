@@ -3,6 +3,7 @@
 import { getVisionOverrideQuery } from './robotVision.js'
 
 export function startRobotWebBridge(challenge) {
+  if (globalThis.MIMIX_STATIC) return { updateContext() {}, stop() {} }
   let context = { page: 'challenge', challenge, selectedObject: null }
 
   async function publishContext() {

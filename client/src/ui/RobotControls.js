@@ -23,6 +23,7 @@ function createControllerId() {
 
 export class RobotControls {
   constructor() {
+    if (globalThis.MIMIX_STATIC) return
     this.ui = document.getElementById('ui')
     if (!this.ui) return
 

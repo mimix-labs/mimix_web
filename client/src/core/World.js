@@ -36,7 +36,7 @@ export class World {
       Object.entries(LOAD_BYTES).map(([key, total]) => [key, { loaded: 0, total }]),
     )
     this._onLoadingProgress = onLoadingProgress
-    const requestedVision = new URLSearchParams(window.location.search).get('vision')
+    const requestedVision = globalThis.MIMIX_STATIC ? 'browser' : new URLSearchParams(window.location.search).get('vision')
     const visionQuery = ['browser', 'robot'].includes(requestedVision)
       ? `?vision=${requestedVision}`
       : ''

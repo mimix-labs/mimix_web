@@ -8,6 +8,7 @@ export class RobotWebBridge {
   }
 
   start() {
+    if (globalThis.MIMIX_STATIC) return
     this.publishContext()
     this.stream = new EventSource('/api/robot/commands/stream')
     this.stream.addEventListener('robot-command', (event) => {
@@ -29,6 +30,7 @@ export class RobotWebBridge {
   }
 
   async publishContext() {
+    if (globalThis.MIMIX_STATIC) return
     try {
       await fetch('/api/robot/context', {
         method: 'POST',

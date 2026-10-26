@@ -1,6 +1,7 @@
 const VISION_OVERRIDES = new Set(['browser', 'robot']);
 
 export function getVisionOverride() {
+  if (globalThis.MIMIX_STATIC) return 'browser';
   const requestedMode = new URLSearchParams(window.location.search).get('vision');
   return VISION_OVERRIDES.has(requestedMode) ? requestedMode : null;
 }
@@ -13,6 +14,7 @@ export function getVisionOverrideQuery() {
 // La fuente de visión se configura al desplegar el backend. Los parámetros de
 // URL se mantienen únicamente como overrides explícitos para depuración.
 export async function resolveVisionMode() {
+  if (globalThis.MIMIX_STATIC) return 'browser';
   const override = getVisionOverride();
   if (override === 'robot') return 'jetson';
   if (override === 'browser') return 'browser';

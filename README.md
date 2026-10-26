@@ -1,8 +1,13 @@
-# Mimix Web
+# Mimix Web · versión clásica
+
+Esta rama congela la experiencia clásica para publicarla como sitio estático en
+Vercel, sin servidor ni control físico del robot. El desarrollo de arquitectura
+continúa por separado. Consulta [publicación clásica](docs/deployment-vercel-classic.md)
+para instalación, pruebas y límites; las instrucciones Railway de abajo son históricas.
 
 Mimix es una experiencia educativa 3D para explorar Matemáticas y Ciencias junto a Wall-E. Funciona en una laptop usando MediaPipe en el navegador y también puede conectarse a una NVIDIA Jetson para recibir detección de manos y comandos del robot.
 
-**Demo:** [mimix-web-production.up.railway.app](https://mimix-web-production.up.railway.app)
+**Demo clásica:** [mimix-classic.vercel.app](https://mimix-classic.vercel.app)
 
 ## Características
 

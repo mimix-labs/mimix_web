@@ -1,5 +1,18 @@
 # Progreso de Mimix Web
 
+## Publicación clásica independiente — 26 de octubre de 2026
+
+- Worktree y rama `codex/mimix-classic-vercel` desde `c3fa02c`; frontend idéntico
+  al commit `99a8f4a` mencionado en Railway. Checkout de arquitectura nueva intacto.
+- Modo estático en mundo y ambos retos: cámara local, cero API/SSE/eventos remotos
+  y control Jetson desactivado. Modelos y experiencia visual originales conservados.
+- Proyecto Vercel independiente `mimix-classic`, raíz `client`, salida `dist`.
+- Convex autorizado si hace falta; no necesario para el alcance público actual.
+- Verificado: 6/6 pruebas unitarias, build Vite y 4/4 pruebas Chromium. Capturas
+  escritorio/móvil inspeccionadas; cámara simulada sin errores ni llamadas a API.
+- Publicación en curso; ver docs/deployment-vercel-classic.md y PLAN.md.
+
+
 Actualizado: 27 de julio de 2026.
 
 ## Estado actual
