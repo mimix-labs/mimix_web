@@ -40,12 +40,12 @@ export default function World({ challengeOrigin }: { challengeOrigin: string }) 
     }
   }, [challengeOrigin])
 
-  const state = phase === 'error'
-    ? { label: 'Error', announcement: 'No pudimos cargar la experiencia. Usa Volver a intentar para recuperarla.' }
-    : !online && phase === 'ready'
-      ? { label: 'Sin conexión', announcement: 'Sin conexión. El mundo cargado sigue disponible; los retos y servicios en vivo pueden no responder.' }
-      : !online
-        ? { label: 'Sin conexión', announcement: 'Sin conexión durante la carga. Recupera la conexión para terminar de preparar el mundo.' }
+  const state = !online && phase === 'ready'
+    ? { label: 'Sin conexión', announcement: 'Sin conexión. El mundo cargado sigue disponible; los retos y servicios en vivo pueden no responder.' }
+    : !online
+      ? { label: 'Sin conexión', announcement: 'Sin conexión durante la carga. Recupera la conexión para terminar de preparar el mundo.' }
+      : phase === 'error'
+        ? { label: 'Error', announcement: 'No pudimos cargar la experiencia. Usa Volver a intentar para recuperarla.' }
       : phase === 'ready'
         ? { label: 'Listo', announcement: 'Mundo listo. Usa WASD o las flechas para mover a Wall-E.' }
         : { label: 'Cargando', announcement: 'Preparando el mundo 3D de Mimix.' }

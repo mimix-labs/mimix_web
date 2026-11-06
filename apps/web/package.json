@@ -23,7 +23,10 @@
     "@mimix/contracts": "workspace:*",
     "@mimix/challenge-mathematics": "workspace:*",
     "@mimix/challenge-science": "workspace:*",
-    "@mimix/world": "workspace:*"
+    "@mimix/world": "workspace:*",
+    "@clerk/localizations": "^4.24.6",
+    "@mimix/cloud": "workspace:*",
+    "convex": "^1.49.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.0",

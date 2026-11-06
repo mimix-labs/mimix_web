@@ -24,7 +24,8 @@
         "DATABASE_URL",
         "LOG_LEVEL",
         "NODE_ENV",
-        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
+        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+        "NEXT_PUBLIC_CONVEX_URL"
       ],
       "dependsOn": [
         "^build"
@@ -97,7 +98,9 @@
         "public/vendor/draco/**"
       ],
       "env": [
-        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
+        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+        "NEXT_PUBLIC_CONVEX_URL",
+        "MIMIX_DATA_BACKEND"
       ],
       "passThroughEnv": [
         "MIMIX_WEB_AUTH_MODE",
@@ -105,7 +108,8 @@
         "MIMIX_LEGACY_ORIGIN",
         "CLERK_SECRET_KEY",
         "CLERK_JWT_KEY",
-        "MIMIX_WORLD_MODE"
+        "MIMIX_WORLD_MODE",
+        "MIMIX_DATA_BACKEND"
       ]
     }
   }
