@@ -5,6 +5,7 @@ RUN npm install --global pnpm@10.34.6
 # Cache dependency installation independently from application edits.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json ./apps/web/package.json
+COPY apps/cloud/package.json ./apps/cloud/package.json
 COPY packages/character-contract/package.json ./packages/character-contract/package.json
 COPY packages/agent-core/package.json ./packages/agent-core/package.json
 COPY characters/wall-e/package.json ./characters/wall-e/package.json

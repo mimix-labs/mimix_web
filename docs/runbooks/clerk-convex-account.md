@@ -74,6 +74,22 @@ no precargan redirecciones anónimas; los controles de acceso son reactivos en c
 El componente Clerk se muestra en español. Cargar la cuenta no crea intentos
 ni declara completado un reto.
 
+## Evidencia del incremento
+
+PR: https://github.com/mimix-labs/mimix_web/pull/24. Preview protegido:
+https://mimix-platform-dffcppaz9-edwarmkaers-projects.vercel.app.
+
+En una copia limpia de los archivos del PR: instalación congelada, lint completo,
+build de 12 tareas, 13 pruebas web y 10 pruebas Convex correctos. Las 11 pruebas
+Chromium del shell/mundo también pasan, incluida pérdida de conexión durante carga.
+El aviso de red tiene prioridad sobre el rechazo de la descarga que esa caída provoca.
+El Dockerfile web incluye el manifest de `apps/cloud` en la capa de dependencias.
+
+En navegador, dos cuentas reservadas Clerk Test mode reciben UUID distintos y datos
+propios. Tras salir y volver a entrar desde Vercel, Alice conserva su UUID interno y
+recupera el intento de desarrollo creado previamente. Esto comprueba el recorrido
+Vercel → Clerk → Convex; Google OAuth personal y producción quedan sin recorrer.
+
 ## Publicación y rollback
 
 Validar primero un preview protegido del proyecto `mimix-platform`. Conectar la
