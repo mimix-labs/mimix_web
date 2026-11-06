@@ -1,0 +1,4 @@
+{
+  "compilerOptions": {"target":"ES2023","lib":["ES2023","dom"],"module":"ESNext","moduleResolution":"Bundler","strict":true,"noEmit":true,"skipLibCheck":true,"types":["vite/client","node"],"resolveJsonModule":true,"allowSyntheticDefaultImports":true},
+  "include":["convex/**/*.ts","test/**/*.ts","vitest.config.ts"]
+}

@@ -9,6 +9,7 @@ export default [
       '**/.next/**',
       '**/next-env.d.ts',
       '**/node_modules/**',
+      'apps/cloud/convex/_generated/**',
       'client/public/challenges/**/vendor/**',
       'apps/web/public/vendor/**',
       'graphify-out/**',
@@ -18,8 +19,8 @@ export default [
     ],
   },
   js.configs.recommended,
-  ...tseslint.configs.recommended.map(config => ({ ...config, files: ['apps/api/**/*.ts', 'apps/web/**/*.{ts,tsx}', 'server/src/*.d.ts', 'packages/**/*.ts', 'characters/**/*.ts', 'tools/**/*.ts'] })),
-  { files: ['apps/api/**/*.{ts,js}', 'apps/web/**/*.{ts,tsx,js,mjs}', 'packages/**/*.{ts,js,mjs}', 'characters/**/*.{ts,js}', 'tools/**/*.{ts,js}', 'client/test/**/*.js', 'client/scripts/*.mjs'], languageOptions: { globals: globals.node } },
+  ...tseslint.configs.recommended.map(config => ({ ...config, files: ['apps/api/**/*.ts', 'apps/cloud/**/*.ts', 'apps/web/**/*.{ts,tsx}', 'server/src/*.d.ts', 'packages/**/*.ts', 'characters/**/*.ts', 'tools/**/*.ts'] })),
+  { files: ['apps/api/**/*.{ts,js}', 'apps/cloud/**/*.{ts,js}', 'apps/web/**/*.{ts,tsx,js,mjs}', 'packages/**/*.{ts,js,mjs}', 'characters/**/*.{ts,js}', 'tools/**/*.{ts,js}', 'client/test/**/*.js', 'client/scripts/*.mjs'], languageOptions: { globals: globals.node } },
   { files: ['packages/challenge-{browser,mathematics,science}/src/*.js'], languageOptions: { globals: globals.browser } },
   {
     files: ['server/**/*.js', 'test/**/*.js', 'infra/docker/*.cjs', '*.js'],

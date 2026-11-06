@@ -2,6 +2,7 @@ import 'server-only'
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { createApiClient } from './api'
+import { createConvexApiClient } from './convex-api'
 import { webConfig } from './config'
 export async function sessionApi() {
   const config = webConfig()
@@ -9,5 +10,7 @@ export async function sessionApi() {
   const session = await auth()
   const token = session.isAuthenticated ? await session.getToken() : null
   if (!token) redirect('/acceso')
-  return createApiClient(config.apiOrigin, token)
+  return config.dataBackend === 'convex'
+    ? createConvexApiClient(config.convexUrl!, token)
+    : createApiClient(config.apiOrigin, token)
 }
