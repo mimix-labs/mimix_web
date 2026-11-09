@@ -13,7 +13,11 @@
       "import": "./src/host.js"
     },
     "./styles.css": "./src/ui/styles.css",
-    "./assets": "./scripts/assets.mjs"
+    "./assets": "./scripts/assets.mjs",
+    "./welcome": {
+      "types": "./src/welcome.d.ts",
+      "import": "./src/welcome.js"
+    }
   },
   "scripts": {
     "build": "node scripts/build.mjs",

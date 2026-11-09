@@ -9,6 +9,7 @@ export class CharacterController {
   constructor({ mesh, animations, input, proceduralAnimator = null, collisionWorld = null }) {
     this.mesh   = mesh
     this.input  = input
+    this.animations = animations
 
     this._mixer   = new THREE.AnimationMixer(mesh)
     this._actions = {}  // name → AnimationAction
@@ -129,4 +130,6 @@ export class CharacterController {
   playAction(name) {
     return this._proceduralAnimator?.play(name) ?? false
   }
+
+  get previewAnimator() { return this._proceduralAnimator }
 }

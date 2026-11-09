@@ -1,0 +1,1 @@
+export function mountWelcome(canvas: HTMLCanvasElement, options?: { presentation?: 'center' | 'side' }): { ready: Promise<void>; setPresentation(presentation: 'center' | 'side'): void; dispose(): void }

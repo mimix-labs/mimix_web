@@ -71,11 +71,13 @@ export class Engine {
     const key = new THREE.DirectionalLight(0xffe680, 2.0);
     key.position.set(15, 30, 10);
     this.scene.add(key);
+    this.keyLight = key;
 
     // Subtle cool rim light from below (floating island atmosphere)
     const rim = new THREE.DirectionalLight(0x4466aa, 0.4);
     rim.position.set(-10, -10, -10);
     this.scene.add(rim);
+    this.rimLight = rim;
   }
 
   // Escucha el evento {resize} de la venta y reajusta cámara y renderer

@@ -7,6 +7,11 @@ import { CameraFollower } from '../systems/CameraFollower.js'
 import { IslandCameraCue } from '../systems/IslandCameraCue.js'
 import { CharacterManager } from '../entities/CharacterManager.js'
 import { StartRing } from '../fx/StartRing.js'
+import { SpaceParticles } from '../fx/SpaceParticles.js'
+import { GalaxyBackground } from '../fx/GalaxyBackground.js'
+import { CharacterSpaceLighting } from '../fx/CharacterSpaceLighting.js'
+import { SpaceWordmark } from '../fx/SpaceWordmark.js'
+import { WorldIntro } from '../systems/WorldIntro.js'
 import { ChallengeZone } from '../scenes/ChallengeZone.js'
 import { AssetLoader, disposeObject } from './assets.js'
 
@@ -30,8 +35,15 @@ const CHALLENGE_LAYOUT = {
 }
 
 export class World {
-  constructor({ canvas, root, host, onLoadingProgress = null }) {
+  constructor({ canvas, root, host, onLoadingProgress = null, startInSpace = false, onPhaseChange = null }) {
+    this.phase = 'loading'
+    this.startInSpace = startInSpace
+    this.onPhaseChange = onPhaseChange
+    this.intro = null
+    this.spaceLighting = null
+    this.wordmark = null
     this._started = false
+    this.interactionEnabled = true
     this._loadingProgress = Object.fromEntries(
       Object.entries(LOAD_BYTES).map(([key, total]) => [key, { loaded: 0, total }]),
     )
@@ -42,6 +54,7 @@ export class World {
     this.engine = new Engine(canvas)
     this.loop      = new Loop(this.engine)
     this.input     = new InputSystem(root)
+    if (startInSpace) this.input.setEnabled(false)
     this.steamMap  = new SteamMap(this.engine.scene, {
       assets: this.assets,
       onAssetProgress: (asset, event) => this._reportAssetProgress(asset, event),
@@ -49,6 +62,9 @@ export class World {
     // Loading begins in the map constructor, before the character import resolves.
     this.steamMap.ready.catch(() => {})
     this.startRing = new StartRing(this.engine.scene)
+    this.spaceParticles = startInSpace ? null : new SpaceParticles(this.engine.scene, { renderer: this.engine.renderer })
+    this.galaxy = startInSpace ? new GalaxyBackground(this.engine.scene, { renderer: this.engine.renderer }) : null
+    this.spaceBackground = this.galaxy ?? this.spaceParticles
     this.cameraFollower = new CameraFollower({
       camera: this.engine.camera,
       controls: this.engine.controls,
@@ -93,21 +109,33 @@ export class World {
     })
 
     this.loop.add(this.steamMap)
-    this.loop.add(this.characters)
-    this.loop.add(this.cameraFollower)
+    this.loop.add({ update: delta => { if (!this.intro?.active) this.characters.update(delta) } })
+    this.loop.add({ update: delta => { if (!this.intro?.active) this.cameraFollower.update(delta) } })
     if (ENABLE_ISLAND_CAMERA_CUES) {
       this.loop.add(this.mathCameraCue)
       this.loop.add(this.scienceCameraCue)
     }
     this.loop.add(this.startRing)
-    this.loop.add(this.mathChallenge)
-    this.loop.add(this.scienceChallenge)
+    this.loop.add(this.spaceBackground)
+    this.loop.add({ update: (delta, elapsed) => {
+      if (!this.intro?.active) {
+        this.mathChallenge.update(delta, elapsed)
+        this.scienceChallenge.update(delta, elapsed)
+      }
+    } })
+    this.loop.add({ update: delta => this.intro?.update(delta) })
+    this.loop.add({ update: () => this.spaceLighting?.update(this.galaxy?.warpIntensity, this.galaxy?.reducedMotion) })
+    this.loop.add({ update: delta => this.wordmark?.update(delta, this.intro?.reducedMotion, this.galaxy?.warpIntensity) })
   }
 
   dispose() {
     if (this.disposed) return
     this.disposed = true
     this.loop.stop()
+    this.intro?.dispose()
+    this.spaceLighting?.dispose()
+    this.wordmark?.dispose()
+    this.spaceBackground.dispose()
     this.input.dispose()
     this.assets.dispose()
     this.characters.controller?.mixer?.stopAllAction()
@@ -116,7 +144,6 @@ export class World {
     this.engine.dispose()
   }
 
-  // Called from main.js once walle.glb is available
   async loadWallE() {
     const { WALLE } = await import('../entities/walle/WallE.js')
     if (this.disposed) return
@@ -136,7 +163,90 @@ export class World {
     this.steamMap.snapToGround(controller.mesh.position)
     this.cameraFollower.follow(this.characters.active)
     controller.playAction('greeting')
+    if (this.startInSpace) {
+      this.intro = new WorldIntro({
+        scene: this.engine.scene,
+        character: this.characters.active,
+        animations: controller.animations,
+        poseAnimator: controller.previewAnimator,
+        canvas: this.engine.canvas,
+        camera: this.engine.camera,
+        controls: this.engine.controls,
+        input: this.input,
+        onTransition: progress => {
+          this.spaceBackground.setTransitionProgress(progress)
+          this.spaceLighting?.setTransitionProgress(progress)
+          this.wordmark?.setTransitionProgress(progress)
+        },
+        onComplete: () => {
+          this.spaceLighting?.dispose()
+          this.wordmark?.dispose()
+          this.cameraFollower.follow(this.characters.active)
+          this._setPhase('exploring')
+        },
+      })
+      this.spaceLighting = new CharacterSpaceLighting({ scene: this.engine.scene, character: this.characters.active, camera: this.engine.camera, front: this.engine.keyLight, rim: this.engine.rimLight })
+      this.wordmark = new SpaceWordmark({ scene: this.engine.scene, camera: this.engine.camera, anchor: this.intro.previewTarget, canvas: this.engine.canvas })
+      this._setPhase('intro')
+    } else this._setPhase('exploring')
     this._startWhenReady()
+  }
+
+  _setPhase(phase) {
+    this.phase = phase
+    this.galaxy?.setInteractive(phase === 'intro')
+    if (phase === 'exploring') this.setInteractionEnabled(this.interactionEnabled)
+    this.onPhaseChange?.(phase)
+  }
+
+  setInteractionEnabled(enabled) {
+    if (this.disposed) return
+    this.interactionEnabled = enabled
+    this.input.setEnabled(enabled && this.phase === 'exploring')
+    this.engine.controls.enabled = enabled && this.phase === 'exploring'
+    if (this._started) {
+      if (enabled) this.loop.start()
+      else this.loop.stop()
+    }
+  }
+
+  captureView() {
+    if (this.disposed || this.phase !== 'exploring') return null
+    return {
+      position: this.characters.active.position.toArray(),
+      rotation: this.characters.active.rotation.y,
+      camera: this.engine.camera.position.toArray(),
+      target: this.engine.controls.target.toArray(),
+    }
+  }
+
+  restoreView(view) {
+    if (!view || this.disposed || this.phase !== 'exploring') return false
+    const vector = value => Array.isArray(value) && value.length === 3 && value.every(n => Number.isFinite(n) && Math.abs(n) < 500)
+    if (![view.position, view.camera, view.target].every(vector) || !Number.isFinite(view.rotation)) return false
+    const [x, , z] = view.position
+    const ground = this.steamMap.getGroundHeight(x, z)
+    if (ground === null) return false
+    const camera = new THREE.Vector3(...view.camera), target = new THREE.Vector3(...view.target)
+    const distance = camera.distanceTo(target)
+    if (distance < this.engine.controls.minDistance || distance > this.engine.controls.maxDistance) return false
+    this.characters.active.position.set(x, ground + 0.02, z)
+    this.characters.active.rotation.y = view.rotation
+    this.engine.camera.position.copy(camera)
+    this.engine.controls.target.copy(target)
+    this.cameraFollower.follow(this.characters.active)
+    // A pagehide snapshot can be inside the portal that launched a challenge.
+    // Restoring it must allow the user to leave before that portal opens again.
+    this.mathChallenge.requireExitBeforeEntry()
+    this.scienceChallenge.requireExitBeforeEntry()
+    this.engine.render()
+    return true
+  }
+
+  startExploring() {
+    if (this.disposed || this.phase !== 'intro') return false
+    this._setPhase('transition')
+    return this.intro.start()
   }
 
   _reportAssetProgress(asset, event) {
@@ -162,7 +272,8 @@ export class World {
   _startWhenReady() {
     if (!this._started) {
       this._started = true
-      this.loop.start()
+      if (this.interactionEnabled) this.loop.start()
+      else this.engine.render()
     }
     this._onLoadingProgress?.({ progress: 100, message: '¡Todo listo!' })
   }

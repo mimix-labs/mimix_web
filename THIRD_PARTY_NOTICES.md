@@ -24,3 +24,14 @@ Copyright (c) 2026 Philip Zhao. Licencia MIT.
 > LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 > SOFTWARE.
+
+## React Bits Galaxy
+
+El shader Galaxy está adaptado a Three.js desde React Bits, Copyright (c) 2026
+David Haz. La licencia MIT + Commons Clause completa acompaña a la implementación en
+`packages/world/src/fx/reactbits/LICENSE.md`.
+
+## Lilita One
+
+Los contornos del título MIMIX derivan de Lilita One, distribuida bajo SIL Open
+Font License 1.1. Avisos y licencia en `packages/world/src/fx/fonts/OFL.txt`.

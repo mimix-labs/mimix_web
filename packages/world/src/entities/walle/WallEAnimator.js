@@ -53,6 +53,13 @@ export class WallEAnimator {
     return true
   }
 
+  reset() {
+    this.action = null
+    this.expression = null
+    this.idleElapsed = 0
+    this._resetPose()
+  }
+
   // La f\u00edsica del personaje actualiza esta altura; las animaciones solo
   // aplican una peque\u00f1a oscilaci\u00f3n visual alrededor de ella.
   setGroundHeight(height) {
