@@ -1,0 +1,69 @@
+.experience-shell{position:relative;isolation:isolate;min-height:100svh;background:#0d1117;color:var(--text);--space-gold:#d9b400;--space-ink:#443b20;--space-border:#857028;--space-shadow:inset 2px 2px 0 #edcf49,inset -3px -4px 0 #b49118,0 5px 0 #625431,0 9px 0 #353e60,2px 12px 14px #05091280}
+.experience-main{position:relative;max-width:none;min-height:100svh;padding:0;margin:0;pointer-events:none}
+.experience-main>*{pointer-events:auto}
+.experience-backdrop{position:fixed;inset:0;z-index:0}
+.experience-shell-access .experience-main{padding:clamp(72px,15.75svh,126px) max(24px,calc((100vw - 1168px)/2)) 48px 0}
+.space-home{position:absolute;inset:0;background:#0d1117;overflow:hidden}
+.space-home canvas{display:block;width:100%;height:100%}
+.space-home-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.welcome-actions{position:absolute;top:81.25svh;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:stretch;gap:8px;width:min(328px,calc(100vw - 48px));padding:0}
+.space-button{appearance:none;display:flex;align-items:center;justify-content:center;min-height:44px;min-width:0;margin:0;padding:10px 16px;border:0;border-radius:16px;font:600 17px/1.45 Inter,ui-sans-serif,system-ui,sans-serif;text-align:center;text-decoration:none;cursor:pointer;touch-action:manipulation;transition:transform 180ms ease-out,background-color 180ms ease-out;color:var(--text)}
+.space-button-primary{min-height:56px;border:3px solid var(--space-border,#857028);border-radius:17px;background:var(--space-gold,#d9b400);color:var(--space-ink,#443b20);box-shadow:var(--space-shadow,inset 2px 2px 0 #edcf49,inset -3px -4px 0 #b49118,0 5px 0 #625431,0 9px 0 #353e60,2px 12px 14px #05091280);margin-bottom:9px}
+.space-button-primary:hover{transform:translateY(-3px);background:#e8c11b}
+.space-button-primary:active{transform:translateY(3px) scale(.96)}
+.space-button-quiet{background:transparent}
+.space-button-quiet:hover{background:#ffffff0a}
+.space-button-outline{background:#0b111b;border:1px solid #526174;border-radius:12px}
+.space-button-outline:hover{background:#1c2938}
+.space-button:focus-visible,.experience-panel a:focus-visible,.experience-panel input:focus-visible{outline:3px solid #8fd8ff;outline-offset:8px}
+.space-button:disabled{opacity:.6;cursor:wait;transform:none}
+.space-status{position:absolute;top:41%;left:50%;transform:translateX(-50%);text-align:center;font-size:14px;color:var(--muted);max-width:280px;width:calc(100% - 32px)}
+.space-status-side{left:25%}
+.space-status p{margin:12px 0}
+.space-status .space-button{margin:auto;font-size:14px}
+.space-fallback-mark{font-weight:900;font-size:clamp(40px,8vw,90px);color:var(--space-gold);letter-spacing:.04em}
+.experience-panel{position:relative;z-index:220;width:432px;max-width:calc(100vw - 48px);height:auto;margin-left:auto;padding:32px;background:var(--raised);border-radius:16px;line-height:1.4;outline:none;pointer-events:auto}
+.experience-panel h1{margin:0;font-size:24px;line-height:1.4;font-weight:600;max-width:none}
+.experience-panel p{margin:0}
+.account-state p{color:var(--muted)}
+.account-state{display:flex;flex-direction:column;gap:16px}
+.account-state .space-button{width:100%}
+.account-identity{display:flex;flex-direction:column;gap:4px;overflow-wrap:anywhere}
+.account-identity strong{font-size:18px;font-weight:600}
+.account-identity span{font-size:14px;color:var(--muted)}
+.account-return{width:100%;margin-top:16px;font-size:16px}
+.experience-world-controls{position:fixed;top:16px;left:24px;right:auto;max-width:calc(100vw - 196px);z-index:120;display:flex;gap:12px;padding:8px;border-radius:16px;background:#0b111be6;backdrop-filter:blur(12px)}
+.experience-world-controls .space-button{font-size:14px}
+.experience-skip{z-index:400}
+.experience-loading{position:fixed;inset:40% 0 auto;text-align:center;color:var(--muted);margin:0 auto}
+/* Keep native Clerk flows, validation, legal footer and security challenges. */
+.mimix-clerk-root,.mimix-clerk-box{width:100%;max-width:100%;box-shadow:none}
+.mimix-clerk-card{width:100%;padding:0;gap:16px;border:0;border-radius:0;background:transparent;box-shadow:none}
+.mimix-clerk-title{font-size:24px;line-height:1.4;font-weight:600;margin:0;color:var(--text)}
+.mimix-clerk-subtitle{display:none}
+.mimix-clerk-input{height:48px;min-width:0;border:1px solid #526174;border-radius:10px;background:#0b111b;color:var(--text);font-size:16px}
+.mimix-clerk-label{font-size:14px;line-height:1.4;font-weight:600;color:var(--text)}
+.mimix-clerk-footer{background:transparent;box-shadow:none;padding:16px 0 0}
+.mimix-clerk-link{color:var(--focus);min-height:44px;display:inline-flex;align-items:center}
+.mimix-clerk-card .space-button{width:100%}
+.mimix-clerk-modal{max-width:min(960px,calc(100vw - 32px));max-height:calc(100dvh - 32px)}
+@media(max-width:767px){
+ .welcome-actions{top:63svh;width:calc(100vw - 48px);max-width:342px;gap:12px}
+ .experience-shell-access .experience-main{padding:248px 16px 24px}
+ .experience-panel{width:100%;max-width:none;padding:24px;margin:0}
+ .space-status-side{top:150px;left:50%;font-size:12px}
+ .space-status-side .space-fallback-mark{font-size:36px}
+ .space-status-side p{margin:4px 0}
+ .experience-world-controls{top:12px;right:auto;left:12px;max-width:calc(100vw - 84px);justify-content:space-between;gap:8px;padding:4px}
+ .experience-world-controls .space-button{font-size:12px;padding-inline:10px}
+}
+@media(prefers-reduced-motion:reduce){.space-button{transition:none}.space-button:hover,.space-button:active{transform:none}}
+.experience-panel .mimix-clerk-card .space-button-primary{border:3px solid var(--space-border);border-radius:17px;min-height:56px;background:var(--space-gold);color:var(--space-ink);box-shadow:var(--space-shadow);margin-bottom:9px}
+.experience-panel .mimix-clerk-card .space-button-outline{border:1px solid #526174;border-radius:12px;background:#0b111b;min-height:44px;color:var(--text)}
+.experience-panel .mimix-clerk-card .mimix-clerk-input{height:48px;border:1px solid #526174;border-radius:10px;background:#0b111b;font-size:16px}
+.experience-panel .mimix-clerk-card .mimix-clerk-title{text-align:left}
+.mimix-clerk-main,.mimix-clerk-form{gap:16px}
+
+.experience-panel .mimix-clerk-otp{border:1px solid #526174;background:#0b111b;color:var(--text)}
+.experience-panel .mimix-clerk-error{color:#ffb4ab;font-size:14px;line-height:1.4}
+.experience-panel .mimix-clerk-input{font-family:inherit}

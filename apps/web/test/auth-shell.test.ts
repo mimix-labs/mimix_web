@@ -46,7 +46,7 @@ test('standalone Clerk session reaches private SSR, isolates users and fails clo
   assert.ok(ready, output)
   const request = (path: string, token?: string) => fetch(base + path, { headers: token ? { authorization: `Bearer ${token}` } : {}, redirect: 'manual', signal: AbortSignal.timeout(8000) })
   const anonymous = await request('/perfil')
-  assert.equal(anonymous.status, 307, await anonymous.text())
+  assert.equal(anonymous.status, 307, await anonymous.text() + output)
   assert.equal(new URL(anonymous.headers.get('location')!, base).pathname, '/acceso')
   for (const [token, own, other] of [[alice, aliceId, bobId], [bob, bobId, aliceId]]) {
     const response = await request('/perfil', token)

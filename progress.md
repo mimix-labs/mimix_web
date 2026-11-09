@@ -1,5 +1,18 @@
 # Progreso de Mimix Web
 
+## UI-01 preparada para entrega separada — 9 de noviembre de 2026
+
+- Selección limpia sobre `7598cf3` en `feat/ui-01-platform-welcome`, apilada sobre
+  el PR #24 de servicios. Contiene bienvenida Wall-E, acceso/cuenta nativos,
+  retorno al mundo y dependencias visuales/pruebas; no integra la carrera Cuy.
+- Checkout de origen preservado. Contrato y límites en `docs/design/ui-01-delivery.md`.
+- Validaciones: install congelado, build 20/20, check secuencial 60/60 tareas
+  (281 comprobaciones entre suites), web Chromium 15/15 y mundo Chromium 7/7.
+  Corregida reentrada automática en portales al restaurar contexto, con regresión.
+- Render/mundo en `8f45b80`; la segunda unidad incluye rutas, Clerk y documentación.
+  Revisión independiente sin bloqueos tras corregir el portal. Revisión visual
+  final y producción pendientes; sin merge ni despliegue.
+
 Actualizado: 4 de octubre de 2026.
 
 ## Estado actual
