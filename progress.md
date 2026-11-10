@@ -1,5 +1,50 @@
 # Progreso de Mimix Web
 
+## Integración coordinada de PRs — 10 de noviembre de 2026
+
+- Edwar autorizó coordinar con «MIMIX · Registro de software y permisos» y
+  fusionar los PRs correctos/probados. Ese chat confirmó sin bloqueos #24/#25 y
+  compatibilidad de UI con auth, Convex, sesión y retorno; repitió 10 pruebas cloud
+  y 12 de API/config/retorno, todas correctas.
+- #24 fusionado en main como `99203b4`, después de verificar su SHA revisado y
+  ocho checks verdes. #25 y #26 apuntan ahora a main; integración en ese orden.
+- La CI anterior de UI consumió 13 minutos instalando navegadores y alcanzó su
+  límite de 15 minutos. Además, intro esperaba 0,3 s de simulación en solo cinco
+  segundos reales, incompatible con frames lentos de WebGL por software.
+- Las observaciones que dependen de frames comparten `expectRendered`, con
+  margen de 30 segundos y los mismos umbrales, imágenes y estados. No cambia
+  código de producto. Veinte casos Chromium/Firefox pasan; lint correcto.
+  UI solo se fusionará con la CI del SHA definitivo en verde.
+- Sin cambios de credenciales, producción, despliegues ni avances locales ajenos.
+
+## Retos locales y revisión de PRs — 9 de noviembre de 2026
+
+- Los portales usan `MIMIX_LEGACY_ORIGIN=http://localhost:5173`. Solo estaba
+  encendido Next; se levantó Vite en 5173 y ambas entradas oficiales responden 200.
+  No se cambian los métodos de acceso ni se integra la carrera Cuy.
+- Hay tres PRs abiertos vigentes: #24 cuenta/datos, #25 preparación de producción,
+  #26 UI. #24 y #25 tienen ocho checks verdes; #26 pasó siete y falló únicamente
+  al esperar el retorno del cursor en WebGL por software durante cinco segundos.
+- El test conserva el umbral angular y permite 30 segundos para ese asentamiento,
+  con presupuesto de caso de 120 segundos. Damping sigue usando su paso de 80 ms;
+  no cambia el movimiento de producto. Chromium/Firefox: seis casos aprobados;
+  WebKit local no arranca por dependencias del sistema ausentes (CI sí las instala).
+- El merge a main requiere la revisión y confirmación explícita de Edwar según
+  `.cursor/rules/git-workflow.mdc`; no se cierran PRs que contienen trabajo vigente.
+
+## UI-01 preparada para entrega separada — 9 de noviembre de 2026
+
+- Selección limpia sobre `7598cf3` en `feat/ui-01-platform-welcome`, apilada sobre
+  el PR #24 de servicios. Contiene bienvenida Wall-E, acceso/cuenta nativos,
+  retorno al mundo y dependencias visuales/pruebas; no integra la carrera Cuy.
+- Checkout de origen preservado. Contrato y límites en `docs/design/ui-01-delivery.md`.
+- Validaciones: install congelado, build 20/20, check secuencial 60/60 tareas
+  (281 comprobaciones entre suites), web Chromium 15/15 y mundo Chromium 7/7.
+  Corregida reentrada automática en portales al restaurar contexto, con regresión.
+- Render/mundo en `8f45b80`; la segunda unidad incluye rutas, Clerk y documentación.
+  Revisión independiente sin bloqueos tras corregir el portal. Revisión visual
+  final y producción pendientes; sin merge ni despliegue.
+
 Actualizado: 4 de octubre de 2026.
 
 ## Estado actual

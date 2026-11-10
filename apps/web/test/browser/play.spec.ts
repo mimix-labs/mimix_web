@@ -1,22 +1,27 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 test.use({ viewport: { width: 1280, height: 800 }, launchOptions: { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] } })
+async function enterWorld(page: Page) {
+  await expect(page.getByRole('button', { name: 'Play: comenzar la exploración' })).toHaveCount(0)
+  await expect(page.locator('#play-state-announcement')).toContainText('Mundo listo')
+}
 test.describe('shared Three.js world', () => {
   test.setTimeout(120000)
   test('SSR does not execute the world; browser loads it with original help and controls', async ({ page, request }) => {
-    const html = await (await request.get('/play')).text()
+    const html = await (await request.get('/mundo')).text()
     expect(html).not.toContain('<canvas')
     expect(html).not.toContain('WebGLRenderer')
     const requests: string[] = []; const errors: string[] = []
     page.on('request', request => requests.push(request.url()))
     page.on('pageerror', error => errors.push(error.message))
     await page.addInitScript(() => localStorage.setItem('mimix-onboarding-v2', 'seen'))
-    await page.goto('/play')
+    await page.goto('/mundo')
     await expect(page.locator('#canvas')).toBeVisible()
     await expect(page.locator('#world-loading')).toHaveCount(0, { timeout: 90000 })
+    await enterWorld(page)
     await expect(page.getByRole('button', { name: 'Abrir guía de uso' })).toBeVisible()
     await page.getByRole('button', { name: 'Abrir guía de uso' }).click()
-    await expect(page.getByRole('heading', { name: 'Mueve a Wall-E' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Mueve a tu personaje' })).toBeVisible()
     await page.getByRole('button', { name: 'Siguiente' }).click()
     await expect(page.getByRole('heading', { name: 'Explora la cámara' })).toBeVisible()
     await page.getByRole('button', { name: 'Comenzar' }).click()
@@ -30,7 +35,7 @@ test.describe('shared Three.js world', () => {
   })
   test('asset failure exposes retry, which can recover without changing the world', async ({ page }) => {
     await page.route('**/assets/models/islands/home.glb', route => route.fulfill({ status: 503 }))
-    await page.goto('/play')
+    await page.goto('/mundo')
     await expect(page.getByText('No pudimos cargar el mundo.', { exact: true })).toBeVisible()
     await expect(page.locator('#play-state-announcement')).toContainText('No pudimos cargar la experiencia')
     await expect(page.getByRole('button', { name: 'Volver a intentar' })).toBeVisible()
@@ -41,10 +46,11 @@ test.describe('shared Three.js world', () => {
   })
   test('exposes useful status, capability limits and a keyboard-accessible canvas alternative', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('mimix-onboarding-v2', 'seen'))
-    await page.goto('/play')
+    await page.goto('/mundo')
     await expect(page.locator('#canvas')).toBeVisible()
     await expect(page.locator('#world-loading')).toHaveCount(0, { timeout: 90000 })
 
+    await enterWorld(page)
     await expect(page.locator('#play-state-announcement')).toContainText('Mundo listo')
     await expect(page.getByLabel('Mundo 3D de Mimix')).toHaveAccessibleDescription(/Wall-E está en un mapa flotante con dos portales/)
     const cdp = await page.context().newCDPSession(page)
@@ -66,8 +72,9 @@ test.describe('shared Three.js world', () => {
   })
   test('announces offline degradation without hiding the loaded world', async ({ page, context }) => {
     await page.addInitScript(() => localStorage.setItem('mimix-onboarding-v2', 'seen'))
-    await page.goto('/play')
+    await page.goto('/mundo')
     await expect(page.locator('#world-loading')).toHaveCount(0, { timeout: 90000 })
+    await enterWorld(page)
     await expect(page.locator('#play-state-announcement')).toContainText('Mundo listo')
 
     await context.setOffline(true)
@@ -78,11 +85,13 @@ test.describe('shared Three.js world', () => {
     await expect(page.locator('.play-notice')).toContainText('El mundo cargado sigue disponible')
   })
   test('does not claim the world is loaded when connection drops during loading', async ({ page, context }) => {
-    await page.route('**/assets/models/islands/home.glb', async route => {
+    await page.route('**/assets/models/**/*.glb', async route => {
       await new Promise(resolve => setTimeout(resolve, 5_000))
       await route.continue()
     })
-    await page.goto('/play')
+    const characterDownload = page.waitForRequest(request => request.url().endsWith('/assets/models/walle/walle.glb'))
+    await page.goto('/mundo')
+    await characterDownload
     await expect(page.locator('#world-loading')).toBeVisible()
 
     await context.setOffline(true)
@@ -94,7 +103,7 @@ test.describe('shared Three.js world', () => {
   })
   test('BFCache exit releases the old canvas and restoration loads a fresh world', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('mimix-onboarding-v2', 'seen'))
-    await page.goto('/play')
+    await page.goto('/mundo')
     await expect(page.locator('#canvas')).toBeVisible()
     await expect(page.locator('#world-loading')).toHaveCount(0, { timeout: 90000 })
     await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })))
@@ -102,6 +111,28 @@ test.describe('shared Three.js world', () => {
     await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })))
     await expect(page.locator('#canvas')).toBeVisible()
     await expect(page.locator('#world-loading')).toHaveCount(0, { timeout: 90000 })
+  })
+
+  test('welcome enters the world directly and keeps the guide available', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('mimix-onboarding-v2', 'seen'))
+    await page.goto('/')
+    await expect(page.locator('.space-home')).toHaveAttribute('data-scene-state', 'ready')
+    await page.screenshot({ path: 'test-results/ui-01-clean-home.png' })
+    await page.getByRole('link', { name: 'Comenzar como invitado' }).click()
+    await expect(page.locator('#play-state-announcement')).toContainText('Mundo listo', { timeout: 90000 })
+    await expect(page).toHaveURL(/\/mundo$/)
+    await expect(page.locator('#world-loading')).toHaveCount(0, { timeout: 90000 })
+    await enterWorld(page)
+    await expect(page.getByRole('button', { name: 'Abrir guía de uso' })).toBeVisible()
+  })
+
+  test('direct world entry supports reduced motion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto('/mundo')
+    await expect(page.locator('#world-loading')).toHaveCount(0, { timeout: 90000 })
+    await enterWorld(page)
+    await expect(page.getByRole('button', { name: 'Play: comenzar la exploración' })).toBeHidden()
+    await expect(page.getByRole('button', { name: 'Abrir guía de uso' })).toBeVisible()
   })
 
 })

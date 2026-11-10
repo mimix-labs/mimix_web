@@ -1,7 +1,7 @@
 const STEPS = [
   {
     eyebrow: 'Paso 1 de 2',
-    title: 'Mueve a Wall-E',
+    title: 'Mueve a tu personaje',
     body: 'Elige cualquiera de estos dos grupos de teclas para recorrer el mapa.',
     visual: `
       <div class="control-groups">

@@ -1,6 +1,6 @@
 ---
 status: approved
-surface: play
+surface: platform-experience
 reference: docs/runbooks/evidence/ui-play/before-desktop.png
 ---
 
@@ -37,3 +37,28 @@ alternativa semántica desplegable.
 - No cubrir el mundo con un panel permanente ni competir con la guía.
 - No representar capacidades desconectadas como activas.
 - No depender solo de color, canvas o movimiento para transmitir estado.
+
+## UI-01: bienvenida y acceso de la plataforma
+
+La dirección espacial aceptada se implementa en `/`: Galaxy, letras MIMIX 3D y
+Wall-E. El repositorio Mimix Cuy aporta la referencia de motion y botones, sin
+incorporar su carrera. El mundo educativo queda en `/mundo`; `/play` redirige allí.
+El contrato anterior de estado/ayuda sigue aplicando al mundo.
+
+- Invitado: «Comenzar como invitado» e «Iniciar sesión», disponibles aunque falle
+  la decoración 3D. Sesión real: «Continuar» y «Mi cuenta».
+- Acceso: composición lateral desktop; columna móvil con panel de altura natural.
+  `SignIn withSignUp` conserva métodos configurados, alta, código, errores y pie
+  de seguridad nativos. Mi cuenta usa identidad real y gestión nativa de Clerk.
+- Botón dorado con relieve, panel oscuro y foco celeste; texto mínimo. En acceso
+  el modelo cambia de encuadre sin crear otro renderer ni volver a descargarlo.
+- Wall-E flota, se balancea, saluda con articulaciones y responde al cursor.
+  Movimiento reducido fija la pose; pestaña oculta congela el tiempo de motion.
+  Luces y materiales se restauran al pasar de la preview a exploración.
+- Acceso sobre el mundo pausa bucle, teclado y cámara, mantiene el canvas y
+  devuelve el foco al disparador. Una navegación completa restaura posición y
+  cámara validadas, en la pestaña y hasta 30 minutos; no guarda auth ni progreso.
+- Referencia editable: Figma `4onaRTdHTm9tMvJe2EhmuA`, tableros desktop `23:960`
+  y móvil `23:2110`. La revisión visual final de Edwar sigue pendiente.
+
+Alcance, pruebas, evidencia y límites en [UI-01](docs/design/ui-01-delivery.md).

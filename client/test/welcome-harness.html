@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="UTF-8"><title>Wall-E welcome test</title>
+<style>html,body{margin:0;background:#0d1117}canvas{display:block;width:100vw;height:100vh}</style></head>
+<body><canvas id="canvas" aria-label="Wall-E en el espacio"></canvas>
+<script type="module">
+import { mountWelcome } from '@mimix/world/welcome'
+import { WorldIntro } from '../../packages/world/src/systems/WorldIntro.js'
+// Test-only observation of the real welcome, without exporting scene internals.
+const update = WorldIntro.prototype.update
+WorldIntro.prototype.update = function(delta) {
+  window.intro = this
+  update.call(this, delta)
+}
+window.welcome = mountWelcome(document.getElementById('canvas'))
+window.welcome.ready.then(() => { window.harnessReady = true })
+</script></body></html>

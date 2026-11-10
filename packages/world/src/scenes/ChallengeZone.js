@@ -43,7 +43,15 @@ export class ChallengeZone {
     if (!player) return
 
     const distanceSquared = player.position.clone().setY(0).distanceToSquared(this.position)
+    if (this.waitingForExit) {
+      if (distanceSquared > this.radius * this.radius) this.waitingForExit = false
+      return
+    }
     if (distanceSquared <= this.radius * this.radius) this._openChallenge()
+  }
+
+  requireExitBeforeEntry() {
+    this.waitingForExit = true
   }
 
   _openChallenge() {
