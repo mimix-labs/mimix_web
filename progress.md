@@ -1,5 +1,20 @@
 # Progreso de Mimix Web
 
+## Retos locales y revisión de PRs — 9 de noviembre de 2026
+
+- Los portales usan `MIMIX_LEGACY_ORIGIN=http://localhost:5173`. Solo estaba
+  encendido Next; se levantó Vite en 5173 y ambas entradas oficiales responden 200.
+  No se cambian los métodos de acceso ni se integra la carrera Cuy.
+- Hay tres PRs abiertos vigentes: #24 cuenta/datos, #25 preparación de producción,
+  #26 UI. #24 y #25 tienen ocho checks verdes; #26 pasó siete y falló únicamente
+  al esperar el retorno del cursor en WebGL por software durante cinco segundos.
+- El test conserva el umbral angular y permite 30 segundos para ese asentamiento,
+  con presupuesto de caso de 120 segundos. Damping sigue usando su paso de 80 ms;
+  no cambia el movimiento de producto. Chromium/Firefox: seis casos aprobados;
+  WebKit local no arranca por dependencias del sistema ausentes (CI sí las instala).
+- El merge a main requiere la revisión y confirmación explícita de Edwar según
+  `.cursor/rules/git-workflow.mdc`; no se cierran PRs que contienen trabajo vigente.
+
 ## UI-01 preparada para entrega separada — 9 de noviembre de 2026
 
 - Selección limpia sobre `7598cf3` en `feat/ui-01-platform-welcome`, apilada sobre

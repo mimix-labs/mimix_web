@@ -91,3 +91,14 @@ Riesgo medio: cambian rutas y ciclo de vida de WebGL/acceso. Revisar entrada sin
 Clerk/Convex y la revisión visual definitiva quedan fuera de esta entrega.
 Rollback: revertir los commits de UI en orden inverso; no hay migraciones de datos
 ni escrituras de progreso que revertir. Mantener el PR de servicios como base.
+
+## Ajuste de estabilidad de CI — 9 de noviembre
+
+La primera corrida remota aprobó siete de ocho jobs. El único fallo fue el
+retorno al centro en la prueba de bienvenida: WebGL por software produjo menos
+fotogramas que los necesarios dentro del plazo original de cinco segundos. El
+test conserva el límite angular de 0,01 rad y permite hasta 30 segundos para
+ese paso, dentro de un caso de 120 segundos. No cambia el código de animación.
+Los seis casos Chromium/Firefox pasan localmente. WebKit local carece de dos
+librerías del sistema; el workflow remoto instala sus dependencias y es la
+validación para ese motor. El estado vigente se consulta en los checks del PR #26.

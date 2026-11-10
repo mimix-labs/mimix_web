@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test'
 
 for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
   test(`real Wall-E welcome floats, greets and follows the cursor at ${viewport.width}px`, async ({ page }) => {
+    test.setTimeout(120000)
     const assets = [], errors = []
     page.on('request', request => { if (request.url().includes('/assets/models/')) assets.push(request.url()) })
     page.on('pageerror', error => errors.push(error.message))
@@ -18,7 +19,9 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 
     await page.mouse.move(viewport.width * 0.9, viewport.height * 0.6)
     await expect.poll(() => page.evaluate(() => window.intro.character.rotation.y - window.intro.previewRotation.y)).toBeGreaterThan(0.15)
     await page.locator('canvas').dispatchEvent('pointerleave')
-    await expect.poll(() => page.evaluate(() => Math.abs(window.intro.character.rotation.y - window.intro.previewRotation.y))).toBeLessThan(0.01)
+    // Damping caps each simulation step at 80 ms. Software WebGL in CI can
+    // render fewer frames in five wall-clock seconds than this return needs.
+    await expect.poll(() => page.evaluate(() => Math.abs(window.intro.character.rotation.y - window.intro.previewRotation.y)), { timeout: 30000 }).toBeLessThan(0.01)
     expect(await page.evaluate(() => window.intro.poseAnimator.wheels.every(wheel => wheel.rotation.x === 0))).toBe(true)
     await page.evaluate(() => { window.welcome.dispose(); window.welcome.dispose() })
     expect(await page.evaluate(() => window.intro.character.parent)).toBe(null)
