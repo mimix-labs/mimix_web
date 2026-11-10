@@ -102,3 +102,12 @@ ese paso, dentro de un caso de 120 segundos. No cambia el código de animación.
 Los seis casos Chromium/Firefox pasan localmente. WebKit local carece de dos
 librerías del sistema; el workflow remoto instala sus dependencias y es la
 validación para ese motor. El estado vigente se consulta en los checks del PR #26.
+
+## Integración autorizada — 10 de noviembre
+
+Edwar autorizó fusionar el trabajo probado tras coordinar con registro de software.
+Servicios confirmó la compatibilidad; #24 se integró en main (`99203b4`). #25 y
+#26 se retargetearon a main. La prueba de intro comparte ahora el margen de espera
+para frames lentos: no cambian sus umbrales ni código de animación. Ocho casos
+Chromium/Firefox pasan; los checks del SHA final deben estar verdes antes del merge
+de UI. No se habilita producción ni se realiza despliegue por esta coordinación.

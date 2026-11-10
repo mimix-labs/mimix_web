@@ -1,5 +1,21 @@
 # Progreso de Mimix Web
 
+## Integración coordinada de PRs — 10 de noviembre de 2026
+
+- Edwar autorizó coordinar con «MIMIX · Registro de software y permisos» y
+  fusionar los PRs correctos/probados. Ese chat confirmó sin bloqueos #24/#25 y
+  compatibilidad de UI con auth, Convex, sesión y retorno; repitió 10 pruebas cloud
+  y 12 de API/config/retorno, todas correctas.
+- #24 fusionado en main como `99203b4`, después de verificar su SHA revisado y
+  ocho checks verdes. #25 y #26 apuntan ahora a main; integración en ese orden.
+- La CI anterior de UI consumió 13 minutos instalando navegadores y alcanzó su
+  límite de 15 minutos. Además, intro esperaba 0,3 s de simulación en solo cinco
+  segundos reales, incompatible con frames lentos de WebGL por software.
+- Intro espera ahora la misma condición durante hasta 30 segundos, conservando
+  las aserciones y el movimiento de producto. Ocho casos Chromium/Firefox pasan.
+  UI solo se fusionará con la CI del SHA definitivo en verde.
+- Sin cambios de credenciales, producción, despliegues ni avances locales ajenos.
+
 ## Retos locales y revisión de PRs — 9 de noviembre de 2026
 
 - Los portales usan `MIMIX_LEGACY_ORIGIN=http://localhost:5173`. Solo estaba
