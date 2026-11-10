@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { expectRendered } from './rendering.js'
 
 test('space lighting reaches Wall-E and the title, preserves Galaxy and restores map materials after Play', async ({ page }) => {
   test.setTimeout(120000)
@@ -59,9 +60,9 @@ test('space lighting reaches Wall-E and the title, preserves Galaxy and restores
   expect(pixels.changedOutside).toBe(0)
   expect(pixels.glError).toBe(0)
   await page.mouse.click(180, 200)
-  await expect.poll(() => page.evaluate(() => window.world.spaceLighting.rim.intensity)).toBeGreaterThan(pixels.steady + 0.1)
+  await expectRendered.poll(() => page.evaluate(() => window.world.spaceLighting.rim.intensity)).toBeGreaterThan(pixels.steady + 0.1)
   await page.evaluate(() => window.world.startExploring())
-  await expect.poll(() => page.evaluate(() => window.world.phase)).toBe('exploring')
+  await expectRendered.poll(() => page.evaluate(() => window.world.phase)).toBe('exploring')
   expect(await page.evaluate(() => window.savedSpaceMaterials.every(({ mesh, material }) => mesh.material === material))).toBe(true)
   expect(await page.evaluate(() => window.world.spaceLighting.rig.parent === null)).toBe(true)
   await page.evaluate(() => { delete window.savedSpaceMaterials; window.unmount() })

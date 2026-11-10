@@ -11,8 +11,9 @@
 - La CI anterior de UI consumió 13 minutos instalando navegadores y alcanzó su
   límite de 15 minutos. Además, intro esperaba 0,3 s de simulación en solo cinco
   segundos reales, incompatible con frames lentos de WebGL por software.
-- Intro espera ahora la misma condición durante hasta 30 segundos, conservando
-  las aserciones y el movimiento de producto. Ocho casos Chromium/Firefox pasan.
+- Las observaciones que dependen de frames comparten `expectRendered`, con
+  margen de 30 segundos y los mismos umbrales, imágenes y estados. No cambia
+  código de producto. Veinte casos Chromium/Firefox pasan; lint correcto.
   UI solo se fusionará con la CI del SHA definitivo en verde.
 - Sin cambios de credenciales, producción, despliegues ni avances locales ajenos.
 

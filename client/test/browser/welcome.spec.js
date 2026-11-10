@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { expectRendered } from './rendering.js'
 
 for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
   test(`real Wall-E welcome floats, greets and follows the cursor at ${viewport.width}px`, async ({ page }) => {
@@ -14,14 +15,14 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 
     expect(await page.evaluate(() => Boolean(window.intro.character.getObjectByName('TORSO')))).toBe(true)
     expect(await page.evaluate(() => window.intro.actions.size)).toBe(0)
     const y = await page.evaluate(() => window.intro.character.position.y)
-    await expect.poll(() => page.evaluate(initial => Math.abs(window.intro.character.position.y - initial), y)).toBeGreaterThan(0.01)
-    await expect.poll(() => page.evaluate(() => Math.abs(window.intro.poseAnimator.rightArm.rotation.z))).toBeGreaterThan(0.3)
+    await expectRendered.poll(() => page.evaluate(initial => Math.abs(window.intro.character.position.y - initial), y)).toBeGreaterThan(0.01)
+    await expectRendered.poll(() => page.evaluate(() => Math.abs(window.intro.poseAnimator.rightArm.rotation.z))).toBeGreaterThan(0.3)
     await page.mouse.move(viewport.width * 0.9, viewport.height * 0.6)
-    await expect.poll(() => page.evaluate(() => window.intro.character.rotation.y - window.intro.previewRotation.y)).toBeGreaterThan(0.15)
+    await expectRendered.poll(() => page.evaluate(() => window.intro.character.rotation.y - window.intro.previewRotation.y)).toBeGreaterThan(0.15)
     await page.locator('canvas').dispatchEvent('pointerleave')
     // Damping caps each simulation step at 80 ms. Software WebGL in CI can
     // render fewer frames in five wall-clock seconds than this return needs.
-    await expect.poll(() => page.evaluate(() => Math.abs(window.intro.character.rotation.y - window.intro.previewRotation.y)), { timeout: 30000 }).toBeLessThan(0.01)
+    await expectRendered.poll(() => page.evaluate(() => Math.abs(window.intro.character.rotation.y - window.intro.previewRotation.y))).toBeLessThan(0.01)
     expect(await page.evaluate(() => window.intro.poseAnimator.wheels.every(wheel => wheel.rotation.x === 0))).toBe(true)
     await page.evaluate(() => { window.welcome.dispose(); window.welcome.dispose() })
     expect(await page.evaluate(() => window.intro.character.parent)).toBe(null)
@@ -31,6 +32,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 
 }
 
 test('real Wall-E welcome stays still with reduced motion, including its articulated pose', async ({ page }) => {
+  test.setTimeout(120000)
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/test/welcome-harness.html')
   await page.waitForFunction(() => window.harnessReady && window.intro)
@@ -43,6 +45,6 @@ test('real Wall-E welcome stays still with reduced motion, including its articul
   await page.waitForTimeout(400)
   expect(await pose()).toEqual(before)
   await page.emulateMedia({ reducedMotion: 'no-preference' })
-  await expect.poll(() => page.evaluate(() => window.intro.poseAnimator.time)).toBeGreaterThan(before.time)
+  await expectRendered.poll(() => page.evaluate(() => window.intro.poseAnimator.time)).toBeGreaterThan(before.time)
   await page.evaluate(() => window.welcome.dispose())
 })

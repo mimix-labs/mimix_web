@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { expectRendered } from './rendering.js'
 
 test('space welcome renders a floating yellow title above the character and releases it on Play', async ({ page }) => {
   test.setTimeout(120000)
@@ -33,7 +34,7 @@ test('space welcome renders a floating yellow title above the character and rele
   expect(title.moved).toBe(true)
   expect(title.glError).toBe(0)
   await page.evaluate(() => window.world.startExploring())
-  await expect.poll(() => page.evaluate(() => window.world.phase)).toBe('exploring')
+  await expectRendered.poll(() => page.evaluate(() => window.world.phase)).toBe('exploring')
   expect(await page.evaluate(() => window.world.wordmark.group.parent === null)).toBe(true)
   await page.evaluate(() => window.unmount())
   expect(errors).toEqual([])

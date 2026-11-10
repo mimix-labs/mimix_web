@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { expectRendered } from './rendering.js'
 
 test('Galaxy alone renders behind Wall-E, moves and visibly responds to a real background click', async ({ page }) => {
   test.setTimeout(120000)
@@ -68,7 +69,7 @@ test('Galaxy alone renders behind Wall-E, moves and visibly responds to a real b
   await expect(page.locator('#canvas')).toHaveCount(1)
   await page.evaluate(() => window.world.loop.start())
   await page.evaluate(() => window.world.startExploring())
-  await expect.poll(() => page.evaluate(() => window.world.phase)).toBe('exploring')
+  await expectRendered.poll(() => page.evaluate(() => window.world.phase)).toBe('exploring')
   await page.mouse.click(180, 200)
   expect(await page.evaluate(() => window.world.galaxy.mesh.material.uniforms.uWarp.value)).toBe(0)
   await page.evaluate(() => window.unmount())

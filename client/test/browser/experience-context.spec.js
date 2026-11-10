@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { expectRendered } from './rendering.js'
 
 test('account overlay can freeze and resume the existing world and safely restore a captured view', async ({ page }) => {
   test.setTimeout(120000)
@@ -20,7 +21,7 @@ test('account overlay can freeze and resume the existing world and safely restor
   await page.evaluate(() => window.world.setInteractionEnabled(true))
   const z = before.position[2]
   await page.keyboard.down('KeyW')
-  await expect.poll(() => page.evaluate(() => window.world.captureView().position[2])).toBeLessThan(z)
+  await expectRendered.poll(() => page.evaluate(() => window.world.captureView().position[2])).toBeLessThan(z)
   await page.keyboard.up('KeyW')
   await page.evaluate(() => window.unmount())
 })

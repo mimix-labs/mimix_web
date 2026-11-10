@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { expectRendered } from './rendering.js'
 import { mkdir } from 'node:fs/promises'
 
 test.use({ viewport: { width: 1920, height: 1080 } })
@@ -87,14 +88,14 @@ test('desktop motion preference freezes and resumes particles while the world st
   await page.goto('/test/world-harness.html')
   await page.waitForFunction(() => window.harnessReady)
   await page.evaluate(() => window.mount())
-  await expect.poll(() => page.evaluate(() => window.world.loop.clock.elapsed)).toBeGreaterThan(0.1)
+  await expectRendered.poll(() => page.evaluate(() => window.world.loop.clock.elapsed)).toBeGreaterThan(0.1)
   expect(await page.evaluate(() => window.world.spaceParticles.points.material.uniforms.uTime.value)).toBe(0)
   await page.emulateMedia({ reducedMotion: 'no-preference' })
-  await expect.poll(() => page.evaluate(() => window.world.spaceParticles.points.material.uniforms.uTime.value)).toBeGreaterThan(0)
+  await expectRendered.poll(() => page.evaluate(() => window.world.spaceParticles.points.material.uniforms.uTime.value)).toBeGreaterThan(0)
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await expect.poll(() => page.evaluate(() => window.world.spaceParticles.reducedMotion)).toBe(true)
+  await expectRendered.poll(() => page.evaluate(() => window.world.spaceParticles.reducedMotion)).toBe(true)
   const frozen = await page.evaluate(() => ({ time: window.world.spaceParticles.points.material.uniforms.uTime.value, elapsed: window.world.loop.clock.elapsed }))
-  await expect.poll(() => page.evaluate(() => window.world.loop.clock.elapsed)).toBeGreaterThan(frozen.elapsed + 0.1)
+  await expectRendered.poll(() => page.evaluate(() => window.world.loop.clock.elapsed)).toBeGreaterThan(frozen.elapsed + 0.1)
   expect(await page.evaluate(() => window.world.spaceParticles.points.material.uniforms.uTime.value)).toBe(frozen.time)
   await expect(page.locator('#canvas')).toBeVisible()
   await page.evaluate(() => window.unmount())

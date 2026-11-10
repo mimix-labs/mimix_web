@@ -111,3 +111,8 @@ Servicios confirmó la compatibilidad; #24 se integró en main (`99203b4`). #25 
 para frames lentos: no cambian sus umbrales ni código de animación. Ocho casos
 Chromium/Firefox pasan; los checks del SHA final deben estar verdes antes del merge
 de UI. No se habilita producción ni se realiza despliegue por esta coordinación.
+
+Las esperas de render se unificaron en `client/test/browser/rendering.js` para no
+repetir la suposición de cinco segundos en distintas pruebas del mismo motor.
+Los umbrales e imágenes no cambian; no se modifica la configuración de CI ni el
+producto. Pasan los veinte casos locales de esos archivos en Chromium/Firefox.
