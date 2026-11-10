@@ -34,7 +34,7 @@ test('standalone Clerk session reaches private SSR, isolates users and fails clo
   const probe = createServer().listen(0, '127.0.0.1'); await once(probe, 'listening')
   const address = probe.address(); assert.ok(address && typeof address !== 'string')
   await new Promise<void>(resolve => probe.close(() => resolve()))
-  const child = spawn(process.execPath, ['scripts/start.mjs'], { cwd: new URL('..', import.meta.url), env: { ...process.env, PORT: String(address.port), HOSTNAME: '127.0.0.1', MIMIX_WEB_AUTH_MODE: 'clerk', MIMIX_API_ORIGIN: `http://127.0.0.1:${apiAddress.port}`, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: `pk_live_${Buffer.from('clerk.mimix.test$').toString('base64')}`, CLERK_SECRET_KEY: 'sk_live_fixture', CLERK_JWT_KEY: jwtKey }, stdio: ['ignore', 'pipe', 'pipe'] })
+  const child = spawn(process.execPath, ['scripts/start.mjs'], { cwd: new URL('..', import.meta.url), env: { ...process.env, PORT: String(address.port), HOSTNAME: '127.0.0.1', MIMIX_WEB_AUTH_MODE: 'clerk', MIMIX_DATA_BACKEND: 'api', MIMIX_API_ORIGIN: `http://127.0.0.1:${apiAddress.port}`, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: `pk_live_${Buffer.from('clerk.mimix.test$').toString('base64')}`, CLERK_SECRET_KEY: 'sk_live_fixture', CLERK_JWT_KEY: jwtKey }, stdio: ['ignore', 'pipe', 'pipe'] })
   let output = ''; child.stdout.on('data', value => { output += value }); child.stderr.on('data', value => { output += value })
   t.after(async () => { if (child.exitCode === null) { child.kill('SIGKILL'); await once(child, 'exit') } })
   const base = `http://127.0.0.1:${address.port}`
@@ -58,7 +58,8 @@ test('standalone Clerk session reaches private SSR, isolates users and fails clo
     assert.ok(!html.includes(token))
   }
   const cookieProfile = await fetch(base + '/perfil', { headers: { cookie: `__session=${alice}; __client_uat=${Math.floor(Date.now() / 1000) - 5}` }, signal: AbortSignal.timeout(8000) })
-  assert.ok((await cookieProfile.text()).includes(aliceId))
+  const cookieHtml = await cookieProfile.text()
+  assert.ok(cookieHtml.includes(aliceId), JSON.stringify({status: cookieProfile.status, location: cookieProfile.headers.get('location'), reason: cookieProfile.headers.get('x-clerk-auth-reason'), containsProfile: cookieHtml.includes('Mi perfil'), calls}))
   const beforeInvalid = calls.length
   for (const invalid of ['not-a-jwt', jwt('user_expired', -60)]) {
     const response = await request('/perfil', invalid)

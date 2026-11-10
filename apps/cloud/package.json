@@ -1,0 +1,27 @@
+{
+  "name": "@mimix/cloud",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./api": "./convex/_generated/api.js"
+  },
+  "scripts": {
+    "dev": "convex dev",
+    "deploy": "convex deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mimix/contracts": "workspace:*",
+    "convex": "^1.49.0",
+    "convex-helpers": "^0.1.134"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.6",
+    "convex-test": "^0.0.67",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
+  }
+}
