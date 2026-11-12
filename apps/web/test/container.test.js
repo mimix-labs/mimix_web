@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 const docker = (...args) => execFileSync('docker', args, { encoding: 'utf8' }).trim()
 test('standalone container serves routes, static chunks and health without the build tree', async t => {
-  const id = docker('run', '-d', '--rm', '-p', '127.0.0.1::3100', '-e', 'MIMIX_WEB_AUTH_MODE=disabled', '-e', 'MIMIX_LEGACY_ORIGIN=https://legacy.example.com', 'mimix-web:ci')
+  const id = docker('run', '-d', '--rm', '-p', '127.0.0.1::3100', '-e', 'MIMIX_WEB_AUTH_MODE=disabled', '-e', 'MIMIX_LEGACY_ORIGIN=https://legacy.example.com', process.env.MIMIX_WEB_TEST_IMAGE ?? 'mimix-web:ci')
   t.after(() => docker('stop', id))
   const port = docker('port', id, '3100/tcp').split(':').at(-1)
   const base = `http://127.0.0.1:${port}`
@@ -19,7 +19,7 @@ test('standalone container serves routes, static chunks and health without the b
   const health = await fetch(`${base}/healthz`)
   assert.deepEqual(await health.json(), { status: 'ok', service: 'mimix-web' })
   for (const path of ['/', '/catalogo', '/acceso', '/play']) assert.equal((await fetch(base + path)).status, 200)
-  for (const asset of ['/assets/models/islands/home.glb', '/assets/models/islands/mathematics.glb', '/assets/models/islands/sciencie.glb', '/assets/models/resources/bridge.glb', '/assets/models/walle/walle.glb', '/vendor/draco/draco_decoder.wasm']) {
+  for (const asset of ['/assets/models/islands/home.glb', '/assets/models/islands/mathematics.glb', '/assets/models/islands/sciencie.glb', '/assets/models/resources/bridge.glb', '/assets/models/robot-expressive/RobotExpressive.glb', '/vendor/draco/draco_decoder.wasm']) {
     const response = await fetch(base + asset)
     assert.equal(response.status, 200, asset)
     const body = Buffer.from(await response.arrayBuffer())
@@ -31,7 +31,14 @@ test('standalone container serves routes, static chunks and health without the b
     }
   }
   const home = await (await fetch(base)).text()
-  assert.ok(home.includes('https://legacy.example.com'))
+  assert.ok(!home.includes('https://legacy.example.com'))
+  assert.equal((await fetch(base + '/assets/models/walle/walle.glb')).status, 404)
+  for (const path of ['/challenges/mathematics/', '/challenges/science/']) {
+    const activity = await fetch(base + path)
+    assert.equal(activity.status, 200)
+    assert.equal(activity.headers.get('permissions-policy'), 'camera=(self), microphone=(), geolocation=()')
+    assert.ok((await activity.text()).includes('/challenge-assets/'))
+  }
   const chunks = [...home.matchAll(/src="([^" ]*\/_next\/[^" ]+\.js)"/g)].map(match => match[1])
   assert.ok(chunks.length > 0)
   for (const chunk of chunks) assert.equal((await fetch(new URL(chunk, base))).status, 200)

@@ -123,3 +123,22 @@ usa como pantalla e interfaz remota.
 - `client/src/core/RobotWebBridge.js`: eventos entre Web y robot.
 - `client/public/challenges/science/`: tabla periodica y modelo atomico.
 - `server/`: API local, vision y puente de ordenes del robot.
+
+
+## 2026-11-12 — RobotExpressive seleccionado para MIMIX
+
+Edwar eligió RobotExpressive y autorizó implementar ese personaje. La pregunta
+sobre crear variantes fue solo conceptual; no se crearon personajes adicionales.
+Trabajo aislado desde main `027ac95`, rama `feat/world-robot-expressive`.
+
+- Bienvenida, mundo y Matemáticas usan una única copia CC0 de Three.js con
+  procedencia, licencia y SHA-256 conservados. GLB anterior retirado del artefacto.
+- UI aprobada, invitados, Clerk, Convex, progreso y contratos de hardware conservados.
+- Matemáticas/Ciencias se empaquetan en Next; ningún enlace activo de la plataforma
+  dirige a Classic. El cliente independiente conserva su fallback con el nuevo modelo.
+- Verificado: check 60/60, Chromium plataforma 18/18 (2 opt-in omitidos), cliente
+  32/32 y Firefox 4/4. Capturas nuevas desktop/móvil conservan el expediente histórico.
+- Construcción Docker local en curso con descargas npm lentas; WebKit corresponde
+  a CI. No se afirma validación de cámara física, Jetson ni cuenta real en este cambio.
+- Resumen y evidencia: `docs/design/robot-expressive.md`.
+- Vista local: `http://127.0.0.1:4312/`. Sin merge ni despliegue de esta sustitución.

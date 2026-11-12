@@ -3,10 +3,17 @@
 class RobotManager {
   constructor() {
     this.robot = null;
+    this.disposed = false;
+    this.motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    this.onMotionChange = () => {
+      if (this.motionQuery.matches) this.robot?.mixer.stopAllAction();
+      else this.idle();
+    };
+    this.motionQuery.addEventListener('change', this.onMotionChange);
     this.mixer = null;
     this.actions = {};
     this.isInitialized = false;
-    
+
     // Sistema de gestión de animaciones
     this.currentAnimation = null;
     this.animationQueue = [];
@@ -35,7 +42,17 @@ class RobotManager {
         antialias: true,
         alpha: true
       });
-      renderer.setSize(520, 520);
+      this.ownedRenderer = renderer;
+      const resize = () => {
+        const width = container.clientWidth || 300;
+        const height = container.clientHeight || width;
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+      };
+      resize();
+      this.resizeObserver = new ResizeObserver(resize);
+      this.resizeObserver.observe(container);
       renderer.setClearColor(0x000000, 0);
       renderer.shadowMap.enabled = false;
       container.appendChild(renderer.domElement);
@@ -52,13 +69,24 @@ class RobotManager {
 
       // Cargar robot
       const loader = new THREE.GLTFLoader();
-      
+
       return new Promise((resolve, reject) => {
         // El reto usa el mismo compañero visual que el mapa principal.
-        loader.load('/assets/models/walle/walle.glb',
+        loader.load('/assets/models/robot-expressive/RobotExpressive.glb',
           (gltf) => {
             const model = gltf.scene;
-            model.scale.setScalar(0.75);
+            if (this.disposed) {
+              model.traverse(object => { object.geometry?.dispose(); const materials = Array.isArray(object.material) ? object.material : [object.material]; for (const material of materials) { material?.map?.dispose(); material?.dispose(); } });
+              resolve(false); return;
+            }
+            model.updateMatrixWorld(true);
+            const bounds = new THREE.Box3().setFromObject(model);
+            model.scale.setScalar(1.8 / bounds.getSize(new THREE.Vector3()).y);
+            model.updateMatrixWorld(true);
+            bounds.setFromObject(model);
+            model.position.y -= bounds.min.y;
+            camera.position.set(-2.4, 1.5, 2.8);
+            camera.lookAt(0, 0.95, 0);
             scene.add(model);
 
             // Configurar animaciones
@@ -79,7 +107,7 @@ class RobotManager {
 
             // Iniciar con animación Idle
             let activeAction = actions['Idle'];
-            if (activeAction) {
+            if (activeAction && !this.motionQuery.matches) {
               activeAction.play();
             }
 
@@ -96,12 +124,14 @@ class RobotManager {
               clock: clock
             };
 
+            this.actions = actions;
+            this.mixer = mixer;
             this.isInitialized = true;
             console.log('✅ Robot cargado exitosamente!');
 
             // Iniciar loop de animación
             this.startAnimationLoop();
-            
+
             resolve(true);
           },
           undefined,
@@ -121,11 +151,12 @@ class RobotManager {
   // Loop de animación
   startAnimationLoop() {
     const animate = () => {
-      requestAnimationFrame(animate);
+      if (this.disposed) return;
+      this.animationFrame = requestAnimationFrame(animate);
 
       if (this.robot && this.robot.mixer) {
         const dt = this.robot.clock.getDelta();
-        this.robot.mixer.update(dt);
+        if (!document.hidden && !this.motionQuery.matches) this.robot.mixer.update(Math.min(dt, 0.05));
         this.robot.renderer.render(this.robot.scene, this.robot.camera);
       }
     };
@@ -139,11 +170,16 @@ class RobotManager {
       return false;
     }
 
+    if (this.motionQuery.matches) return false;
+    if (this.onEmoteFinished) {
+      this.robot.mixer.removeEventListener('finished', this.onEmoteFinished);
+      this.onEmoteFinished = null;
+    }
     const previousAction = this.robot.activeAction;
     const newAction = this.robot.actions[actionName];
 
     // Si la acción ya está activa, no hacer nada
-    if (previousAction !== newAction) {
+    if (previousAction !== newAction || !newAction.isRunning()) {
       if (previousAction) {
         // Desactivar la acción anterior
         previousAction.fadeOut(0.3);
@@ -170,14 +206,16 @@ class RobotManager {
       return false;
     }
 
-    const currentState = this.robot.currentState;
-    this.changeAnimation(emoteName);
+    const currentState = ['Idle', 'Walking', 'Running', 'Dance'].includes(this.robot.currentState) ? this.robot.currentState : 'Idle';
+    if (!this.changeAnimation(emoteName)) return false;
 
     // Volver al estado anterior cuando termine el emote
-    const restoreState = () => {
+    const restoreState = event => {
+      if (event.action !== this.robot?.actions[emoteName]) return;
       this.robot.mixer.removeEventListener('finished', restoreState);
       this.changeAnimation(currentState);
     };
+    this.onEmoteFinished = restoreState;
     this.robot.mixer.addEventListener('finished', restoreState);
 
     return true;
@@ -188,29 +226,25 @@ class RobotManager {
     // Cancelar timeouts activos
     this.activeTimeouts.forEach(timeout => clearTimeout(timeout));
     this.activeTimeouts = [];
-    
+
     // Cancelar intervalos activos
     this.activeIntervals.forEach(interval => clearInterval(interval));
     this.activeIntervals = [];
-    
+
     // Limpiar cola de animaciones
     this.animationQueue = [];
-    
+
     // Detener animación actual suavemente
     if (this.currentAnimation) {
       this.currentAnimation.fadeOut(0.2);
       this.currentAnimation = null;
     }
-    
+
     // Resetear estado
     this.isAnimating = false;
-    
-    // Volver a idle después de un breve delay
-    const timeout = setTimeout(() => {
-      this.idle();
-    }, 300);
-    this.activeTimeouts.push(timeout);
-    
+
+    this.changeAnimation('Idle');
+
     console.log('🤖 Todas las animaciones del robot canceladas');
   }
 
@@ -239,8 +273,8 @@ class RobotManager {
       return false;
     }
 
-    const { 
-      loop = false, 
+    const {
+      loop = false,
       duration = null,
       fadeIn = 0.2,
       fadeOut = 0.2,
@@ -259,16 +293,16 @@ class RobotManager {
     }
 
     const action = this.actions[animationName];
-    
+
     // Configurar la animación
     action.reset();
     action.setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce);
     action.clampWhenFinished = !loop;
-    
+
     // Reproducir con fade in
     action.fadeIn(fadeIn);
     action.play();
-    
+
     this.currentAnimation = action;
     this.currentAnimationPriority = priority;
     this.isAnimating = true;
@@ -306,8 +340,7 @@ class RobotManager {
 
     // Estados
     idle() {
-      this.cancelAllAnimations();
-      this.playAnimation('idle', { loop: true, priority: 'low' });
+      return this.changeAnimation('Idle');
     }
     dance() { return this.changeAnimation('Dance'); }
     walk() { return this.changeAnimation('Walking'); }
@@ -341,14 +374,14 @@ class RobotManager {
     // Evento personalizado para celebrar
     celebrate() {
         this.cancelAllAnimations();
-        
+
         // Secuencia: like -> jump -> idle
         this.like();
-        
+
         this.addTimeout(() => {
           this.jump();
         }, 1600);
-        
+
         this.addTimeout(() => {
           this.idle();
         }, 3200);
@@ -357,10 +390,10 @@ class RobotManager {
     // Evento para saludar
     greet() {
       this.cancelAllAnimations();
-      
+
       // Secuencia: wave -> idle
       this.wave();
-      
+
       this.addTimeout(() => {
         this.idle();
       }, 2100);
@@ -411,13 +444,26 @@ class RobotManager {
         }
         return true;
     }
+  dispose() {
+    this.disposed = true;
+    this.motionQuery.removeEventListener('change', this.onMotionChange);
+    this.resizeObserver?.disconnect();
+    if (this.onEmoteFinished) this.robot?.mixer.removeEventListener('finished', this.onEmoteFinished);
+    cancelAnimationFrame(this.animationFrame);
+    this.activeTimeouts.forEach(clearTimeout);
+    this.activeIntervals.forEach(clearInterval);
+    clearInterval(this.autoGreetingInterval);
+    this.robot?.mixer.stopAllAction();
+    this.robot?.scene.traverse(object => {
+      object.geometry?.dispose();
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      for (const material of materials) { material?.map?.dispose(); material?.dispose(); }
+    });
+    this.ownedRenderer?.dispose(); this.ownedRenderer?.domElement.remove();
+    this.robot = null; this.isInitialized = false;
+  }
 }
 
-// Crear instancia singleton
 const robotManager = new RobotManager();
-
-// Exportar para uso global
 window.robotManager = robotManager;
-
-// También exportar para módulos ES6
 export default robotManager;

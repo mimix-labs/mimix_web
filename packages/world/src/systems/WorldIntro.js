@@ -2,7 +2,7 @@ import * as THREE from 'three'
 
 const DURATION = 0.9
 
-// A preview of the active character; it does not depend on Wall-E's geometry.
+// A preview of the active character, independent of its geometry.
 export class WorldIntro {
   constructor({ scene, character, camera, controls, input, animations = [], poseAnimator = null, canvas = null, onComplete, onTransition = () => {}, motionQuery = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)'), now = () => performance.now() }) {
     this.character = character
@@ -25,18 +25,18 @@ export class WorldIntro {
     this.waveRemaining = 0
     this.mixer = new THREE.AnimationMixer(character)
     this.actions = new Map()
-    for (const source of animations.filter(clip => ['Float', 'Wave'].includes(clip.name))) {
+    for (const source of animations.filter(clip => ['Float', 'Idle', 'Wave'].includes(clip.name))) {
       const clip = source.clone()
       // Keep the same floating anchor while waving; baked ground translation
       // must not make the character fall during the greeting.
       clip.tracks = clip.tracks.filter(track => !track.name.startsWith('Root.'))
       this.actions.set(clip.name, this.mixer.clipAction(clip))
     }
-    // Wall-E has separate meshes rather than Float/Wave clips. Animate its
-    // joints inside the floating container, never alongside authored clips.
+    // Use authored clips when available; keep procedural rigs as a fallback.
     this.poseAnimator = this.actions.size ? null : poseAnimator
     if (this.reducedMotion) this.poseAnimator?.reset()
-    this._playClip('Float')
+    this.baseClip = this.actions.has('Float') ? 'Float' : 'Idle'
+    if (!this.reducedMotion) this._playClip(this.baseClip)
     this.mixer.update(0)
     this.groundPosition = character.position.clone()
     this.groundRotation = character.rotation.clone()
@@ -77,7 +77,12 @@ export class WorldIntro {
 
     this.onMotionChange = () => {
       this.reducedMotion = motionQuery.matches
-      if (this.reducedMotion) this.poseAnimator?.reset()
+      if (this.reducedMotion) {
+        this.poseAnimator?.reset()
+        this.mixer.stopAllAction()
+        this.currentAction = null
+        this.waveRemaining = 0
+      } else if (this.phase === 'intro') this._playClip(this.baseClip)
       if (this.reducedMotion && this.phase === 'transition') this._finish()
     }
     motionQuery?.addEventListener('change', this.onMotionChange)
@@ -128,7 +133,7 @@ export class WorldIntro {
         this.poseAnimator?.update(step, false)
         if (this.waveRemaining > 0) {
           this.waveRemaining -= step
-          if (this.waveRemaining <= 0) this._playClip('Float')
+          if (this.waveRemaining <= 0) this._playClip(this.baseClip)
         } else if (this.elapsed >= this.nextWave && this.actions.has('Wave')) {
           this._playClip('Wave')
           this.waveRemaining = this.actions.get('Wave').getClip().duration

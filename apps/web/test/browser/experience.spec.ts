@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright'
 
 test.use({ viewport: { width: 1296, height: 800 }, launchOptions: { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] } })
 test('welcome and unavailable access follow the spatial design, with guest entry independent of 3D', async ({ page }) => {
-  await page.route('**/assets/models/walle/walle.glb', route => route.fulfill({ status: 503 }))
+  await page.route('**/assets/models/robot-expressive/RobotExpressive.glb', route => route.fulfill({ status: 503 }))
   await page.goto('/')
   const guest = page.getByRole('link', { name: 'Comenzar como invitado' })
   await expect(guest).toHaveAttribute('href', '/mundo')

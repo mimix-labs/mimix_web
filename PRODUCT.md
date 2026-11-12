@@ -1,6 +1,6 @@
 # Mimix — contexto del producto
 
-Mimix es una plataforma de aprendizaje interactiva basada en retos consecutivos dentro de experiencias digitales. Un agente de aprendizaje puede acompañar a la persona mediante un personaje virtual o un robot físico opcional; Wall-E es el personaje inicial, no una dependencia del producto.
+Mimix es una plataforma de aprendizaje interactiva basada en retos consecutivos dentro de experiencias digitales. Un agente de aprendizaje puede acompañar a la persona mediante un personaje virtual o un robot físico opcional; RobotExpressive es el compañero visual seleccionado, un recurso externo CC0; no es una dependencia de la lógica pedagógica.
 
 ## Propósito
 

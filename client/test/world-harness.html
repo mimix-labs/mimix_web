@@ -7,7 +7,7 @@ window.mount = async (options = {}) => {
   root.innerHTML = '<canvas id="canvas"></canvas>'
   const host = createWorldHost({challengeOrigin: location.origin, navigate: url => { window.visits.push(url) }})
   window.world = new World({canvas: root.getElementById('canvas'), root, host, ...options})
-  await window.world.loadWallE()
+  await window.world.loadCharacter()
 }
 window.mountUI = () => {
   const root = document.getElementById('mount').shadowRoot ?? document.getElementById('mount').attachShadow({mode: 'open'})

@@ -41,7 +41,7 @@ alternativa semántica desplegable.
 ## UI-01: bienvenida y acceso de la plataforma
 
 La dirección espacial aceptada se implementa en `/`: Galaxy, letras MIMIX 3D y
-Wall-E. El repositorio Mimix Cuy aporta la referencia de motion y botones, sin
+RobotExpressive. El repositorio Mimix Cuy aporta la referencia de motion y botones, sin
 incorporar su carrera. El mundo educativo queda en `/mundo`; `/play` redirige allí.
 El contrato anterior de estado/ayuda sigue aplicando al mundo.
 
@@ -52,7 +52,7 @@ El contrato anterior de estado/ayuda sigue aplicando al mundo.
   de seguridad nativos. Mi cuenta usa identidad real y gestión nativa de Clerk.
 - Botón dorado con relieve, panel oscuro y foco celeste; texto mínimo. En acceso
   el modelo cambia de encuadre sin crear otro renderer ni volver a descargarlo.
-- Wall-E flota, se balancea, saluda con articulaciones y responde al cursor.
+- RobotExpressive flota, se balancea, saluda con articulaciones y responde al cursor.
   Movimiento reducido fija la pose; pestaña oculta congela el tiempo de motion.
   Luces y materiales se restauran al pasar de la preview a exploración.
 - Acceso sobre el mundo pausa bucle, teclado y cámara, mantiene el canvas y
@@ -62,3 +62,14 @@ El contrato anterior de estado/ayuda sigue aplicando al mundo.
   y móvil `23:2110`. La revisión visual final de Edwar sigue pendiente.
 
 Alcance, pruebas, evidencia y límites en [UI-01](docs/design/ui-01-delivery.md).
+
+## Sustitución de personaje aprobada — 12/11/2026
+
+Edwar eligió explícitamente RobotExpressive de Three.js y autorizó aplicarlo.
+Se conservan composición, Galaxy, título, botones, Clerk y Convex. No se crean
+variantes del personaje. GLB externo CC0 sin modificaciones, altura normalizada
+1.8 unidades en el mapa; los gestos usan sus clips, sin animador de Wall-E.
+La bienvenida conserva flotación ±0.14, inclinación por cursor y saludo periódico;
+movimiento reducido mantiene pose estática. Las actividades se empaquetan junto a
+Next para evitar que enlaces vigentes abran una versión Classic con otro modelo.
+Procedencia y verificación: [RobotExpressive](docs/design/robot-expressive.md).

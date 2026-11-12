@@ -25,3 +25,7 @@ infra/docker/cloud.env
 client/public/assets/models/
 apps/web/public/assets/models/
 apps/web/public/vendor/draco/
+
+# First-party activity bundles generated for the Next platform.
+apps/web/public/challenges/
+apps/web/public/challenge-assets/

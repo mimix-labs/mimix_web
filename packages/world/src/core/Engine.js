@@ -46,7 +46,7 @@ export class Engine {
       0.1,
       500,
     );
-    this.camera.position.set(6, 7, 6); // close to Wall-E, original elevated view
+    this.camera.position.set(6, 7, 6); // close to the companion, original elevated view
   }
 
   // Configura los controles
@@ -56,7 +56,7 @@ export class Engine {
     this.controls.dampingFactor = 0.05;
     this.controls.screenSpacePanning = true;
     this.controls.enableRotate = true; // sin rotación: solo paneo con clic izquierdo
-    this.controls.target.set(0, 0, 0); // la cámara mira al origen (Wall-E + mapa centrados)
+    this.controls.target.set(0, 0, 0); // la cámara mira al origen (the companion + mapa centrados)
     this.controls.minDistance = 6;
     this.controls.maxDistance = 16;
   }

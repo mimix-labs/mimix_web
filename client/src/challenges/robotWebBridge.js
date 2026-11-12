@@ -13,14 +13,14 @@ export function startRobotWebBridge(challenge) {
         body: JSON.stringify(context),
       })
     } catch (error) {
-      console.warn('No se pudo compartir el contexto con Wall-E:', error)
+      console.warn('No se pudo compartir el contexto con RobotExpressive:', error)
     }
   }
 
   function destinationUrl(destination) {
     const query = getVisionOverrideQuery()
     const destinations = {
-      world: `/${query}`,
+      world: `${import.meta.env.VITE_MIMIX_PLATFORM === 'true' ? '/mundo' : '/'}${query}`,
       mathematics: `/challenges/mathematics/index.html${query}`,
       science: `/challenges/science/index.html${query}`,
     }
@@ -37,7 +37,7 @@ export function startRobotWebBridge(challenge) {
         window.location.assign(target)
       }
     } catch (error) {
-      console.error('Comando inválido de Wall-E:', error)
+      console.error('Comando inválido de RobotExpressive:', error)
     }
   })
 

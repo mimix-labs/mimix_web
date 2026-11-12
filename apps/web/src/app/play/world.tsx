@@ -5,8 +5,8 @@ import { createWorldHost } from '@mimix/world/host'
 import { WORLD_VIEW_KEY, worldViewFromStorage } from '../../lib/experience-navigation'
 
 type WorldPhase = 'loading' | 'intro' | 'transition' | 'ready' | 'error'
-const worldDescription = 'Wall-E está en un mapa flotante con dos portales: Matemáticas y Ciencias. Recorre el mapa o abre un reto directamente.'
-const introDescription = 'Wall-E flota en el espacio. Pulsa Play para entrar al mapa y comenzar la exploración.'
+const worldDescription = 'RobotExpressive está en un mapa flotante con dos portales: Matemáticas y Ciencias. Recorre el mapa o abre un reto directamente.'
+const introDescription = 'RobotExpressive flota en el espacio. Pulsa Play para entrar al mapa y comenzar la exploración.'
 
 export default function World({ challengeOrigin, paused = false }: { challengeOrigin: string; paused?: boolean }) {
   const element = useRef<HTMLDivElement>(null)
@@ -29,7 +29,7 @@ export default function World({ challengeOrigin, paused = false }: { challengeOr
   useEffect(() => {
     const container = element.current!
     const root = container.shadowRoot ?? container.attachShadow({ mode: 'open' })
-    const host = createWorldHost({ challengeOrigin, navigate: url => window.location.assign(url), vision: new URLSearchParams(window.location.search).get('vision') })
+    const host = createWorldHost({ challengeOrigin: challengeOrigin || window.location.origin, navigate: url => window.location.assign(url), vision: new URLSearchParams(window.location.search).get('vision') })
     let active = true
     const world = mountWorld(root, { host, startInSpace: false, onPhaseChange: next => {
       if (active) setPhase(next === 'exploring' ? 'ready' : next)
@@ -67,7 +67,7 @@ export default function World({ challengeOrigin, paused = false }: { challengeOr
   const navigating = phase === 'ready'
   const description = navigating ? worldDescription
     : phase === 'intro' ? introDescription
-    : phase === 'transition' ? 'Wall-E está entrando al mapa. La navegación se activará al terminar la transición.'
+    : phase === 'transition' ? 'RobotExpressive está entrando al mapa. La navegación se activará al terminar la transición.'
     : phase === 'error' ? 'No pudimos cargar el mundo. Usa Volver a intentar para recuperarlo.'
     : 'Estamos preparando el personaje y el mapa de Mimix.'
 
@@ -78,11 +78,11 @@ export default function World({ challengeOrigin, paused = false }: { challengeOr
       : phase === 'error'
         ? { label: 'Error', announcement: 'No pudimos cargar la experiencia. Usa Volver a intentar para recuperarla.' }
       : phase === 'intro'
-        ? { label: 'Preparado', announcement: 'Wall-E está listo en el espacio. Pulsa Play para comenzar la exploración.' }
+        ? { label: 'Preparado', announcement: 'RobotExpressive está listo en el espacio. Pulsa Play para comenzar la exploración.' }
       : phase === 'transition'
         ? { label: 'Entrando', announcement: 'Entrando al mapa. La navegación estará disponible en un momento.' }
       : phase === 'ready'
-        ? { label: 'Listo', announcement: 'Mundo listo. Usa WASD o las flechas para mover a Wall-E.' }
+        ? { label: 'Listo', announcement: 'Mundo listo. Usa WASD o las flechas para mover a RobotExpressive.' }
         : { label: 'Cargando', announcement: 'Preparando el mundo 3D de Mimix.' }
 
   return <section className="play-world" aria-label="Experiencia de juego Mimix">

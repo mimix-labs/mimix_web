@@ -9,6 +9,7 @@ for (const [route, heading] of [['/inicio-anterior', 'Un mundo de Matemáticas y
     page.on('request', request => requests.push(request.url()))
     await page.goto(route)
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible()
+    if (route === '/inicio-anterior') await expect(page.getByRole('link', { name: 'Abrir el mundo 3D' })).toHaveAttribute('href', '/mundo')
     expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([])
     await page.keyboard.press('Tab')
     await expect(page.getByRole('link', { name: 'Saltar al contenido' })).toBeFocused()
@@ -34,8 +35,8 @@ test('private routes fail closed without identity and never fetch private data',
 })
 test('catalog keeps the original challenge entrypoints and home enters the educational world', async ({ page }) => {
   await page.goto('/catalogo')
-  await expect(page.getByRole('link', { name: 'Explorar Matemáticas' })).toHaveAttribute('href', 'http://localhost:5173/challenges/mathematics/')
-  await expect(page.getByRole('link', { name: 'Explorar Ciencias' })).toHaveAttribute('href', 'http://localhost:5173/challenges/science/')
+  await expect(page.getByRole('link', { name: 'Explorar Matemáticas' })).toHaveAttribute('href', '/challenges/mathematics/')
+  await expect(page.getByRole('link', { name: 'Explorar Ciencias' })).toHaveAttribute('href', '/challenges/science/')
   await page.getByRole('link', { name: 'MIMIX', exact: true }).click()
   await expect(page.getByRole('link', { name: 'Comenzar como invitado' })).toHaveAttribute('href', '/mundo')
   const response = await page.goto('/no-existe')

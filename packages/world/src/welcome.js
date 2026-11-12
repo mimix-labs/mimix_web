@@ -5,7 +5,7 @@ import { CharacterSpaceLighting } from './fx/CharacterSpaceLighting.js'
 import { SpaceWordmark } from './fx/SpaceWordmark.js'
 import { WorldIntro } from './systems/WorldIntro.js'
 import { CharacterManager } from './entities/CharacterManager.js'
-import { WALLE } from './entities/walle/WallE.js'
+import { ROBOT_EXPRESSIVE } from './entities/RobotExpressive.js'
 import * as THREE from 'three'
 
 // Standalone welcome: no map, challenge zones, physics or exploration host.
@@ -32,7 +32,7 @@ export function mountWelcome(canvas, { presentation = 'center' } = {}) {
     title.layout = { offsetRatio: (centerY - titleY) / height, widthRatio: mobile ? (side ? 0.64 : 0.76) : (side ? 0.38 : 0.48), heightRatio: mobile ? (side ? 0.06 : 0.1) : 0.15 }
   }
   window.addEventListener('resize', fit)
-  const ready = characters.load(WALLE.modelPath, WALLE.spawnPosition).then(controller => {
+  const ready = characters.load(ROBOT_EXPRESSIVE.modelPath, ROBOT_EXPRESSIVE.spawnPosition, ROBOT_EXPRESSIVE).then(controller => {
     if (disposed) return
     controller.playAction('greeting')
     intro = new WorldIntro({ scene: engine.scene, character: characters.active, animations: controller.animations,
@@ -56,7 +56,7 @@ export function mountWelcome(canvas, { presentation = 'center' } = {}) {
     if (disposed) return
     disposed = true; cancelAnimationFrame(frame)
     window.removeEventListener('resize', fit)
-    intro?.dispose(); lighting?.dispose(); title?.dispose(); galaxy.dispose(); assets.dispose()
+    intro?.dispose(); characters.controller?.dispose(); lighting?.dispose(); title?.dispose(); galaxy.dispose(); assets.dispose()
     disposeObject(engine.scene); engine.scene.clear(); engine.dispose()
   } }
 }

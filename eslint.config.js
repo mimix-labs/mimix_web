@@ -12,6 +12,7 @@ export default [
       'apps/cloud/convex/_generated/**',
       'client/public/challenges/**/vendor/**',
       'apps/web/public/vendor/**',
+      'apps/web/public/challenge-assets/**',
       'graphify-out/**',
       '**/harness-dist/**',
       '**/test-results/**',

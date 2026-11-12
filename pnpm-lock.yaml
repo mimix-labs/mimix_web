@@ -227,6 +227,9 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      vite:
+        specifier: ^5.4.0
+        version: 5.4.21(@types/node@24.13.6)(lightningcss@1.33.0)
 
   characters/wall-e:
     dependencies:

@@ -32,7 +32,7 @@ export const BRIDGE_LAYOUT = {
 }
 
 // Loads the complete three-island world and treats all floor meshes as one
-// collision surface for Wall-E.
+// collision surface for the companion.
 export class SteamMap {
   constructor(scene, { assets, onAssetProgress = null } = {}) {
     this.assets = assets
