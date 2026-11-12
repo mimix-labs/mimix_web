@@ -138,7 +138,25 @@ Trabajo aislado desde main `027ac95`, rama `feat/world-robot-expressive`.
   dirige a Classic. El cliente independiente conserva su fallback con el nuevo modelo.
 - Verificado: check 60/60, Chromium plataforma 18/18 (2 opt-in omitidos), cliente
   32/32 y Firefox 4/4. Capturas nuevas desktop/móvil conservan el expediente histórico.
-- Construcción Docker local en curso con descargas npm lentas; WebKit corresponde
-  a CI. No se afirma validación de cámara física, Jetson ni cuenta real en este cambio.
+- Docker local construido, contenedor standalone 1/1. CI del commit `1f3e344`:
+  ocho jobs SUCCESS, incluidos WebKit y Docker; Vercel SUCCESS. No se afirma
+  validación de cámara física, Jetson ni cuenta real en este cambio.
 - Resumen y evidencia: `docs/design/robot-expressive.md`.
-- Vista local: `http://127.0.0.1:4312/`. Sin merge ni despliegue de esta sustitución.
+- Vista local: `http://127.0.0.1:4312/`. Sin merge ni despliegue manual;
+  Vercel generó una preview automática del PR.
+
+### Cierre coordinado de revisión — 12 de noviembre de 2026
+
+- Edwar aprobó visualmente la web y pidió la confirmación del chat de registro.
+  «MIMIX · Registro de software y permisos» aprobó técnicamente el commit `1f3e344`
+  y la identificación de RobotExpressive como recurso externo CC0 documentado.
+- Actualización de evidencia en la misma rama/PR #27 autorizada. La aprobación
+  técnica no certifica admisión del expediente ni autoriza merge/despliegue.
+- Para la nueva revisión se usan versión/capturas corregidas y licencia; se
+  excluyen capturas previas, referencias al personaje como vigente y el fixture
+  `characters/wall-e` de la selección de código. Historial, correos, PDFs y
+  evidencia ya enviada se conservan aparte; el requerimiento no exige purgar Git.
+- Pendiente de publicación: Classic todavía entrega el GLB anterior desde
+  `/assets/models/walle/walle.glb` (HTTP 200, 250772 bytes el 12/11). Coordinar su
+  retiro o redirección y verificar la URL al publicar. No se eliminaron proyectos,
+  despliegues, commits ni evidencia histórica. Detalles en el resumen de diseño.

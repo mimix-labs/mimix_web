@@ -59,16 +59,17 @@ El contrato anterior de estado/ayuda sigue aplicando al mundo.
   devuelve el foco al disparador. Una navegación completa restaura posición y
   cámara validadas, en la pestaña y hasta 30 minutos; no guarda auth ni progreso.
 - Referencia editable: Figma `4onaRTdHTm9tMvJe2EhmuA`, tableros desktop `23:960`
-  y móvil `23:2110`. La revisión visual final de Edwar sigue pendiente.
+  y móvil `23:2110`. Edwar aprobó la versión con RobotExpressive el 12/11/2026.
 
-Alcance, pruebas, evidencia y límites en [UI-01](docs/design/ui-01-delivery.md).
+Evidencia histórica de UI-01 en [su entrega](docs/design/ui-01-delivery.md);
+el estado vigente y la aprobación están en [RobotExpressive](docs/design/robot-expressive.md).
 
 ## Sustitución de personaje aprobada — 12/11/2026
 
 Edwar eligió explícitamente RobotExpressive de Three.js y autorizó aplicarlo.
 Se conservan composición, Galaxy, título, botones, Clerk y Convex. No se crean
 variantes del personaje. GLB externo CC0 sin modificaciones, altura normalizada
-1.8 unidades en el mapa; los gestos usan sus clips, sin animador de Wall-E.
+1.8 unidades en el mapa; los gestos usan los clips propios del modelo.
 La bienvenida conserva flotación ±0.14, inclinación por cursor y saludo periódico;
 movimiento reducido mantiene pose estática. Las actividades se empaquetan junto a
 Next para evitar que enlaces vigentes abran una versión Classic con otro modelo.
