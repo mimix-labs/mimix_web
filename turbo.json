@@ -95,7 +95,9 @@
         "!.next/cache/**",
         "!.next/dev/**",
         "public/assets/models/**",
-        "public/vendor/draco/**"
+        "public/vendor/draco/**",
+        "public/challenges/**",
+        "public/challenge-assets/**"
       ],
       "env": [
         "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
@@ -110,6 +112,11 @@
         "CLERK_JWT_KEY",
         "MIMIX_WORLD_MODE",
         "MIMIX_DATA_BACKEND"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/client/src/challenges/**",
+        "$TURBO_ROOT$/client/challenges/**"
       ]
     }
   }

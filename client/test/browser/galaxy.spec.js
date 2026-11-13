@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { expectRendered } from './rendering.js'
 
-test('Galaxy alone renders behind Wall-E, moves and visibly responds to a real background click', async ({ page }) => {
+test('Galaxy alone renders behind RobotExpressive, moves and visibly responds to a real background click', async ({ page }) => {
   test.setTimeout(120000)
   const errors = []
   page.on('pageerror', error => errors.push(error.message))

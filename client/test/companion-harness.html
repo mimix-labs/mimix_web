@@ -1,0 +1,7 @@
+<!doctype html><html lang="es"><head><meta charset="UTF-8"><title>Compañero MIMIX</title>
+<style>body{margin:0;background:#0b111b}#robot-container{width:300px;height:300px}</style></head>
+<body><div id="robot-container"></div><script type="module">
+import { RobotManager } from '../src/challenges/robotManager.js'
+window.robotManager = new RobotManager()
+window.robotManager.init().then(() => { window.harnessReady = true })
+</script></body></html>

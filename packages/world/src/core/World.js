@@ -24,7 +24,7 @@ const LOAD_BYTES = {
   science: 8173260,
   bridgeMathematics: 2239132,
   bridgeScience: 2239132,
-  character: 250772,
+  character: 463988,
 }
 
 // Challenge entrances: positioned on the Home-facing edge of each island.
@@ -138,14 +138,14 @@ export class World {
     this.spaceBackground.dispose()
     this.input.dispose()
     this.assets.dispose()
-    this.characters.controller?.mixer?.stopAllAction()
+    this.characters.controller?.dispose()
     disposeObject(this.engine.scene)
     this.engine.scene.clear()
     this.engine.dispose()
   }
 
-  async loadWallE() {
-    const { WALLE } = await import('../entities/walle/WallE.js')
+  async loadCharacter() {
+    const { ROBOT_EXPRESSIVE } = await import('../entities/RobotExpressive.js')
     if (this.disposed) return
     const cameraDirection = this.engine.camera.getWorldDirection(new THREE.Vector3())
     cameraDirection.y = 0
@@ -153,7 +153,8 @@ export class World {
 
     this._onLoadingProgress?.({ progress: 5, message: 'Cargando el mapa completo…' })
     const [controller] = await Promise.all([
-      this.characters.load(WALLE.modelPath, WALLE.spawnPosition, {
+      this.characters.load(ROBOT_EXPRESSIVE.modelPath, ROBOT_EXPRESSIVE.spawnPosition, {
+        ...ROBOT_EXPRESSIVE,
         facingDirection: cameraDirection,
         onProgress: event => this._reportAssetProgress('character', event),
       }),

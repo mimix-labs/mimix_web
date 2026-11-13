@@ -3,7 +3,7 @@ import * as THREE from 'three'
 const BS = 1
 
 // Puente voxel recto entre dos puntos del plano (suelo de roca + filos neón).
-// Permite que Wall-E cruce de HOME a cada isla STEAM.
+// Permite que the companion cruce de HOME a cada isla STEAM.
 export class Bridge {
   // from / to = { x, z } en coordenadas del mundo
   constructor(from, to, { color = 0x6fe9ff, width = 3 } = {}) {

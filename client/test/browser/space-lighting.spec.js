@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { expectRendered } from './rendering.js'
 
-test('space lighting reaches Wall-E and the title, preserves Galaxy and restores map materials after Play', async ({ page }) => {
+test('space lighting reaches RobotExpressive and the title, preserves Galaxy and restores map materials after Play', async ({ page }) => {
   test.setTimeout(120000)
   const errors = []
   page.on('pageerror', error => errors.push(error.message))
@@ -43,7 +43,7 @@ test('space lighting reaches Wall-E and the title, preserves Galaxy and restores
       } else if (inTitle && lit[i] > 150 && lit[i + 1] > 95 && lit[i + 2] < lit[i + 1] * 0.45) {
         if (delta(before, lit, i) > 6) litTitle++
         if (delta(lit, pulse, i) > 3) pulsingTitle++
-      } else if (before[i] > 40 && before[i] > before[i + 1] * 1.15 && before[i + 1] > before[i + 2] * 1.3) {
+      } else if (inBody) {
         if (delta(before, lit, i) > 12) litBody++
         if (delta(lit, pulse, i) > 3) pulsingBody++
       }

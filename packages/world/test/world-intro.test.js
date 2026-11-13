@@ -1,21 +1,15 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { Scene, Group, Mesh, BoxGeometry, MeshBasicMaterial, PerspectiveCamera, Vector3, AmbientLight, AnimationClip, VectorKeyframeTrack } from 'three'
-import { WallEAnimator } from '../src/entities/walle/WallEAnimator.js'
 
-async function createIntro({ reducedMotion = false, animated = false, procedural = false, canvas = null } = {}) {
+async function createIntro({ reducedMotion = false, animated = false, idle = false, canvas = null } = {}) {
   const { WorldIntro } = await import('../src/systems/WorldIntro.js')
   const scene = new Scene()
   const character = new Mesh(new BoxGeometry(1, 2, 1), new MeshBasicMaterial())
   character.position.set(0, 0.32, 0)
   const head = new Group(); head.name = 'Head'; character.add(head)
   const boneRoot = new Group(); boneRoot.name = 'Root'; character.add(boneRoot)
-  const model = new Group(); character.add(model)
-  const arm = new Mesh(new BoxGeometry(0.2, 0.5, 0.2), new MeshBasicMaterial())
-  arm.name = 'BRAZOD'; model.add(arm)
-  const poseAnimator = procedural ? new WallEAnimator(model) : null
-  poseAnimator?.play('greeting')
-  const animations = animated ? ['Float', 'Wave'].map((name, index) => new AnimationClip(name, 2.5, [
+  const animations = animated ? [idle ? 'Idle' : 'Float', 'Wave'].map((name, index) => new AnimationClip(name, 2.5, [
     new VectorKeyframeTrack('Head.position', [0, 1, 2.5], [0, 0, 0, 0, index + 1, 0, 0, 0, 0]),
     new VectorKeyframeTrack('Root.position', [0, 2.5], [0, 4, 0, 0, 4, 0]),
   ])) : []
@@ -35,35 +29,10 @@ async function createIntro({ reducedMotion = false, animated = false, procedural
   motionQuery.matches = reducedMotion
   let completed = 0
   let time = 0
-  const intro = new WorldIntro({ scene, character, camera, controls, input, animations, poseAnimator, canvas, motionQuery, now: () => time, onComplete: () => { completed++ } })
+  const intro = new WorldIntro({ scene, character, camera, controls, input, animations, canvas, motionQuery, now: () => time, onComplete: () => { completed++ } })
   const advance = (seconds, simulationDelta = seconds) => { time += seconds * 1000; intro.update(simulationDelta) }
-  return { intro, advance, character, head, boneRoot, poseAnimator, island, hidden, particles, light, camera, controls, input, motionQuery, completed: () => completed }
+  return { intro, advance, character, head, boneRoot, island, hidden, particles, light, camera, controls, input, motionQuery, completed: () => completed }
 }
-
-test('Wall-E without baked clips greets while floating and resets its pose for reduced motion and exploration', async () => {
-  const view = await createIntro({ procedural: true })
-  try {
-    const baseY = view.character.position.y
-    for (let i = 0; i < 15; i++) view.advance(0.05)
-    assert.notEqual(view.character.position.y, baseY)
-    assert.ok(view.poseAnimator.rightArm.rotation.z > 0.3)
-    view.motionQuery.matches = true
-    view.motionQuery.dispatchEvent(new Event('change'))
-    view.advance(0.05)
-    assert.equal(view.poseAnimator.rightArm.rotation.z, 0)
-    const time = view.poseAnimator.time
-    view.advance(1)
-    assert.equal(view.poseAnimator.time, time)
-    view.motionQuery.matches = false
-    view.motionQuery.dispatchEvent(new Event('change'))
-    view.poseAnimator.play('greeting')
-    view.advance(0.05)
-    assert.ok(view.poseAnimator.rightArm.rotation.z > 0)
-    view.intro.start(); view.advance(1)
-    assert.equal(view.poseAnimator.rightArm.rotation.z, 0)
-    assert.equal(view.poseAnimator.action, null)
-  } finally { view.intro.dispose() }
-})
 
 test('space entry hides terrain, keeps character/particles/lights and locks navigation', async () => {
   const view = await createIntro()
@@ -187,5 +156,27 @@ test('cursor tilts the character, returns to neutral on leave and is removed on 
     assert.equal(view.character.rotation.y, view.intro.previewRotation.y)
     view.intro.dispose(); view.intro.pointer.set(0, 0); move()
     assert.equal(view.intro.pointer.length(), 0)
+  } finally { view.intro.dispose() }
+})
+
+
+test('authored Idle and Wave clips resume after a greeting and reset on reduced motion', async () => {
+  const view = await createIntro({ animated: true, idle: true })
+  try {
+    assert.ok(view.intro.actions.has('Idle'))
+    for (let i = 0; i < 110; i++) view.advance(0.05)
+    assert.equal(view.intro.currentAction.getClip().name, 'Wave')
+    for (let i = 0; i < 60; i++) view.advance(0.05)
+    assert.equal(view.intro.currentAction.getClip().name, 'Idle')
+    assert.ok(view.head.position.y > 0)
+    view.motionQuery.matches = true
+    view.motionQuery.dispatchEvent(new Event('change'))
+    view.advance(0.05)
+    assert.equal(view.head.position.y, 0)
+    assert.equal(view.intro.mixer.stats.actions.inUse, 0)
+    view.motionQuery.matches = false
+    view.motionQuery.dispatchEvent(new Event('change'))
+    for (let i = 0; i < 10; i++) view.advance(0.05)
+    assert.ok(view.head.position.y > 0)
   } finally { view.intro.dispose() }
 })

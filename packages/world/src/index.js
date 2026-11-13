@@ -56,7 +56,7 @@ export function mountWorld(root, { host, existingSurface = false, startInSpace =
     if (disposed) return
     world = new World({ canvas: root.getElementById('canvas'), root, host, onLoadingProgress: status => loading.update(status), startInSpace, onPhaseChange: changePhase })
     world.setInteractionEnabled(interactionEnabled)
-    await world.loadWallE()
+    await world.loadCharacter()
     if (disposed) return
     loading.complete()
     if (welcome) welcome.querySelector('button')?.focus()

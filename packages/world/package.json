@@ -17,7 +17,8 @@
     "./welcome": {
       "types": "./src/welcome.d.ts",
       "import": "./src/welcome.js"
-    }
+    },
+    "./character": "./src/entities/RobotExpressive.js"
   },
   "scripts": {
     "build": "node scripts/build.mjs",

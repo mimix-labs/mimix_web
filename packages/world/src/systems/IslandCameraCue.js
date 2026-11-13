@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 
-// Starts a short cinematic view while Wall-E crosses the last part of a bridge.
+// Starts a short cinematic view while the companion crosses the last part of a bridge.
 // It ends before the player reaches the center of the destination island.
 export class IslandCameraCue {
   constructor({ characters, cameraFollower, homePosition, islandPosition, titleHeight = 10 }) {

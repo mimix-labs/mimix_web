@@ -12,8 +12,8 @@ test('space preview blocks movement and camera, then Play restores the map and r
     phase: window.world.phase,
     islands: Object.values(window.world.steamMap.islands).map(island => island.group.visible),
   }))
-  expect(await page.evaluate(() => Boolean(window.world.characters.active.getObjectByName('TORSO')))).toBe(true)
-  expect(await page.evaluate(() => window.world.intro.poseAnimator === window.world.characters.controller.previewAnimator)).toBe(true)
+  expect(await page.evaluate(() => window.world.characters.active.getObjectByProperty('isSkinnedMesh', true) !== undefined)).toBe(true)
+  expect(await page.evaluate(() => window.world.intro.actions.has('Idle') && window.world.intro.actions.has('Wave'))).toBe(true)
   expect(before.phase).toBe('intro')
   expect(before.islands).toEqual([false, false, false])
   await page.keyboard.down('KeyW')

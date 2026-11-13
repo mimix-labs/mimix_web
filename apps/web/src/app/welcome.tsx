@@ -27,7 +27,7 @@ export default function WelcomeScene({ presentation = 'center' }: { presentation
     return () => { active = false; scene?.dispose(); sceneRef.current = null; window.removeEventListener('pagehide', onHide); window.removeEventListener('pageshow', onShow) }
   }, [attempt])
   return <div className="space-home" data-scene-state={state}>
-    <canvas ref={canvas} aria-label="Wall-E flota entre estrellas y saluda. Mueve el cursor para interactuar." />
+    <canvas ref={canvas} aria-label="RobotExpressive flota entre estrellas y saluda. Mueve el cursor para interactuar." />
     {state !== 'ready' && <div className={`space-status${presentation === 'side' ? ' space-status-side' : ''}`} role="status">{state === 'error' ? <><span className="space-fallback-mark" aria-hidden="true">MIMIX</span><p>No pudimos cargar el personaje.</p><button className="space-button space-button-quiet" onClick={() => setAttempt(attempt + 1)}>Reintentar</button></> : 'Preparando a tu compañero…'}</div>}
   </div>
 }

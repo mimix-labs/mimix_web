@@ -141,8 +141,8 @@ a {
     position: fixed;
     bottom: 0px;
     left: 0px;
-    width:520px;
-    height:520px;
+    width:min(34vw, 300px);
+    height:min(34vw, 300px);
     z-index: 1000;
     pointer-events: none; /* No bloquea clicks en la página */
 }

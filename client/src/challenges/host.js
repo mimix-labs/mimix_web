@@ -10,7 +10,7 @@ export async function bootOfficialChallenge({ createChallenge, manifest, surface
   if (!validation.ok) throw new Error(validation.error.message)
   const id = validation.manifest.id
   const query = new URLSearchParams(location.search)
-  if (query.get('challengeRuntime') === 'legacy' || import.meta.env.VITE_MIMIX_CHALLENGES_MODE === 'legacy') {
+  if (import.meta.env.VITE_MIMIX_PLATFORM !== 'true' && (query.get('challengeRuntime') === 'legacy' || import.meta.env.VITE_MIMIX_CHALLENGES_MODE === 'legacy')) {
     query.delete('challengeRuntime')
     location.replace(`/legacy/challenges/${id}/index.html${query.size ? `?${query}` : ''}`)
     return

@@ -21,7 +21,7 @@ export class IslandField {
     this.scene.add(this.group)
   }
 
-  // Isla central grande, neón cian neutro (aquí va Wall-E)
+  // Isla central grande, neón cian neutro (aquí va the companion)
   _buildHome() {
     const home = new VoxelIsland(this.group, {
       position: [0, 0, 0],

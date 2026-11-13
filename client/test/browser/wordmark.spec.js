@@ -17,7 +17,7 @@ test('space welcome renders a floating yellow title above the character and rele
     const pixels = new Uint8Array(width * height * 4)
     gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
     let yellow = 0
-    // Before the title exists, this region is Galaxy; Wall-E is below it.
+    // Before the title exists, this region is Galaxy; RobotExpressive is below it.
     for (let y = Math.floor(height * 0.08); y < height * 0.3; y++) {
       for (let x = Math.floor(width * 0.2); x < width * 0.8; x++) {
         const i = ((height - 1 - y) * width + x) * 4

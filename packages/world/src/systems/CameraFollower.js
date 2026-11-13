@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 
-// Follows Wall-E while retaining the zoom chosen through MapControls.
+// Follows the companion while retaining the zoom chosen through MapControls.
 // IslandCameraCue can temporarily request a cinematic framing.
 export class CameraFollower {
   constructor({ camera, controls, smoothness = 7 }) {
@@ -55,7 +55,7 @@ export class CameraFollower {
     const { approachDirection, target } = this.focus
     const blend = 1 - Math.exp(-3.2 * delta)
 
-    // Camera stays behind Wall-E and looks ahead at the island name.
+    // Camera stays behind the companion and looks ahead at the island name.
     this.desiredCamera.copy(this.desiredTarget)
       .addScaledVector(approachDirection, -11)
       .add(new THREE.Vector3(0, 5.5, 0))

@@ -13,7 +13,7 @@ export function startRobotWebBridge(challenge) {
         body: JSON.stringify(context),
       })
     } catch (error) {
-      console.warn('No se pudo compartir el contexto con Wall-E:', error)
+      console.warn('No se pudo compartir el contexto con RobotExpressive:', error)
     }
   }
 
@@ -37,7 +37,7 @@ export function startRobotWebBridge(challenge) {
         window.location.assign(target)
       }
     } catch (error) {
-      console.error('Comando inválido de Wall-E:', error)
+      console.error('Comando inválido de RobotExpressive:', error)
     }
   })
 

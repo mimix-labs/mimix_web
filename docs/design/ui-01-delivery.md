@@ -1,5 +1,10 @@
 # UI-01 · bienvenida Wall-E y acceso de MIMIX
 
+> Documento histórico de UI-01, anterior al reemplazo aprobado el 12/11/2026.
+> Se conserva como evidencia; no describe el personaje vigente ni debe adjuntarse
+> a la nueva revisión del expediente. Estado y capturas actuales en
+> [RobotExpressive](robot-expressive.md).
+
 Base apilada explícita: `7598cf3`, PR de servicios #24. Rama
 `feat/ui-01-platform-welcome`; este PR solo entrega UI y sus dependencias de render.
 No ejecutar merge ni despliegue desde este trabajo.

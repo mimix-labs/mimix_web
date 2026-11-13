@@ -1,15 +1,17 @@
 import * as THREE from 'three'
-import { getGesture } from './gestures.js'
+import { GESTURES, getGesture } from './gestures.js'
 
 const FADE_DURATION = 0.25 // seconds to blend between animations
 const DESCENT_ACCELERATION = 22
 const MAX_DESCENT_SPEED = 4.5
 
 export class CharacterController {
-  constructor({ mesh, animations, input, proceduralAnimator = null, collisionWorld = null }) {
+  constructor({ mesh, animations, input, proceduralAnimator = null, collisionWorld = null, clipNames = {} }) {
     this.mesh   = mesh
     this.input  = input
     this.animations = animations
+    this.clipNames = clipNames
+    this._oneShot = false
 
     this._mixer   = new THREE.AnimationMixer(mesh)
     this._actions = {}  // name → AnimationAction
@@ -23,6 +25,11 @@ export class CharacterController {
     this._collisionWorld = collisionWorld
 
     this._buildActions(animations)
+    this._mixer.addEventListener('finished', event => {
+      if (event.action !== this._current) return
+      this._oneShot = false
+      this.play('idle')
+    })
     this._collisionWorld?.snapToGround(this.mesh.position)
     this._proceduralAnimator?.setGroundHeight(this.mesh.position.y)
     this.play('idle')
@@ -39,9 +46,10 @@ export class CharacterController {
   // Play a gesture by name (defined in gestures.js)
   play(gestureName) {
     const gesture = getGesture(gestureName)
-    const next    = this._actions[gesture.clip]
+    const next    = this._actions[this.clipNames[gestureName] ?? gesture.clip]
 
-    if (!next || next === this._current) return
+    if (!next) return false
+    if (next === this._current && next.isRunning()) return true
 
     next.setLoop(
       gesture.loop ? THREE.LoopRepeat : THREE.LoopOnce,
@@ -53,6 +61,8 @@ export class CharacterController {
 
     if (this._current) this._current.fadeOut(FADE_DURATION)
     this._current = next
+    this._oneShot = !gesture.loop
+    return true
   }
 
   update(delta) {
@@ -98,7 +108,7 @@ export class CharacterController {
 
       this.play(moved ? 'walk' : 'idle')
     } else {
-      this.play('idle')
+      if (!this._oneShot) this.play('idle')
     }
 
     return moved
@@ -128,7 +138,15 @@ export class CharacterController {
   }
 
   playAction(name) {
-    return this._proceduralAnimator?.play(name) ?? false
+    if (this._proceduralAnimator) return this._proceduralAnimator.play(name)
+    const gesture = name === 'greeting' ? 'wave' : name
+    if (!GESTURES[gesture]) return false
+    return this.play(gesture)
+  }
+
+  dispose() {
+    this._mixer.stopAllAction()
+    this._mixer.uncacheRoot(this.mesh)
   }
 
   get previewAnimator() { return this._proceduralAnimator }
